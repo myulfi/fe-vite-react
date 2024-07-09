@@ -148,7 +148,7 @@ export default function ExampleTemplate() {
     const storeExampleTemplate = async () => {
         if (exampleTemplateValidate(exampleTemplateForm)) {
             dialogObject.hide();
-            setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, ["isLoading"]: true });
+            setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, isLoading: true });
 
             await api.post(
                 '/test/example-template.json'
@@ -167,13 +167,16 @@ export default function ExampleTemplate() {
                 })
                 .finally(() => {
                     toastObject.show();
-                    setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, ["isLoading"]: false });
+                    setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, isLoading: false });
                     bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
                 });
         }
     }
 
     const confirmDeleteExampleTemplate = (id) => {
+        console.log(exampleTemplateCheckBoxTableArray);
+        console.log(exampleTemplateDataTotalTable);
+        console.log(exampleTemplateArray);
         if (id !== undefined) {
             setDialog({
                 message: `Are you sure to delete ${id}?`
@@ -203,7 +206,7 @@ export default function ExampleTemplate() {
         if (id !== undefined) {
             setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: true } });
         } else {
-            setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, ["isLoading"]: true });
+            setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, isLoading: true });
         }
 
         await api.delete(
@@ -224,7 +227,7 @@ export default function ExampleTemplate() {
                 if (id !== undefined) {
                     setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } });
                 } else {
-                    setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, ["isLoading"]: false });
+                    setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, isLoading: false });
                 }
                 toastObject.show();
             });
@@ -304,14 +307,14 @@ export default function ExampleTemplate() {
                                                         onClick={() => entryExampleTemplate(data)}
                                                         className="btn-primary"
                                                         icon="bi-pencil"
-                                                        isLoading={exampleTemplateOptionColumnTable[data] !== undefined && exampleTemplateOptionColumnTable[data].updatedButtonFlag}
+                                                        isLoading={exampleTemplateOptionColumnTable[data]?.updatedButtonFlag}
                                                     />
                                                     <ButtonTable
                                                         label="Delete"
                                                         onClick={() => confirmDeleteExampleTemplate(data)}
                                                         className="btn-danger"
                                                         icon="bi-trash"
-                                                        isLoading={exampleTemplateOptionColumnTable[data] !== undefined && exampleTemplateOptionColumnTable[data].deletedButtonFlag}
+                                                        isLoading={exampleTemplateOptionColumnTable[data]?.deletedButtonFlag}
                                                     />
                                                 </>
                                             )

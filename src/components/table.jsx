@@ -60,11 +60,6 @@ export default function Table({
     return (
         <>
             <div>
-                {/* <div className="clearfix">
-                    <div className="float-none">
-                        <div className="left-section">[{checkBoxArray.length}] checked</div>
-                    </div>
-                </div> */}
                 <div className="clearfix">
                     <div className="float-start">
                         {
@@ -76,11 +71,11 @@ export default function Table({
                     </div>
                     <div className="float-end">
                         {
-                            bulkOptionArray !== undefined && bulkOptionArray.length > 0
+                            bulkOptionArray?.length > 0
                             && <div className="btn-group">
                                 <button className="btn btn-outline-dark mb-3 shadow-sm dropdown-toggle" disabled={isBulkOptionLoading ? "disabled" : ""} data-bs-toggle="dropdown">
                                     <span className={isBulkOptionLoading ? "spinner-border spinner-border-sm mx-2" : ""} role="status" aria-hidden="true" />
-                                    <span className="bi-stack">&nbsp;Bulk Option</span>
+                                    <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : ""}Bulk Option</span>
                                 </button>
                                 <div className="dropdown-menu">
                                     {
@@ -163,20 +158,11 @@ export default function Table({
                                             </td>
                                         ))
                                     }
-                                    {/* <td className="text-center">
-                                        <Link to={`/example-template/edit/${data.id}`} className="btn btn-sm btn-primary rounded-sm shadow border-0 me-2">Edit</Link>
-                                        <ButtonTable
-                                            label="Delete"
-                                            onClick={() => deleteExampleTemplate(data.id)}
-                                            buttonClass="btn btn-sm btn-danger rounded-sm shadow border-0 me-2"
-                                        isLoading={optionRow[data.id] !== undefined && optionRow[data.id].deletedButtonFlag}
-                                        />
-                                    </td> */}
                                 </tr>
                             ))
 
                             : <tr>
-                                <td colSpan={columns.length + 1} className="text-center">
+                                <td colSpan={columns.length + (checkBoxArray != undefined ? 1 : 0)} className="text-center">
                                     Data not founded.
                                 </td>
                             </tr>
@@ -195,20 +181,39 @@ export default function Table({
                             && <ul className="pagination">
                                 {
                                     pages.map((page) => (
-                                        <li
-                                            key={page}
-                                            className={
-                                                page === currentPage ? "page-item active" : "page-item"
-                                            }
-                                        >
+                                        <>
                                             {
-                                                page === currentPage
-                                                    ? <a className="page-link">{page}</a>
-                                                    : <a className="page-link" onClick={() => onPageChange(page, sizePage, search)} role="button">
-                                                        {page}
-                                                    </a>
+                                                (
+                                                    pages.length <= 7
+                                                    || (
+                                                        pages.length > 7
+                                                        && (
+                                                            page === currentPage
+                                                            || page === 1
+                                                            || page === pages.length
+                                                            || (
+                                                                page > currentPage - 3
+                                                                && page < currentPage + 3
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                                && <li
+                                                    key={page}
+                                                    className={
+                                                        page === currentPage ? "page-item active" : "page-item"
+                                                    }
+                                                >
+                                                    {
+                                                        page === currentPage ? <a className="page-link">{page}</a>
+                                                            : page !== 1 && page !== pages.length && (page === currentPage - 2 || page === currentPage + 2) ? <a className="page-link">...</a>
+                                                                : <a className="page-link" onClick={() => onPageChange(page, sizePage, search)} role="button">
+                                                                    {page}
+                                                                </a>
+                                                    }
+                                                </li>
                                             }
-                                        </li>
+                                        </>
                                     ))
                                 }
                             </ul>

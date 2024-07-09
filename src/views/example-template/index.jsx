@@ -16,6 +16,7 @@ export default function ExampleTemplate() {
     const [dataTotal, setDataTotal] = useState(0);
     const [exampleTemplateArray, setExampleTemplateArray] = useState([]);
     const [submitLoading, setSubmitLoading] = useState(false);
+    const [submitModal, setSubmitModal] = useState({});
     const [bulkOptionLoading, setBulkOptionLoading] = useState(false);
 
     const clearData = {
@@ -107,7 +108,18 @@ export default function ExampleTemplate() {
                 })
                 .finally(() => {
                     setOptionRow({ ...optionRow, [id]: { updatedButtonFlag: false } });
+                    setSubmitModal({
+                        title: "Edit"
+                        , label: "Update"
+                        , icon: "bi-arrow-repeat"
+                    });
                 });
+        } else {
+            setSubmitModal({
+                title: "Add"
+                , label: "Save"
+                , icon: "bi-bookmark"
+            });
         }
 
         modal = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
@@ -220,12 +232,13 @@ export default function ExampleTemplate() {
     }
 
     return (
-        <div className="container mt-5 mb-5">
+        <div className="container mt-4 mb-4">
             <Modal
                 id="modal_id"
                 size="md"
-                title="Add"
-                labelSubmit="Save"
+                title={submitModal.title}
+                labelSubmit={submitModal.label}
+                iconSubmit={submitModal.icon}
                 onSubmit={() => confirmStoreExampleTemplate()}
                 isSubmitLoading={submitLoading}
             >

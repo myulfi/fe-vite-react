@@ -3,6 +3,7 @@ export default function Modal({
     , size
     , title
     , labelSubmit
+    , iconSubmit
     , onSubmit
     , isSubmitLoading
     , children
@@ -27,13 +28,9 @@ export default function Modal({
                         <button type="button" className="btn btn-sm btn-secondary" data-bs-dismiss="modal">
                             <span className="bi-x-lg">&nbsp;Close</span>
                         </button>
-                        {/* <button type="button" className="btn btn-sm btn-primary" disabled={isSubmitLoading ? "disabled" : ""} onClick={() => onSubmit()}>
-                            <span className={isSubmitLoading ? "spinner-grow spinner-grow-sm" : ""} role="status" aria-hidden="true" />
-                            <span className="bi-bookmark">&nbsp;{labelSubmit}</span>
-                        </button> */}
                         <button type="button" className="btn btn-sm btn-primary" disabled={isSubmitLoading ? "disabled" : ""} onClick={() => onSubmit()}>
                             <span className={isSubmitLoading ? "spinner-grow spinner-grow-sm" : ""} role="status" aria-hidden="true" />
-                            <span className="bi-arrow-repeat">&nbsp;{labelSubmit}</span>
+                            <span className={iconSubmit}>&nbsp;{labelSubmit}</span>
                         </button>
                     </div>
                 </div>

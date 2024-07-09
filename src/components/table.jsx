@@ -1,7 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import ButtonTable from './form/buttonTable';
-import Button from './form/button';
 
 export default function Table({
     labelNewButton
@@ -113,7 +110,7 @@ export default function Table({
                     </div>
                 </div>
             </div>
-            <table className="table table-bordered mt-3">
+            <table className="table table-bordered mt-3 align-middle">
                 <thead className="border border-bottom-0">
                     <tr>
                         <th scope="col" className="text-center">

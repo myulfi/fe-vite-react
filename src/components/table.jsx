@@ -2,14 +2,14 @@ import { useState } from 'react';
 
 export default function Table({
     labelNewButton
-    , onClickNewButton
+    , onClickNewButton = () => { alert("Please define your function!") }
     , bulkOptionArray
-    , isBulkOptionLoading
-    , dataArray
+    , isBulkOptionLoading = false
+    , dataArray = []
     , columns
     , checkBoxArray
-    , onCheckBox
-    , dataTotal
+    , onCheckBox = () => { alert("Please define your function!") }
+    , dataTotal = 0
     , onRender
 }) {
     const checkBoxStateArray = dataArray.map(function (obj) {
@@ -67,26 +67,32 @@ export default function Table({
                 </div> */}
                 <div className="clearfix">
                     <div className="float-start">
-                        <button className="btn btn-md btn-primary rounded mb-3 border-0 shadow-sm" type="button" onClick={() => onClickNewButton()}>
-                            <span className="bi-plus-circle">&nbsp;{labelNewButton}</span>
-                        </button>
+                        {
+                            labelNewButton != undefined
+                            && <button className="btn btn-md btn-primary rounded mb-3 border-0 shadow-sm" type="button" onClick={() => onClickNewButton()}>
+                                <span className="bi-plus-circle">&nbsp;{labelNewButton}</span>
+                            </button>
+                        }
                     </div>
                     <div className="float-end">
-                        <div className="btn-group">
-                            <button className="btn btn-outline-dark dropdown-toggle" disabled={isBulkOptionLoading ? "disabled" : ""} data-bs-toggle="dropdown">
-                                <span className={isBulkOptionLoading ? "spinner-border spinner-border-sm mx-2" : ""} role="status" aria-hidden="true" />
-                                <span className="bi-stack">&nbsp;Bulk Option</span>
-                            </button>
-                            <div className="dropdown-menu">
-                                {
-                                    bulkOptionArray.map((bulkOption, index) => (
-                                        <a key={index} className="dropdown-item" onClick={bulkOption.onClick} role="button">
-                                            <span className="bi-trash">&nbsp;{bulkOption.name}</span>
-                                        </a>
-                                    ))
-                                }
+                        {
+                            bulkOptionArray !== undefined && bulkOptionArray.length > 0
+                            && <div className="btn-group">
+                                <button className="btn btn-outline-dark mb-3 shadow-sm dropdown-toggle" disabled={isBulkOptionLoading ? "disabled" : ""} data-bs-toggle="dropdown">
+                                    <span className={isBulkOptionLoading ? "spinner-border spinner-border-sm mx-2" : ""} role="status" aria-hidden="true" />
+                                    <span className="bi-stack">&nbsp;Bulk Option</span>
+                                </button>
+                                <div className="dropdown-menu">
+                                    {
+                                        bulkOptionArray.map((bulkOption, index) => (
+                                            <a key={index} className="dropdown-item" onClick={bulkOption.onClick} role="button">
+                                                <span className="bi-trash">&nbsp;{bulkOption.name}</span>
+                                            </a>
+                                        ))
+                                    }
+                                </div>
                             </div>
-                        </div>
+                        }
                     </div>
                 </div>
                 <div className="clearfix">
@@ -113,20 +119,22 @@ export default function Table({
             <table className="table table-bordered mt-3 align-middle">
                 <thead className="border border-bottom-0">
                     <tr>
-                        <th scope="col" className="text-center">
-                            <input
-                                type="checkbox"
-                                id="checkall"
-                                checked={checkBoxStateArray.length > 0 && checkBoxStateArray.every(id => new Set(checkBoxArray).has(id))}
-                                onChange={onCheckBoxAll}
-                            />
-                        </th>
+                        {
+                            checkBoxArray != undefined
+                            && <th scope="col" className="text-center">
+                                <input
+                                    type="checkbox"
+                                    id="checkall"
+                                    checked={checkBoxStateArray.length > 0 && checkBoxStateArray.every(id => new Set(checkBoxArray).has(id))}
+                                    onChange={onCheckBoxAll}
+                                />
+                            </th>
+                        }
                         {
                             columns.map((column, index) => (
                                 <th key={index} scope="col" className={column.class}>{column.name}</th>
                             ))
                         }
-                        {/* <th scope="col">Option</th> */}
                     </tr>
                 </thead>
                 <tbody>
@@ -134,13 +142,16 @@ export default function Table({
                         dataArray.length > 0
                             ? dataArray.map((data) => (
                                 <tr key={data.id}>
-                                    <td className="text-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={checkBoxArray.indexOf(data.id) >= 0}
-                                            onChange={() => onCheckBoxSingle(data.id)}
-                                        />
-                                    </td>
+                                    {
+                                        checkBoxArray != undefined
+                                        && <td className="text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={checkBoxArray.indexOf(data.id) >= 0}
+                                                onChange={() => onCheckBoxSingle(data.id)}
+                                            />
+                                        </td>
+                                    }
                                     {
                                         columns.map((column, index) => (
                                             <td key={index} className={column.class}>
@@ -172,33 +183,39 @@ export default function Table({
                     }
                 </tbody>
             </table>
-            <div>
-                <div className="float-start">
-                    Showing {((currentPage - 1) * sizePage + 1) > dataTotal ? "0" : `${((currentPage - 1) * sizePage) + 1} to ${currentPage * sizePage > dataTotal ? dataTotal : currentPage * sizePage}`} of {dataTotal} entries
-                </div>
-                <div className="float-end">
-                    <ul className="pagination">
+            {
+                dataTotal > 0
+                && <div>
+                    <div className="float-start">
+                        Showing {((currentPage - 1) * sizePage + 1) > dataTotal ? "0" : `${((currentPage - 1) * sizePage) + 1} to ${currentPage * sizePage > dataTotal ? dataTotal : currentPage * sizePage}`} of {dataTotal} entries
+                    </div>
+                    <div className="float-end">
                         {
-                            pages.map((page) => (
-                                <li
-                                    key={page}
-                                    className={
-                                        page === currentPage ? "page-item active" : "page-item"
-                                    }
-                                >
-                                    {
-                                        page === currentPage
-                                            ? <a className="page-link">{page}</a>
-                                            : <a className="page-link" onClick={() => onPageChange(page, sizePage, search)} role="button">
-                                                {page}
-                                            </a>
-                                    }
-                                </li>
-                            ))
+                            pages.length > 1
+                            && <ul className="pagination">
+                                {
+                                    pages.map((page) => (
+                                        <li
+                                            key={page}
+                                            className={
+                                                page === currentPage ? "page-item active" : "page-item"
+                                            }
+                                        >
+                                            {
+                                                page === currentPage
+                                                    ? <a className="page-link">{page}</a>
+                                                    : <a className="page-link" onClick={() => onPageChange(page, sizePage, search)} role="button">
+                                                        {page}
+                                                    </a>
+                                            }
+                                        </li>
+                                    ))
+                                }
+                            </ul>
                         }
-                    </ul>
+                    </div>
                 </div>
-            </div>
+            }
         </>
     );
 }

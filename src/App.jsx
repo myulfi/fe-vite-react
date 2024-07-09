@@ -8,26 +8,26 @@ import Navbar from "./container/navbar";
 import Footer from "./container/footer";
 
 export default function App() {
-  const [menuArray, setMenuArray] = useState([
+  const menuArray = [
     {
       "sequence": 1,
       "color": "00aa00",
       "name": "Home",
-      "icon": "bi-home",
+      "icon": "bi-house-door",
       "path": "/home"
     },
     {
       "sequence": 10,
       "color": "D43F3A",
       "name": "Master",
-      "icon": "bi-book",
+      "icon": "bi-files",
       "children": [
         {
           "sequence": 1,
           "color": "null",
           "name": "Zone",
-          "icon": "bi-globe",
-          "path": "/zone"
+          "icon": "bi-pin-map",
+          "path": "/master/zone"
         }
       ]
     },
@@ -35,28 +35,28 @@ export default function App() {
       "sequence": 25,
       "color": "08b5fb",
       "name": "External Data",
-      "icon": "bi-external-link",
+      "icon": "bi-wifi",
       "children": [
         {
           "sequence": 1,
           "color": "E7E7E7",
           "name": "Server",
-          "icon": "bi-tasks",
-          "path": "/server"
+          "icon": "bi-hdd-rack",
+          "path": "/external-data/server"
         },
         {
           "sequence": 2,
           "color": "E7E7E7",
           "name": "Database",
           "icon": "bi-database",
-          "path": "/database"
+          "path": "/external-data/database"
         },
         {
           "sequence": 3,
           "color": "E7E7E7",
           "name": "API",
-          "icon": "fa-exchange",
-          "path": "/api"
+          "icon": "bi-plugin",
+          "path": "/external-data/api"
         }
       ]
     },
@@ -71,7 +71,7 @@ export default function App() {
           "color": "E7E7E7",
           "name": "Monitoring",
           "icon": "bi-laptop",
-          "path": "/monitoring"
+          "path": "/system-center/monitoring"
         },
         {
           "sequence": 2,
@@ -82,60 +82,60 @@ export default function App() {
               "color": "E7E7E7",
               "name": "Menu",
               "icon": "bi-sitemap",
-              "path": "/menu"
+              "path": "/system-center/menu"
             },
             {
               "sequence": 2,
               "color": "E7E7E7",
               "name": "Role",
               "icon": "bi-file-text-o",
-              "path": "/role"
+              "path": "/system-center/role"
             },
             {
               "sequence": 3,
               "color": "E7E7E7",
               "name": "User",
               "icon": "fa-user",
-              "path": "/user"
+              "path": "/system-center/user"
             }
           ],
           "name": "Access",
-          "icon": "fa-lock",
-          "path": "/access"
+          "icon": "bi-lock",
+          "path": "/system-center/access"
         },
         {
           "sequence": 3,
           "color": "E7E7E7",
           "name": "Configuration",
-          "icon": "fa-gears",
+          "icon": "bi-gear",
           "children": [
             {
               "sequence": 1,
               "color": "E7E7E7",
               "name": "Properties",
               "icon": "bi-file-text",
-              "path": "/properties"
+              "path": "/system-center/properties"
             },
             {
               "sequence": 2,
               "color": "null",
               "name": "Language",
               "icon": "bi-language",
-              "path": "/language"
+              "path": "/system-center/language"
             },
             {
               "sequence": 3,
               "color": "null",
               "name": "Procedure",
               "icon": "bi-arrow-right",
-              "path": "/procedure"
+              "path": "/system-center/procedure"
             },
             {
               "sequence": 4,
               "color": "E7E7E7",
               "name": "Email Scheduler",
               "icon": "bi-envelope",
-              "path": "/email-scheduler"
+              "path": "/system-center/email-scheduler"
             }
           ]
         }
@@ -145,50 +145,15 @@ export default function App() {
       "sequence": 99,
       "color": "E7E7E7",
       "name": "Example Template",
-      "icon": "bi-puzzle-piece",
-      "path": "/example-template"
+      "icon": "bi-puzzle",
+      "path": "/test/example-template"
     }
-  ]);
+  ];
   return (
-    <>
-      <div>
-        {/* <nav className="navbar navbar-expand-lg bg-dark" data-bs-theme="dark">
-          <div className="container">
-            <Link to="/" className="navbar-brand">HOME</Link>
-            <button
-              className="navbar-toggler"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
-            >
-              <span className="navbar-toggler-icon"></span>
-            </button>
-            <div className="collapse navbar-collapse" id="navbarSupportedContent">
-              <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-                <li className="nav-item">
-                  <Link to="/posts" className="nav-link active" aria-current="page">POSTS</Link>
-                </li>
-              </ul>
-              <ul className="navbar-nav ms-auto mb-2 mb-lg-0" role="search">
-                <a
-                  href="https://hahahihi.com"
-                  target="_blank"
-                  className="btn btn-success"
-                >VITE + REACT</a
-                >
-              </ul>
-            </div>
-          </div>
-        </nav> */}
-        <Navbar data={menuArray} />
-      </div>
-
+    <div>
+      <Navbar data={menuArray} />
       <Routes />
       <Footer />
-    </>
+    </div>
   )
-
 }

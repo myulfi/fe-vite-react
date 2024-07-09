@@ -20,6 +20,6 @@ export default function Select({
                 }
             </select>
             {error && <small className="text-danger mt-1 px-1">{error}</small>}
-        </div >
+        </div>
     );
 }

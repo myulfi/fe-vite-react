@@ -47,6 +47,6 @@ export default function Pagination({
                 onChange={event => onSearchKeyDown(event)}
                 onKeyDown={event => { if (event.key === "Enter") { onPageChange(currentPage, sizePage, search) } }}
             />
-        </ div >
+        </div>
     );
 }

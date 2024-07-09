@@ -1,11 +1,11 @@
 export default function Modal({
-    id
-    , size
-    , title
-    , labelSubmit
-    , iconSubmit
-    , onSubmit
-    , isSubmitLoading
+    id = "modal_id"
+    , size = "xl"
+    , title = "Form"
+    , labelSubmit = "Submit"
+    , iconSubmit = "bi-arrow-repeat"
+    , onSubmit = () => { alert("Please define your function!") }
+    , isSubmitLoading = false
     , children
 }) {
     return (

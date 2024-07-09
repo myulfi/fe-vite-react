@@ -1,8 +1,8 @@
 export default function Dialog({
-    id
+    id = "dialog_id"
+    , type = "alert"
     , message
-    , type
-    , onConfirm
+    , onConfirm = () => { alert("Please define your function!") }
 }) {
     let titleSpan;
     if (type === "confirmation") titleSpan = "bg-primary";

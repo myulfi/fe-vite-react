@@ -109,7 +109,7 @@ export default function ExampleTemplate() {
                     });
                 })
                 .catch(function (error) {
-                    message = "error";
+
                 })
                 .finally(() => {
                     setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: false } });
@@ -117,6 +117,7 @@ export default function ExampleTemplate() {
                         title: "Edit"
                         , label: "Update"
                         , icon: "bi-arrow-repeat"
+                        , isLoading: false
                     });
                 });
         } else {
@@ -124,6 +125,7 @@ export default function ExampleTemplate() {
                 title: "Add"
                 , label: "Save"
                 , icon: "bi-bookmark"
+                , isLoading: false
             });
         }
 
@@ -146,7 +148,7 @@ export default function ExampleTemplate() {
     const storeExampleTemplate = async () => {
         if (exampleTemplateValidate(exampleTemplateForm)) {
             dialogObject.hide();
-            setExampleTemplateEntryModal({ ...exampleTemplateForm, [isLoading]: true });
+            setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, ["isLoading"]: true });
 
             await api.post(
                 '/test/example-template.json'
@@ -157,7 +159,7 @@ export default function ExampleTemplate() {
                     if (json.data.status === "success") {
                         getExampleTemplate();
                     }
-                    setToast({ type: json.data.status, message: json.data.message });
+                    setToast({ type: json.data.status, message: "Submitted successfully" });
                 })
                 .catch((error) => {
                     setToast({ type: "failed", message: error });
@@ -165,7 +167,7 @@ export default function ExampleTemplate() {
                 })
                 .finally(() => {
                     toastObject.show();
-                    setExampleTemplateEntryModal({ ...exampleTemplateForm, [isLoading]: false });
+                    setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, ["isLoading"]: false });
                     bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
                 });
         }
@@ -201,7 +203,7 @@ export default function ExampleTemplate() {
         if (id !== undefined) {
             setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: true } });
         } else {
-            setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, [isLoading]: true });
+            setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, ["isLoading"]: true });
         }
 
         await api.delete(
@@ -211,7 +213,6 @@ export default function ExampleTemplate() {
         )
             .then(function (json) {
                 if (json.data.status === "success") {
-                    message = "Deleted Successfuly";
                     getExampleTemplate();
                 }
                 setToast({ type: json.data.status, message: json.data.message });
@@ -223,7 +224,7 @@ export default function ExampleTemplate() {
                 if (id !== undefined) {
                     setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } });
                 } else {
-                    setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, [isLoading]: false });
+                    setExampleTemplateBulkOptionTable({ ...exampleTemplateBulkOptionTable, ["isLoading"]: false });
                 }
                 toastObject.show();
             });

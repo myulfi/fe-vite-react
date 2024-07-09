@@ -25,11 +25,11 @@ export default function Modal({
                         </form>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                        <button type="button" className="btn btn-sm btn-secondary m-1" data-bs-dismiss="modal">
                             <span className="bi-x-lg">&nbsp;Close</span>
                         </button>
-                        <button type="button" className="btn btn-sm btn-primary" disabled={isSubmitLoading ? "disabled" : ""} onClick={() => onSubmit()}>
-                            <span className={isSubmitLoading ? "spinner-grow spinner-grow-sm" : ""} role="status" aria-hidden="true" />
+                        <button type="button" className="btn btn-sm btn-primary m-1" disabled={isSubmitLoading ? "disabled" : ""} onClick={() => onSubmit()}>
+                            <span className={isSubmitLoading ? "spinner-grow spinner-grow-sm mx-2" : ""} role="status" aria-hidden="true" />
                             <span className={iconSubmit}>&nbsp;{labelSubmit}</span>
                         </button>
                     </div>

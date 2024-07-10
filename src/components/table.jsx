@@ -10,6 +10,7 @@ export default function Table({
     , checkBoxArray
     , onCheckBox = () => { alert("Please define your function!") }
     , dataTotal = 0
+    , limitPaginationButton = 7
     , onRender
 }) {
     const checkBoxStateArray = dataArray.map(function (obj) {
@@ -56,6 +57,47 @@ export default function Table({
 
         onCheckBox(checkBoxArray);
     };
+
+    const paginationRange = (len, start) => {
+        var end;
+
+        if (start === undefined) {
+            start = 1;
+            end = len;
+        } else {
+            end = start;
+            start = len;
+        }
+
+        var out = [];
+        for (var i = start; i <= end; i++) { out.push(i); }
+        return out;
+    }
+
+    const paginationButton = (currentPage, pageAmount, limitButton) => {
+        const halfLimitButon = Math.floor(limitButton / 2);
+        var buttonArray;
+        if (pageAmount <= limitButton) {
+            buttonArray = paginationRange(1, pageAmount);
+        } else if (currentPage <= halfLimitButon) {
+            buttonArray = paginationRange(1, limitButton);
+            buttonArray[limitButton - 2] = "...";
+            buttonArray[limitButton - 1] = pageAmount;
+        } else if (currentPage >= pageAmount - halfLimitButon) {
+            buttonArray = paginationRange(pageAmount - limitButton + 1, pageAmount);
+            buttonArray[0] = 1;
+            buttonArray[1] = "...";
+        } else {
+            buttonArray = paginationRange(currentPage - halfLimitButon, currentPage + halfLimitButon);
+            buttonArray[0] = 1;
+            buttonArray[1] = "...";
+            buttonArray[limitButton - 2] = "...";
+            buttonArray[limitButton - 1] = pageAmount;
+
+        }
+
+        return buttonArray;
+    }
 
     return (
         <>
@@ -179,43 +221,43 @@ export default function Table({
                         {
                             pages.length > 1
                             && <ul className="pagination">
+
+                                <li className="page-item">
+                                    {
+                                        currentPage === 1
+                                            ? <a className="page-link disabled">Previous</a>
+                                            : <a className="page-link" onClick={() => onPageChange(currentPage - 1, sizePage, search)} role="button">
+                                                Previous
+                                            </a>
+                                    }
+                                </li>
                                 {
-                                    pages.map((page) => (
-                                        <>
-                                            {
-                                                (
-                                                    pages.length <= 7
-                                                    || (
-                                                        pages.length > 7
-                                                        && (
-                                                            page === currentPage
-                                                            || page === 1
-                                                            || page === pages.length
-                                                            || (
-                                                                page > currentPage - 3
-                                                                && page < currentPage + 3
-                                                            )
-                                                        )
-                                                    )
-                                                )
-                                                && <li
-                                                    key={page}
-                                                    className={
-                                                        page === currentPage ? "page-item active" : "page-item"
-                                                    }
-                                                >
-                                                    {
-                                                        page === currentPage ? <a className="page-link">{page}</a>
-                                                            : page !== 1 && page !== pages.length && (page === currentPage - 2 || page === currentPage + 2) ? <a className="page-link">...</a>
-                                                                : <a className="page-link" onClick={() => onPageChange(page, sizePage, search)} role="button">
-                                                                    {page}
-                                                                </a>
-                                                    }
-                                                </li>
+                                    paginationButton(currentPage, pages.length, limitPaginationButton).map((page, index) => (
+                                        <li
+                                            key={index}
+                                            className={
+                                                page === currentPage ? "page-item active" : "page-item"
                                             }
-                                        </>
+                                        >
+                                            {
+                                                page === currentPage || page === "..."
+                                                    ? <a className="page-link">{page}</a>
+                                                    : <a className="page-link" onClick={() => onPageChange(page, sizePage, search)} role="button">
+                                                        {page}
+                                                    </a>
+                                            }
+                                        </li>
                                     ))
                                 }
+                                <li className="page-item">
+                                    {
+                                        currentPage === pages.length
+                                            ? <a className="page-link disabled">Next</a>
+                                            : <a className="page-link" onClick={() => onPageChange(currentPage + 1, sizePage, search)} role="button">
+                                                Next
+                                            </a>
+                                    }
+                                </li>
                             </ul>
                         }
                     </div>

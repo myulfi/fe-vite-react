@@ -3,7 +3,7 @@ import './table.css';
 
 export default function Table({
     labelNewButton
-    , onClickNewButton = () => { alert("Please define your function!") }
+    , onNewButtonClick = () => { alert("Please define your function!") }
     , bulkOptionArray
     , isBulkOptionLoading = false
     , dataArray = []
@@ -107,7 +107,7 @@ export default function Table({
                     <div className="float-sm-start d-grid d-sm-flex mb-2">
                         {
                             labelNewButton != undefined
-                            && <button className="btn btn-md btn-primary rounded border-0 shadow-sm" type="button" onClick={() => onClickNewButton()}>
+                            && <button className="btn btn-md btn-primary rounded border-0 shadow-sm" type="button" onClick={() => onNewButtonClick()}>
                                 <span className="bi-plus-circle">&nbsp;{labelNewButton}</span>
                             </button>
                         }

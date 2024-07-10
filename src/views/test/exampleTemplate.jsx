@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../../api';
 import ButtonTable from "../../components/form/buttonTable";
 import Table from '../../components/table';
@@ -35,19 +35,32 @@ export default function ExampleTemplate() {
         , activeFlag: null
     };
 
+    const exampleTemplateCheckBoxTableArrayRef = useRef([]);
     const [exampleTemplateCheckBoxTableArray, setExampleTemplateCheckBoxTableArray] = useState([]);
     const [exampleTemplateOptionColumnTable, setExampleTemplateOptionColumnTable] = useState([]);
     const [exampleTemplateDataTotalTable, setExampleTemplateDataTotalTable] = useState(0);
 
     const [exampleTemplateArray, setExampleTemplateArray] = useState([]);
-    const [exampleTemplateEntryModal, setExampleTemplateEntryModal] = useState({});
+    const [exampleTemplateEntryModal, setExampleTemplateEntryModal] = useState({
+        title: ""
+        , buttonArray: [
+            {
+                label: ""
+                , icon: ""
+                , onSubmit: null
+                , isLoading: false
+            }
+        ]
+    });
 
+    const exampleTemplateFormRef = useRef(exampleTemplateInitial);
     const [exampleTemplateForm, setExampleTemplateForm] = useState(exampleTemplateInitial);
     const [exampleTemplateFormError, setExampleTemplateFormError] = useState([]);
 
     const onExampleTemplateFormChange = (e) => {
         const { name, value } = e.target;
-        setExampleTemplateForm({ ...exampleTemplateForm, [name]: value });
+        exampleTemplateFormRef.current = { ...exampleTemplateForm, [name]: value };
+        setExampleTemplateForm(exampleTemplateFormRef.current);
     };
 
     const selectValueMap = [{ "key": 1, "value": "Satu" }, { "key": 2, "value": "Dua" }, { "key": 3, "value": "Tiga" }, { "key": 4, "value": "Empat" }];
@@ -91,14 +104,15 @@ export default function ExampleTemplate() {
     }
 
     const entryExampleTemplate = async (id) => {
-        setExampleTemplateForm(exampleTemplateInitial);
+        exampleTemplateFormRef.current = exampleTemplateInitial;
+        setExampleTemplateForm(exampleTemplateFormRef.current);
         setExampleTemplateFormError([]);
         if (id !== undefined) {
             setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: true } });
             await api.get(`/test/${id}/example-template.json`)
                 .then(response => {
                     const exampleTemplate = response.data.data;
-                    setExampleTemplateForm({
+                    exampleTemplateFormRef.current = {
                         id: exampleTemplate.id
                         , name: exampleTemplate.name
                         , description: exampleTemplate.description
@@ -106,7 +120,8 @@ export default function ExampleTemplate() {
                         , amount: exampleTemplate.amount
                         , date: exampleTemplate.date
                         , activeFlag: exampleTemplate.activeFlag
-                    });
+                    }
+                    setExampleTemplateForm(exampleTemplateFormRef.current);
                 })
                 .catch(function (error) {
 
@@ -114,18 +129,32 @@ export default function ExampleTemplate() {
                 .finally(() => {
                     setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: false } });
                     setExampleTemplateEntryModal({
-                        title: "Edit"
-                        , label: "Update"
-                        , icon: "bi-arrow-repeat"
-                        , isLoading: false
+                        ...exampleTemplateEntryModal
+                        , title: "Edit"
+                        , buttonArray: exampleTemplateEntryModal.buttonArray.map((button, index) =>
+                            index === 0 ? {
+                                ...button
+                                , label: "Update"
+                                , icon: "bi-arrow-repeat"
+                                , onSubmit: () => confirmStoreExampleTemplate()
+                                , isLoading: false
+                            } : button
+                        )
                     });
                 });
         } else {
             setExampleTemplateEntryModal({
-                title: "Add"
-                , label: "Save"
-                , icon: "bi-bookmark"
-                , isLoading: false
+                ...exampleTemplateEntryModal
+                , title: "Add"
+                , buttonArray: exampleTemplateEntryModal.buttonArray.map((button, index) =>
+                    index === 0 ? {
+                        ...button
+                        , label: "Save"
+                        , icon: "bi-bookmark"
+                        , onSubmit: () => confirmStoreExampleTemplate()
+                        , isLoading: false
+                    } : button
+                )
             });
         }
 
@@ -134,7 +163,7 @@ export default function ExampleTemplate() {
     }
 
     const confirmStoreExampleTemplate = () => {
-        if (exampleTemplateValidate(exampleTemplateForm)) {
+        if (exampleTemplateValidate(exampleTemplateFormRef.current)) {
             setDialog({
                 message: "Are you sure to create?"
                 , type: "confirmation"
@@ -146,13 +175,23 @@ export default function ExampleTemplate() {
     }
 
     const storeExampleTemplate = async () => {
-        if (exampleTemplateValidate(exampleTemplateForm)) {
+        if (exampleTemplateValidate(exampleTemplateFormRef.current)) {
             dialogObject.hide();
-            setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, isLoading: true });
+            setExampleTemplateEntryModal({
+                ...exampleTemplateEntryModal
+                , buttonArray: exampleTemplateEntryModal.buttonArray.map((button, index) =>
+                    index === 0
+                        ? {
+                            ...button
+                            , isLoading: true
+                        }
+                        : button
+                )
+            });
 
             await api.post(
                 '/test/example-template.json'
-                , JSON.stringify(exampleTemplateForm)
+                , JSON.stringify(exampleTemplateFormRef.current)
                 , { headers: { 'Content-Type': 'application/json' } }
             )
                 .then((json) => {
@@ -167,16 +206,23 @@ export default function ExampleTemplate() {
                 })
                 .finally(() => {
                     toastObject.show();
-                    setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, isLoading: false });
+                    setExampleTemplateEntryModal({
+                        ...exampleTemplateEntryModal
+                        , buttonArray: exampleTemplateEntryModal.buttonArray.map((button, index) =>
+                            index === 0
+                                ? {
+                                    ...button
+                                    , isLoading: false
+                                }
+                                : button
+                        )
+                    });
                     bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
                 });
         }
     }
 
     const confirmDeleteExampleTemplate = (id) => {
-        console.log(exampleTemplateCheckBoxTableArray);
-        console.log(exampleTemplateDataTotalTable);
-        console.log(exampleTemplateArray);
         if (id !== undefined) {
             setDialog({
                 message: `Are you sure to delete ${id}?`
@@ -184,9 +230,9 @@ export default function ExampleTemplate() {
                 , onConfirm: () => deleteExampleTemplate(id)
             });
         } else {
-            if (exampleTemplateCheckBoxTableArray.length > 0) {
+            if (exampleTemplateCheckBoxTableArrayRef.current.length > 0) {
                 setDialog({
-                    message: `Are you sure to delete ${exampleTemplateCheckBoxTableArray.length} items(s)?`
+                    message: `Are you sure to delete ${exampleTemplateCheckBoxTableArrayRef.current.length} items(s)?`
                     , type: "warning"
                     , onConfirm: () => deleteExampleTemplate()
                 });
@@ -210,7 +256,7 @@ export default function ExampleTemplate() {
         }
 
         await api.delete(
-            `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`
+            `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArrayRef.current.join("")}/example-template.json`
             , null
             , { headers: { 'Content-Type': 'application/json' } }
         )
@@ -239,10 +285,7 @@ export default function ExampleTemplate() {
                 id="modal_id"
                 size="md"
                 title={exampleTemplateEntryModal.title}
-                labelSubmit={exampleTemplateEntryModal.label}
-                iconSubmit={exampleTemplateEntryModal.icon}
-                onSubmit={() => confirmStoreExampleTemplate()}
-                isSubmitLoading={exampleTemplateEntryModal.isLoading}
+                buttonArray={exampleTemplateEntryModal.buttonArray}
             >
                 <Input label="Name" type="text" name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} placeholder="Please input name" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
                 <Textarea label="Description" name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} placeholder="Please input description" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
@@ -258,13 +301,14 @@ export default function ExampleTemplate() {
                 onConfirm={dialog.onConfirm}
             />
             <Toast id="toast_id" type={toast.type} message={toast.message} />
+            <div className="row"><h3><span className="bi-puzzle">&nbsp;Example</span></h3></div>
             <div className="row">
                 <div className="col-md-12">
                     <div className="card border-0 rounded shadow">
                         <div className="card-body">
                             <Table
                                 labelNewButton={exampleTemplateAddButtonTable.label}
-                                onClickNewButton={exampleTemplateAddButtonTable.onClick}
+                                onNewButtonClick={exampleTemplateAddButtonTable.onClick}
 
                                 bulkOptionArray={exampleTemplateBulkOptionTable.buttonArray}
                                 isBulkOptionLoading={exampleTemplateBulkOptionTable.isLoading}
@@ -333,7 +377,10 @@ export default function ExampleTemplate() {
                                 ]}
 
                                 checkBoxArray={exampleTemplateCheckBoxTableArray}
-                                onCheckBox={exampleTemplateCheckBoxTableArray => { setExampleTemplateCheckBoxTableArray([...exampleTemplateCheckBoxTableArray]); }}
+                                onCheckBox={exampleTemplateCheckBoxTableArray => {
+                                    exampleTemplateCheckBoxTableArrayRef.current = [...exampleTemplateCheckBoxTableArray];
+                                    setExampleTemplateCheckBoxTableArray(exampleTemplateCheckBoxTableArrayRef.current);
+                                }}
                                 dataTotal={exampleTemplateDataTotalTable}
                                 onRender={(page, length, search) => { getExampleTemplate(page = page, length = length, search = search); }}
                             />

@@ -274,26 +274,36 @@ export default function ExampleTemplate() {
                                     {
                                         data: "name"
                                         , name: "Name"
+                                        , class: "min-mobile text-nowrap"
                                     }
                                     , {
                                         data: "description"
                                         , name: "Description"
+                                        , class: "min-tablet text-nowrap"
                                     }
                                     , {
                                         data: "value"
                                         , name: "Value"
+                                        , class: "min-tablet text-nowrap"
+                                        , width: 10
                                     }
                                     , {
                                         data: "date"
                                         , name: "Date"
+                                        , class: "min-desktop text-nowrap"
+                                        , width: 10
                                     }
                                     , {
                                         data: "createdBy"
                                         , name: "Created By"
+                                        , class: "min-desktop text-nowrap"
+                                        , width: 10
                                     }
                                     , {
                                         data: "createdDate"
                                         , name: "Created Date"
+                                        , class: "min-desktop text-nowrap"
+                                        , width: 10
                                     }
                                     , {
                                         data: "id"

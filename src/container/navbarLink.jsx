@@ -16,7 +16,7 @@ export default function NavbarLink({
                         {
                             datum.children?.length > 0
                             && <>
-                                <a className={`${level === 0 ? "nav-link" : "dropdown-item"} dropdown-toggle`} id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a className={`${level === 0 ? "nav-link" : "dropdown-item"} dropdown-toggle`} id="navbarDropdown" role={level === 0 ? "button" : ""} data-bs-toggle="dropdown" aria-expanded="false">
                                     <i className={datum.icon} />&nbsp;{datum.name}
                                 </a>
                                 <NavbarLink data={datum.children} level={level + 1} />

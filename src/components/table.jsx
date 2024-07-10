@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './table.css';
 
 export default function Table({
     labelNewButton
@@ -103,19 +104,19 @@ export default function Table({
         <>
             <div>
                 <div className="clearfix">
-                    <div className="float-start">
+                    <div className="float-sm-start d-grid d-sm-flex mb-2">
                         {
                             labelNewButton != undefined
-                            && <button className="btn btn-md btn-primary rounded mb-3 border-0 shadow-sm" type="button" onClick={() => onClickNewButton()}>
+                            && <button className="btn btn-md btn-primary rounded border-0 shadow-sm" type="button" onClick={() => onClickNewButton()}>
                                 <span className="bi-plus-circle">&nbsp;{labelNewButton}</span>
                             </button>
                         }
                     </div>
-                    <div className="float-end">
+                    <div className="float-sm-end d-grid d-sm-flex mb-2">
                         {
                             bulkOptionArray?.length > 0
                             && <div className="btn-group">
-                                <button className="btn btn-outline-dark mb-3 shadow-sm dropdown-toggle" disabled={isBulkOptionLoading ? "disabled" : ""} data-bs-toggle="dropdown">
+                                <button className="btn btn-outline-dark shadow-sm dropdown-toggle" disabled={isBulkOptionLoading ? "disabled" : ""} data-bs-toggle="dropdown">
                                     <span className={isBulkOptionLoading ? "spinner-border spinner-border-sm mx-2" : ""} role="status" aria-hidden="true" />
                                     <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : ""}Bulk Option</span>
                                 </button>
@@ -133,16 +134,16 @@ export default function Table({
                     </div>
                 </div>
                 <div className="clearfix">
-                    <div className="float-start">
-                        Show <select className="p-1" value={sizePage} onChange={(e) => onPageChange(currentPage, e.target.value, search)}>
+                    <div className="float-sm-start mb-2">
+                        Show&nbsp;<select className="p-1" value={sizePage} onChange={(e) => onPageChange(currentPage, e.target.value, search)}>
                             {
                                 lengthArray.map((length) => (
                                     <option value={length} key={length}>{length}</option>
                                 ))
                             }
-                        </select> entires
+                        </select>&nbsp;entires
                     </div>
-                    <div className="float-end">
+                    <div className="float-sm-end d-grid d-sm-flex mb-2">
                         <input
                             type="text"
                             value={search}
@@ -153,76 +154,77 @@ export default function Table({
                     </div>
                 </div>
             </div>
-            <table className="table table-bordered mt-3 align-middle">
-                <thead className="border border-bottom-0">
-                    <tr>
+            <div className="table-responsive">
+                <table className="table table-striped table-bordered table-hover my-1 align-middle">
+                    <thead className="border border-bottom-0">
+                        <tr>
+                            {
+                                checkBoxArray != undefined
+                                && <th scope="col" className="text-center">
+                                    <input
+                                        type="checkbox"
+                                        id="checkall"
+                                        checked={checkBoxStateArray.length > 0 && checkBoxStateArray.every(id => new Set(checkBoxArray).has(id))}
+                                        onChange={onCheckBoxAll}
+                                    />
+                                </th>
+                            }
+                            {
+                                columns.map((column, index) => (
+                                    <th key={index} scope="col" className={column.class} width={`${column.width}%`}>{column.name}</th>
+                                ))
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
                         {
-                            checkBoxArray != undefined
-                            && <th scope="col" className="text-center">
-                                <input
-                                    type="checkbox"
-                                    id="checkall"
-                                    checked={checkBoxStateArray.length > 0 && checkBoxStateArray.every(id => new Set(checkBoxArray).has(id))}
-                                    onChange={onCheckBoxAll}
-                                />
-                            </th>
-                        }
-                        {
-                            columns.map((column, index) => (
-                                <th key={index} scope="col" className={column.class}>{column.name}</th>
-                            ))
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        dataArray.length > 0
-                            ? dataArray.map((data) => (
-                                <tr key={data.id}>
-                                    {
-                                        checkBoxArray != undefined
-                                        && <td className="text-center">
-                                            <input
-                                                type="checkbox"
-                                                checked={checkBoxArray.indexOf(data.id) >= 0}
-                                                onChange={() => onCheckBoxSingle(data.id)}
-                                            />
-                                        </td>
-                                    }
-                                    {
-                                        columns.map((column, index) => (
-                                            <td key={index} className={column.class}>
-                                                {
-                                                    column.render != undefined
-                                                        ? column.render(data[column.data])
-                                                        : data[column.data]
-                                                }
+                            dataArray.length > 0
+                                ? dataArray.map((data) => (
+                                    <tr key={data.id}>
+                                        {
+                                            checkBoxArray != undefined
+                                            && <td className="text-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checkBoxArray.indexOf(data.id) >= 0}
+                                                    onChange={() => onCheckBoxSingle(data.id)}
+                                                />
                                             </td>
-                                        ))
-                                    }
-                                </tr>
-                            ))
+                                        }
+                                        {
+                                            columns.map((column, index) => (
+                                                <td key={index} className={column.class}>
+                                                    {
+                                                        column.render != undefined
+                                                            ? column.render(data[column.data])
+                                                            : data[column.data]
+                                                    }
+                                                </td>
+                                            ))
+                                        }
+                                    </tr>
+                                ))
 
-                            : <tr>
-                                <td colSpan={columns.length + (checkBoxArray != undefined ? 1 : 0)} className="text-center">
-                                    Data not founded.
-                                </td>
-                            </tr>
-                    }
-                </tbody>
-            </table>
+                                : <tr>
+                                    <td colSpan={columns.length + (checkBoxArray != undefined ? 1 : 0)} className="text-center">
+                                        Data not founded.
+                                    </td>
+                                </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
             {
                 dataTotal > 0
                 && <div>
-                    <div className="float-start">
+                    <div className="float-sm-start d-grid d-sm-flex mt-2">
                         Showing {((currentPage - 1) * sizePage + 1) > dataTotal ? "0" : `${((currentPage - 1) * sizePage) + 1} to ${currentPage * sizePage > dataTotal ? dataTotal : currentPage * sizePage}`} of {dataTotal} entries
                     </div>
-                    <div className="float-end">
+                    <div className="float-sm-end d-grid d-sm-flex mt-2">
                         {
                             pages.length > 1
                             && <ul className="pagination">
-
-                                <li className="page-item">
+                                <li className="page-item d-none d-sm-block">
                                     {
                                         currentPage === 1
                                             ? <a className="page-link disabled">Previous</a>
@@ -249,7 +251,7 @@ export default function Table({
                                         </li>
                                     ))
                                 }
-                                <li className="page-item">
+                                <li className="page-item d-none d-sm-block">
                                     {
                                         currentPage === pages.length
                                             ? <a className="page-link disabled">Next</a>

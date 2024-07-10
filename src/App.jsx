@@ -81,21 +81,21 @@ export default function App() {
               "sequence": 1,
               "color": "E7E7E7",
               "name": "Menu",
-              "icon": "bi-sitemap",
+              "icon": "bi-menu-button",
               "path": "/system-center/menu"
             },
             {
               "sequence": 2,
               "color": "E7E7E7",
               "name": "Role",
-              "icon": "bi-file-text-o",
+              "icon": "bi-file-ruled",
               "path": "/system-center/role"
             },
             {
               "sequence": 3,
               "color": "E7E7E7",
               "name": "User",
-              "icon": "fa-user",
+              "icon": "bi-person",
               "path": "/system-center/user"
             }
           ],
@@ -120,7 +120,7 @@ export default function App() {
               "sequence": 2,
               "color": "null",
               "name": "Language",
-              "icon": "bi-language",
+              "icon": "bi-translate",
               "path": "/system-center/language"
             },
             {

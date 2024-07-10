@@ -1,4 +1,5 @@
 import NavbarLink from "./navbarLink";
+import './navbar.css';
 
 export default function Navbar({
     data

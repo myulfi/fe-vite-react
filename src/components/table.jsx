@@ -155,7 +155,7 @@ export default function Table({
                 </div>
             </div>
             <div className="table-responsive">
-                <table className="table table-striped table-bordered table-hover my-1 align-middle">
+                <table className="table table-bordered table-hover my-1 align-middle">
                     <thead className="border border-bottom-0">
                         <tr>
                             {

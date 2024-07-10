@@ -34,8 +34,8 @@ export default function App() {
     {
       "sequence": 25,
       "color": "08b5fb",
-      "name": "External Data",
-      "icon": "bi-wifi",
+      "name": "External",
+      "icon": "bi-arrow-90deg-right",
       "children": [
         {
           "sequence": 1,
@@ -63,15 +63,15 @@ export default function App() {
     {
       "sequence": 30,
       "color": "ffc40d",
-      "name": "System Center",
-      "icon": "bi-key",
+      "name": "Command",
+      "icon": "bi-shield-lock",
       "children": [
         {
           "sequence": 1,
           "color": "E7E7E7",
           "name": "Monitoring",
           "icon": "bi-laptop",
-          "path": "/system-center/monitoring"
+          "path": "/command/monitoring"
         },
         {
           "sequence": 2,
@@ -81,27 +81,27 @@ export default function App() {
               "sequence": 1,
               "color": "E7E7E7",
               "name": "Menu",
-              "icon": "bi-menu-button",
-              "path": "/system-center/menu"
+              "icon": "bi-diagram-3",
+              "path": "/command/menu"
             },
             {
               "sequence": 2,
               "color": "E7E7E7",
               "name": "Role",
               "icon": "bi-file-ruled",
-              "path": "/system-center/role"
+              "path": "/command/role"
             },
             {
               "sequence": 3,
               "color": "E7E7E7",
               "name": "User",
               "icon": "bi-person",
-              "path": "/system-center/user"
+              "path": "/command/user"
             }
           ],
           "name": "Access",
           "icon": "bi-lock",
-          "path": "/system-center/access"
+          "path": "/command/access"
         },
         {
           "sequence": 3,
@@ -114,28 +114,28 @@ export default function App() {
               "color": "E7E7E7",
               "name": "Properties",
               "icon": "bi-file-text",
-              "path": "/system-center/properties"
+              "path": "/command/properties"
             },
             {
               "sequence": 2,
               "color": "null",
               "name": "Language",
               "icon": "bi-translate",
-              "path": "/system-center/language"
+              "path": "/command/language"
             },
             {
               "sequence": 3,
               "color": "null",
               "name": "Procedure",
               "icon": "bi-arrow-right",
-              "path": "/system-center/procedure"
+              "path": "/command/procedure"
             },
             {
               "sequence": 4,
               "color": "E7E7E7",
               "name": "Email Scheduler",
               "icon": "bi-envelope",
-              "path": "/system-center/email-scheduler"
+              "path": "/command/email-scheduler"
             }
           ]
         }
@@ -144,7 +144,7 @@ export default function App() {
     {
       "sequence": 99,
       "color": "E7E7E7",
-      "name": "Example Template",
+      "name": "Example",
       "icon": "bi-puzzle",
       "path": "/test/example-template"
     }

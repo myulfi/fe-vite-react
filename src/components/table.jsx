@@ -148,6 +148,7 @@ export default function Table({
                             type="text"
                             value={search}
                             placeholder="Search"
+                            className="form-control form-control-sm"
                             onChange={event => onSearchKeyDown(event)}
                             onKeyDown={event => { if (event.key === "Enter") { onPageChange(1, sizePage, search) } }}
                         />

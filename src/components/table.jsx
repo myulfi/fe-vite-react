@@ -129,7 +129,7 @@ export default function Table({
                 </div>
                 <div className="clearfix">
                     <div className="float-sm-start mb-2">
-                        Show&nbsp;<select className="p-1" value={sizePage} onChange={(e) => onPageChange(currentPage, e.target.value, search)}>
+                        Show&nbsp;<select className="p-1" value={sizePage} onChange={(e) => onPageChange(1, e.target.value, search)}>
                             {
                                 lengthArray.map((length) => (
                                     <option value={length} key={length}>{length}</option>

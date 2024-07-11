@@ -4,8 +4,8 @@ import './table.css';
 export default function Table({
     labelNewButton
     , onNewButtonClick = () => { alert("Please define your function!") }
+    , bulkOptionLoadingFlag = false
     , bulkOptionArray
-    , isBulkOptionLoading = false
     , dataArray = []
     , columns
     , checkBoxArray
@@ -112,26 +112,20 @@ export default function Table({
                             </button>
                         }
                     </div>
-                    <div className="float-sm-end d-grid d-sm-flex mb-2">
-                        {
-                            bulkOptionArray?.length > 0
-                            && <div className="btn-group">
-                                <button className="btn btn-outline-dark shadow-sm dropdown-toggle" disabled={isBulkOptionLoading ? "disabled" : ""} data-bs-toggle="dropdown">
-                                    <span className={isBulkOptionLoading ? "spinner-border spinner-border-sm mx-2" : ""} role="status" aria-hidden="true" />
+                    {
+                        bulkOptionArray !== undefined
+                        && <div className="float-sm-end d-grid d-sm-flex mb-2">
+                            <div className="btn-group">
+                                <button className="btn btn-outline-dark shadow-sm dropdown-toggle" disabled={bulkOptionLoadingFlag ? "disabled" : ""} data-bs-toggle="dropdown">
+                                    <span className={bulkOptionLoadingFlag ? "spinner-border spinner-border-sm mx-2" : ""} role="status" aria-hidden="true" />
                                     <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : ""}Bulk Option</span>
                                 </button>
                                 <div className="dropdown-menu">
-                                    {
-                                        bulkOptionArray.map((bulkOption, index) => (
-                                            <a key={index} className="dropdown-item" onClick={bulkOption.onClick} role="button">
-                                                <span className="bi-trash">&nbsp;{bulkOption.name}</span>
-                                            </a>
-                                        ))
-                                    }
+                                    {bulkOptionArray}
                                 </div>
                             </div>
-                        }
-                    </div>
+                        </div>
+                    }
                 </div>
                 <div className="clearfix">
                     <div className="float-sm-start mb-2">

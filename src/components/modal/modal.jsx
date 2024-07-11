@@ -25,17 +25,7 @@ export default function Modal({
                         <button type="button" className="btn btn-sm btn-secondary m-1" data-bs-dismiss="modal">
                             <span className="bi-x-lg">&nbsp;Close</span>
                         </button>
-                        {
-                            buttonArray !== undefined
-                            && buttonArray.map((button, index) => (
-                                <div key={index}>
-                                    <button type="button" className="btn btn-sm btn-primary m-1" disabled={button.isLoading ? "disabled" : ""} onClick={() => button.onSubmit()}>
-                                        <span className={button.isLoading ? "spinner-grow spinner-grow-sm mx-2" : ""} role="status" aria-hidden="true" />
-                                        <span className={button.icon}>&nbsp;{button.label}</span>
-                                    </button>
-                                </div>
-                            ))
-                        }
+                        {buttonArray}
                     </div>
                 </div>
             </div>

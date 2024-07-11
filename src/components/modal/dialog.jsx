@@ -1,7 +1,7 @@
 export default function Dialog({
     id = "dialog_id"
     , type = "alert"
-    , message
+    , message = "Message"
     , onConfirm = () => { alert("Please define your function!") }
 }) {
     let titleSpan;

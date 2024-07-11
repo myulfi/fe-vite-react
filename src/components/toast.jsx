@@ -1,7 +1,7 @@
 export default function Toast({
     id = "toast_id"
     , type = "success"
-    , message
+    , message = "Message"
 }) {
     return (
         <div className="toast-container position-fixed p-3 top-0 end-0">

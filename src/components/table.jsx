@@ -116,9 +116,9 @@ export default function Table({
                         bulkOptionArray !== undefined
                         && <div className="float-sm-end d-grid d-sm-flex mb-2">
                             <div className="btn-group">
-                                <button className="btn btn-outline-dark shadow-sm dropdown-toggle" disabled={bulkOptionLoadingFlag ? "disabled" : ""} data-bs-toggle="dropdown">
-                                    <span className={bulkOptionLoadingFlag ? "spinner-border spinner-border-sm mx-2" : ""} role="status" aria-hidden="true" />
-                                    <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : ""}Bulk Option</span>
+                                <button className="btn btn-outline-dark shadow-sm dropdown-toggle" disabled={bulkOptionLoadingFlag} data-bs-toggle="dropdown">
+                                    <span className={bulkOptionLoadingFlag ? "spinner-border spinner-border-sm mx-2" : null} role="status" aria-hidden="true" />
+                                    <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : null}Bulk Option</span>
                                 </button>
                                 <div className="dropdown-menu">
                                     {bulkOptionArray}
@@ -139,6 +139,7 @@ export default function Table({
                     </div>
                     <div className="float-sm-end d-grid d-sm-flex mb-2">
                         <input
+                            autoFocus
                             type="text"
                             value={search}
                             placeholder="Search"
@@ -199,7 +200,6 @@ export default function Table({
                                         }
                                     </tr>
                                 ))
-
                                 : <tr>
                                     <td colSpan={columns.length + (checkBoxArray != undefined ? 1 : 0)} className="text-center">
                                         Data not founded.

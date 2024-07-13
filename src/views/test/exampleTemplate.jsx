@@ -103,7 +103,7 @@ export default function ExampleTemplate() {
                     });
                 })
                 .catch(function (error) {
-
+                    setToast({ type: "failed", message: error });
                 })
                 .finally(() => {
                     setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: false } });
@@ -268,7 +268,7 @@ export default function ExampleTemplate() {
                                 labelNewButton="New"
                                 onNewButtonClick={() => entryExampleTemplate()}
 
-                                isBulkOptionLoading={exampleTemplateBulkOptionLoadingFlag}
+                                bulkOptionLoadingFlag={exampleTemplateBulkOptionLoadingFlag}
                                 bulkOptionArray={
                                     <Dropdown label="Delete" icon="bi-trash" onClick={() => confirmDeleteExampleTemplate()} />
                                 }

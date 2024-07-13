@@ -22,10 +22,8 @@ export default function Table({
     const [currentPage, setCurrentPage] = useState(1);
     const [sizePage, setSizePage] = useState(5);
 
-    const pagesCount = Math.ceil(dataTotal / sizePage);
-    const pages = Array.from({ length: pagesCount }, (_, i) => i + 1);
+    const pages = Array.from({ length: Math.ceil(dataTotal / sizePage) }, (_, i) => i + 1);
     const lengthArray = [5, 10, 25, 50, 100];
-    const onSearchKeyDown = event => setSearch((event.target.value));
 
     const onPageChange = (page, length, search) => {
         setCurrentPage(page);
@@ -94,7 +92,6 @@ export default function Table({
             buttonArray[1] = "...";
             buttonArray[limitButton - 2] = "...";
             buttonArray[limitButton - 1] = pageAmount;
-
         }
 
         return buttonArray;
@@ -104,14 +101,14 @@ export default function Table({
         <>
             <div>
                 <div className="clearfix">
-                    <div className="float-sm-start d-grid d-sm-flex mb-2">
-                        {
-                            labelNewButton != undefined
-                            && <button className="btn btn-md btn-primary rounded border-0 shadow-sm" type="button" onClick={() => onNewButtonClick()}>
+                    {
+                        labelNewButton != undefined
+                        && <div className="float-sm-start d-grid d-sm-flex mb-2">
+                            <button className="btn btn-md btn-primary rounded border-0 shadow-sm" type="button" onClick={() => onNewButtonClick()}>
                                 <span className="bi-plus-circle">&nbsp;{labelNewButton}</span>
                             </button>
-                        }
-                    </div>
+                        </div>
+                    }
                     {
                         bulkOptionArray !== undefined
                         && <div className="float-sm-end d-grid d-sm-flex mb-2">
@@ -144,7 +141,7 @@ export default function Table({
                             value={search}
                             placeholder="Search"
                             className="form-control form-control-sm"
-                            onChange={event => onSearchKeyDown(event)}
+                            onChange={event => setSearch(event.target.value)}
                             onKeyDown={event => { if (event.key === "Enter") { onPageChange(1, sizePage, search) } }}
                         />
                     </div>

@@ -38,6 +38,7 @@ export default function ExampleTemplate() {
     const [exampleTemplateCheckBoxTableArray, setExampleTemplateCheckBoxTableArray] = useState([]);
     const [exampleTemplateOptionColumnTable, setExampleTemplateOptionColumnTable] = useState([]);
     const [exampleTemplateDataTotalTable, setExampleTemplateDataTotalTable] = useState(0);
+    const [exampleTemplateTableLoadingFlag, setExampleTemplateTableLoadingFlag] = useState(false);
 
     const [exampleTemplateArray, setExampleTemplateArray] = useState([]);
 
@@ -81,6 +82,7 @@ export default function ExampleTemplate() {
     useEffect(() => { getExampleTemplate(); }, []);
 
     const getExampleTemplate = async (page = 1, length = 5, search = "", orderColumn = 1, orderDir = "asc") => {
+        setExampleTemplateTableLoadingFlag(true);
         await api.get(`/test/example-template.json?start=${(page - 1) * length}&length=${length}&search%5Bvalue%5D=${search}`)
             .then(response => {
                 const json = response.data;
@@ -95,6 +97,9 @@ export default function ExampleTemplate() {
                     }, {})
                 );
             })
+            .finally(() => {
+                setExampleTemplateTableLoadingFlag(false);
+            });
     }
 
     const entryExampleTemplate = async (id) => {
@@ -357,6 +362,7 @@ export default function ExampleTemplate() {
                                 onCheckBox={exampleTemplateCheckBoxTableArray => { setExampleTemplateCheckBoxTableArray([...exampleTemplateCheckBoxTableArray]); }}
                                 dataTotal={exampleTemplateDataTotalTable}
                                 onRender={(page, length, search) => { getExampleTemplate(page = page, length = length, search = search); }}
+                                loadingFlag={exampleTemplateTableLoadingFlag}
                             />
                         </div>
                     </div>

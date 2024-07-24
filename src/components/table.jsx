@@ -13,6 +13,7 @@ export default function Table({
     , dataTotal = 0
     , limitPaginationButton = 7
     , onRender
+    , loadingFlag = false
 }) {
     const checkBoxStateArray = dataArray.map(function (obj) {
         return obj['id'];
@@ -148,6 +149,9 @@ export default function Table({
                 </div>
             </div>
             <div className="table-responsive">
+                {
+                    loadingFlag && <div className="spinner-border text-primary position-absolute top-50 start-50"></div>
+                }
                 <table className="table table-bordered table-hover my-1 align-middle">
                     <thead className="border border-bottom-0">
                         <tr>

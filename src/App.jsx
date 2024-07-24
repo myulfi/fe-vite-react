@@ -4,8 +4,8 @@ import { useState } from 'react';
 
 //import routes
 import Routes from './routers';
-import Navbar from "./container/navbar";
-import Footer from "./container/footer";
+import Navbar from "./components/container/navbar";
+import Footer from "./components/container/footer";
 
 export default function App() {
   const menuArray = [

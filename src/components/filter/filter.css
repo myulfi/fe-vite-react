@@ -1,0 +1,35 @@
+.fade-in-delay-1 {
+    animation: fadeInAnimation ease 1000ms;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+.fade-in-delay-2 {
+    animation: fadeInAnimation ease 1500ms;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+.fade-in-delay-3 {
+    animation: fadeInAnimation ease 2000ms;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+.fade-in-delay-4 {
+    animation: fadeInAnimation ease 2500ms;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes fadeInAnimation {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0%);
+        opacity: 1;
+    }
+}

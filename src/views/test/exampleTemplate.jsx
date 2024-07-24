@@ -3,13 +3,15 @@ import api from '../../api';
 import Button from "../../components/form/button";
 import Table from '../../components/table';
 import Toast from '../../components/toast';
-import Dialog from '../../components/modal/dialog';
-import Modal from '../../components/modal/modal';
+import Dialog from '../../components/dialog';
+import Modal from '../../components/modal';
 import Input from '../../components/form/input';
 import Textarea from '../../components/form/textarea';
 import Select from '../../components/form/select';
 import Radio from '../../components/form/radio';
 import Dropdown from '../../components/dropdown';
+import SelectFilter from '../../components/filter/selectFilter';
+import DateFilter from '../../components/filter/dateFilter';
 
 export default function ExampleTemplate() {
     const exampleTemplateInitial = {
@@ -19,6 +21,17 @@ export default function ExampleTemplate() {
         , amount: 0
         , date: ''
         , activeFlag: null
+    };
+
+    const exampleTemplateFilterTableTableInitial = {
+        value: 0
+    };
+
+    const [exampleTemplateFilterTable, setExampleTemplateFilterTable] = useState(exampleTemplateFilterTableTableInitial);
+
+    const onExampleTemplateFilterTableChange = (e) => {
+        const { name, value } = e.target;
+        setExampleTemplateFilterTable({ ...exampleTemplateFilterTable, [name]: value });
     };
 
     const [exampleTemplateBulkOptionLoadingFlag, setExampleTemplateBulkOptionLoadingFlag] = useState(false);
@@ -260,6 +273,10 @@ export default function ExampleTemplate() {
             />
             <Toast id="toast_id" type={toast.type} message={toast.message} />
             <div className="row"><h3><span className="bi-puzzle">&nbsp;Example</span></h3></div>
+            <div className="row">
+                <SelectFilter label="Value" name="value" map={selectValueMap} value={exampleTemplateFilterTable.value} onChange={onExampleTemplateFilterTableChange} delay="1" className="col-md-4 col-sm-6 col-xs-12" />
+                <DateFilter label="Date" name="date" value={exampleTemplateFilterTable.date} onChange={onExampleTemplateFilterTableChange} delay="2" className="col-md-4 col-sm-6 col-xs-12" />
+            </div>
             <div className="row">
                 <div className="col-md-12">
                     <div className="card border-0 rounded shadow">

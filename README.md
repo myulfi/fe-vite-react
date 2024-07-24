@@ -12,3 +12,5 @@ Install Library			| D:\myulfi\development\vite\fe-vite-react>npm install
 Run						| D:\myulfi\development\vite\fe-vite-react>npm run dev
 Router					| D:\myulfi\development\vite\fe-vite-react>npm install react-router-dom@6.4.5
 Axios					| D:\myulfi\development\vite\fe-vite-react>npm install axios@1.3.4
+Chartjs					| D:\myulfi\development\vite\fe-vite-react>npm i react-chartjs-2 chart.js
+Build					| D:\myulfi\development\vite\fe-vite-react>npx vite build

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './table.css';
 
 export default function Table({
@@ -12,6 +12,7 @@ export default function Table({
     , onCheckBox = () => { alert("Please define your function!") }
     , dataTotal = 0
     , limitPaginationButton = 7
+    , filter
     , onRender
     , loadingFlag = false
 }) {
@@ -25,6 +26,8 @@ export default function Table({
 
     const pages = Array.from({ length: Math.ceil(dataTotal / sizePage) }, (_, i) => i + 1);
     const lengthArray = [5, 10, 25, 50, 100];
+
+    useEffect(() => { onPageChange(1, sizePage, search); }, [filter]);
 
     const onPageChange = (page, length, search) => {
         setCurrentPage(page);

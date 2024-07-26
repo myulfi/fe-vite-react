@@ -12,6 +12,7 @@ import Radio from '../../components/form/radio';
 import Dropdown from '../../components/dropdown';
 import SelectFilter from '../../components/filter/selectFilter';
 import DateFilter from '../../components/filter/dateFilter';
+import RangeFilter from '../../components/filter/rangeFilter';
 
 export default function ExampleTemplate() {
     const exampleTemplateInitial = {
@@ -24,7 +25,9 @@ export default function ExampleTemplate() {
     };
 
     const exampleTemplateFilterTableTableInitial = {
-        value: 0
+        value: 0,
+        date: "",
+        range: 0,
     };
 
     const [exampleTemplateFilterTable, setExampleTemplateFilterTable] = useState(exampleTemplateFilterTableTableInitial);
@@ -79,11 +82,23 @@ export default function ExampleTemplate() {
     var dialogObject;
     var modalObject;
 
-    useEffect(() => { getExampleTemplate(); }, []);
+    // useEffect(() => { getExampleTemplate(); }, []);
 
     const getExampleTemplate = async (page = 1, length = 5, search = "", orderColumn = 1, orderDir = "asc") => {
         setExampleTemplateTableLoadingFlag(true);
-        await api.get(`/test/example-template.json?start=${(page - 1) * length}&length=${length}&search%5Bvalue%5D=${search}`)
+        await api.get(
+            "/test/example-template.json",
+            {
+                params: {
+                    "start": (page - 1) * length,
+                    "length": length,
+                    "search": search,
+                    "value": exampleTemplateFilterTable.value,
+                    "date": exampleTemplateFilterTable.date,
+                    "range": exampleTemplateFilterTable.range,
+                }
+            }
+        )
             .then(response => {
                 const json = response.data;
                 setExampleTemplateArray(json.data);
@@ -279,8 +294,9 @@ export default function ExampleTemplate() {
             <Toast id="toast_id" type={toast.type} message={toast.message} />
             <div className="row"><h3><span className="bi-puzzle">&nbsp;Example</span></h3></div>
             <div className="row">
-                <SelectFilter label="Value" name="value" map={selectValueMap} value={exampleTemplateFilterTable.value} onChange={onExampleTemplateFilterTableChange} delay="1" className="col-md-4 col-sm-6 col-xs-12" />
+                <SelectFilter label="Value" name="value" map={selectValueMap} value={exampleTemplateFilterTable.value} onChange={onExampleTemplateFilterTableChange} placeholder="All" delay="1" className="col-md-4 col-sm-6 col-xs-12" />
                 <DateFilter label="Date" name="date" value={exampleTemplateFilterTable.date} onChange={onExampleTemplateFilterTableChange} delay="2" className="col-md-4 col-sm-6 col-xs-12" />
+                <RangeFilter label="Range" name="range" value={exampleTemplateFilterTable.range} onChange={onExampleTemplateFilterTableChange} delay="3" className="col-md-4 col-sm-6 col-xs-12" />
             </div>
             <div className="row">
                 <div className="col-md-12">
@@ -361,6 +377,7 @@ export default function ExampleTemplate() {
                                 checkBoxArray={exampleTemplateCheckBoxTableArray}
                                 onCheckBox={exampleTemplateCheckBoxTableArray => { setExampleTemplateCheckBoxTableArray([...exampleTemplateCheckBoxTableArray]); }}
                                 dataTotal={exampleTemplateDataTotalTable}
+                                filter={exampleTemplateFilterTable}
                                 onRender={(page, length, search) => { getExampleTemplate(page = page, length = length, search = search); }}
                                 loadingFlag={exampleTemplateTableLoadingFlag}
                             />

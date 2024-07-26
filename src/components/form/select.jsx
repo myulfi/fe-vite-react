@@ -11,8 +11,8 @@ export default function Select({
     return (
         <div className={`form-group mb-3 ${className}`}>
             <label className="form-label fw-bold">{label}</label>
-            <select className="form-control" name={name} value={value} onChange={onChange}>
-                <option value="" disabled>{placeholder}</option>
+            <select className="form-select" name={name} value={value} onChange={onChange}>
+                <option value="">{placeholder}</option>
                 {
                     map.map((object) => (
                         <option value={object.key} key={object.key}>{object.value}</option>

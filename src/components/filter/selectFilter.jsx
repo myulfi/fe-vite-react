@@ -13,8 +13,8 @@ export default function SelectFilter({
 }) {
     return (
         <Filter label={label} icon={icon} className={className} delay={delay}>
-            <select className="form-control" name={name} value={value} onChange={onChange}>
-                <option value="" disabled>{placeholder}</option>
+            <select className="form-select" name={name} value={value} onChange={onChange}>
+                <option value="">{placeholder}</option>
                 {
                     map.map((object) => (
                         <option value={object.key} key={object.key}>{object.value}</option>

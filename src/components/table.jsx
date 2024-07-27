@@ -8,6 +8,7 @@ export default function Table({
     , bulkOptionArray
     , dataArray = []
     , columns
+    , order = []
     , checkBoxArray
     , onCheckBox = () => { alert("Please define your function!") }
     , dataTotal = 0
@@ -21,18 +22,68 @@ export default function Table({
     });
 
     const [search, setSearch] = useState("");
+    const [currentOrder, setCurrentOrder] = useState(order);
+    const [orderColumn, setOrderColumn] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [sizePage, setSizePage] = useState(5);
 
     const pages = Array.from({ length: Math.ceil(dataTotal / sizePage) }, (_, i) => i + 1);
     const lengthArray = [5, 10, 25, 50, 100];
 
-    useEffect(() => { onPageChange(1, sizePage, search); }, [filter]);
+    useEffect(() => {
+        if (orderColumn.length === 0) {
+            var array = new Array();
+            for (var i = 0; i < columns.length; i++) {
+                array.push(columns[i].orderable ? "bi-three-dots-vertical" : null);
+            }
+
+            if (order.length > 0) {
+                for (var i = 0; i < order.length; i++) {
+                    if ("asc" === order[i][1]) {
+                        array[order[i][0]] = "bi-sort-down-alt";
+                        setCurrentOrder([columns[order[i][0]]["data"], "asc"]);
+                        onRender(currentPage, sizePage, search, [columns[order[i][0]]["data"], "asc"]);
+                        break;
+                    } else if ("desc" === order[i][1]) {
+                        array[order[i][0]] = "bi-sort-down";
+                        setCurrentOrder([columns[order[i][0]]["data"], "desc"]);
+                        onRender(currentPage, sizePage, search, [columns[order[i][0]]["data"], "desc"]);
+                        break;
+                    }
+                }
+            } else {
+                onRender(currentPage, sizePage, search);
+            }
+            setOrderColumn(array);
+        } else {
+            onRender(currentPage, sizePage, search, currentOrder);
+        }
+    }, [filter]);
 
     const onPageChange = (page, length, search) => {
         setCurrentPage(page);
         setSizePage(length);
-        onRender(page, length, search);
+        onRender(page, length, search, currentOrder);
+    };
+
+    const onOrderChange = (data, index) => {
+        var array = new Array();
+        for (var i = 0; i < orderColumn.length; i++) {
+            if (index === i) {
+                if (orderColumn[i] === "bi-sort-down") {
+                    array.push("bi-sort-down-alt");
+                    setCurrentOrder([data, "asc"]);
+                    onRender(currentPage, sizePage, search, [data, "asc"]);
+                } else {
+                    array.push("bi-sort-down");
+                    setCurrentOrder([data, "desc"]);
+                    onRender(currentPage, sizePage, search, [data, "desc"]);
+                }
+            } else {
+                array.push(orderColumn[i] !== null ? "bi-three-dots-vertical" : null);
+            }
+        }
+        setOrderColumn(array);
     };
 
     const onCheckBoxAll = event => {
@@ -171,7 +222,13 @@ export default function Table({
                             }
                             {
                                 columns.map((column, index) => (
-                                    <th key={index} scope="col" className={column.class} width={`${column.width}%`}>{column.name}</th>
+                                    <th key={index} scope="col" className={column.class} width={column.width != null ? `${column.width}%` : null}>
+                                        {column.name}
+                                        {
+                                            orderColumn[index] != null &&
+                                            <i className={`float-end ${orderColumn[index]}`} role="button" onClick={() => onOrderChange(column.data, index)}></i>
+                                        }
+                                    </th>
                                 ))
                             }
                         </tr>

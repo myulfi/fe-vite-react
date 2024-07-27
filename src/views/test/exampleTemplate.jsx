@@ -84,7 +84,7 @@ export default function ExampleTemplate() {
 
     // useEffect(() => { getExampleTemplate(); }, []);
 
-    const getExampleTemplate = async (page = 1, length = 5, search = "", orderColumn = 1, orderDir = "asc") => {
+    const getExampleTemplate = async (page = 1, length = 5, search = "", order = []) => {
         setExampleTemplateTableLoadingFlag(true);
         await api.get(
             "/test/example-template.json",
@@ -93,6 +93,8 @@ export default function ExampleTemplate() {
                     "start": (page - 1) * length,
                     "length": length,
                     "search": search,
+                    "orderColumn": order.length > 1 ? order[0] : null,
+                    "orderDir": order.length > 1 ? order[1] : null,
                     "value": exampleTemplateFilterTable.value,
                     "date": exampleTemplateFilterTable.date,
                     "range": exampleTemplateFilterTable.range,
@@ -317,6 +319,7 @@ export default function ExampleTemplate() {
                                         data: "name"
                                         , name: "Name"
                                         , class: "min-mobile text-nowrap"
+                                        , orderable: true
                                     }
                                     , {
                                         data: "description"
@@ -345,7 +348,8 @@ export default function ExampleTemplate() {
                                         data: "createdDate"
                                         , name: "Created Date"
                                         , class: "min-desktop text-nowrap"
-                                        , width: 10
+                                        , width: 15
+                                        , orderable: true
                                     }
                                     , {
                                         data: "id"
@@ -373,12 +377,13 @@ export default function ExampleTemplate() {
                                         }
                                     }
                                 ]}
+                                order={[[5, "desc"]]}
 
                                 checkBoxArray={exampleTemplateCheckBoxTableArray}
                                 onCheckBox={exampleTemplateCheckBoxTableArray => { setExampleTemplateCheckBoxTableArray([...exampleTemplateCheckBoxTableArray]); }}
                                 dataTotal={exampleTemplateDataTotalTable}
                                 filter={exampleTemplateFilterTable}
-                                onRender={(page, length, search) => { getExampleTemplate(page = page, length = length, search = search); }}
+                                onRender={(page, length, search, order) => { getExampleTemplate(page = page, length = length, search = search, order = order); }}
                                 loadingFlag={exampleTemplateTableLoadingFlag}
                             />
                         </div>

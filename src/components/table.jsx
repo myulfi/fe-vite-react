@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Fragment } from 'react';
 import './table.css';
+import * as CommonConstants from "../constants/commonConstants";
 
 export default function Table({
     labelNewButton
@@ -12,6 +14,7 @@ export default function Table({
     , checkBoxArray
     , onCheckBox = () => { alert("Please define your function!") }
     , dataTotal = 0
+    , initialSizePage = 10
     , limitPaginationButton = 7
     , filter
     , onRender
@@ -21,11 +24,16 @@ export default function Table({
         return obj['id'];
     });
 
+    const columnShow = columns.filter(column => { return column.minDevice !== CommonConstants.NONE; });
+    const columnHide = columns.filter(column => { return column.minDevice !== undefined && column.minDevice !== CommonConstants.MOBILE; });
+
     const [search, setSearch] = useState("");
     const [currentOrder, setCurrentOrder] = useState(order);
     const [orderColumn, setOrderColumn] = useState([]);
+    const [detailRow, setDetailRow] = useState(dataArray.map(() => false));
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [sizePage, setSizePage] = useState(5);
+    const [sizePage, setSizePage] = useState(initialSizePage);
 
     const pages = Array.from({ length: Math.ceil(dataTotal / sizePage) }, (_, i) => i + 1);
     const lengthArray = [5, 10, 25, 50, 100];
@@ -33,21 +41,21 @@ export default function Table({
     useEffect(() => {
         if (orderColumn.length === 0) {
             var array = new Array();
-            for (var i = 0; i < columns.length; i++) {
-                array.push(columns[i].orderable ? "bi-three-dots-vertical" : null);
+            for (var i = 0; i < columnShow.length; i++) {
+                array.push(columnShow[i].orderable ? "bi-three-dots-vertical" : null);
             }
 
             if (order.length > 0) {
                 for (var i = 0; i < order.length; i++) {
                     if ("asc" === order[i][1]) {
                         array[order[i][0]] = "bi-sort-down-alt";
-                        setCurrentOrder([columns[order[i][0]]["data"], "asc"]);
-                        onRender(currentPage, sizePage, search, [columns[order[i][0]]["data"], "asc"]);
+                        setCurrentOrder([columnShow[order[i][0]]["data"], "asc"]);
+                        onRender(currentPage, sizePage, search, [columnShow[order[i][0]]["data"], "asc"]);
                         break;
                     } else if ("desc" === order[i][1]) {
                         array[order[i][0]] = "bi-sort-down";
-                        setCurrentOrder([columns[order[i][0]]["data"], "desc"]);
-                        onRender(currentPage, sizePage, search, [columns[order[i][0]]["data"], "desc"]);
+                        setCurrentOrder([columnShow[order[i][0]]["data"], "desc"]);
+                        onRender(currentPage, sizePage, search, [columnShow[order[i][0]]["data"], "desc"]);
                         break;
                     }
                 }
@@ -111,6 +119,10 @@ export default function Table({
 
         onCheckBox(checkBoxArray);
     };
+
+    const showDetail = (index) => {
+        setDetailRow({ ...detailRow, [index]: !detailRow[index] });
+    }
 
     const paginationRange = (len, start) => {
         var end;
@@ -221,8 +233,8 @@ export default function Table({
                                 </th>
                             }
                             {
-                                columns.map((column, index) => (
-                                    <th key={index} scope="col" className={column.class} width={column.width != null ? `${column.width}%` : null}>
+                                columnShow.map((column, index) => (
+                                    <th key={index} scope="col" className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`} width={column.width != null ? `${column.width}%` : null}>
                                         {column.name}
                                         {
                                             orderColumn[index] != null &&
@@ -236,33 +248,60 @@ export default function Table({
                     <tbody>
                         {
                             dataArray.length > 0
-                                ? dataArray.map((data) => (
-                                    <tr key={data.id}>
+                                ? dataArray.map((data, indexRow) => (
+                                    <Fragment key={indexRow}>
+                                        <tr>
+                                            {
+                                                checkBoxArray != undefined
+                                                && <td className="text-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checkBoxArray.indexOf(data.id) >= 0}
+                                                        onChange={() => onCheckBoxSingle(data.id)}
+                                                    />
+                                                </td>
+                                            }
+                                            {
+                                                columnShow
+                                                    .map((column, index) => (
+                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`}>
+                                                            {
+                                                                index == 0 &&
+                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle" : "bi-plus-circle"} me-2 max-desktop`} role="button" onClick={() => showDetail(indexRow)}></span>
+                                                            }
+                                                            {
+                                                                column.render != undefined
+                                                                    ? column.render(data[column.data])
+                                                                    : data[column.data]
+                                                            }
+                                                        </td>
+                                                    ))
+                                            }
+                                        </tr>
                                         {
-                                            checkBoxArray != undefined
-                                            && <td className="text-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={checkBoxArray.indexOf(data.id) >= 0}
-                                                    onChange={() => onCheckBoxSingle(data.id)}
-                                                />
-                                            </td>
-                                        }
-                                        {
-                                            columns.map((column, index) => (
-                                                <td key={index} className={column.class}>
+                                            columnHide.length > 0 && detailRow[indexRow] &&
+                                            <tr className="max-desktop">
+                                                <td colSpan={columnShow.length + (checkBoxArray != undefined ? 1 : 0)}>
                                                     {
-                                                        column.render != undefined
-                                                            ? column.render(data[column.data])
-                                                            : data[column.data]
+                                                        columnHide
+                                                            .map((column, index) => (
+                                                                <div key={index} className={`border-bottom mx-2 px-2 py-2 ${column.minDevice == CommonConstants.TABLET ? "max-tablet" : column.minDevice == CommonConstants.DESKTOP ? "max-desktop" : ""}`}>
+                                                                    <label className="fw-bold me-2">{column.name}</label>
+                                                                    {
+                                                                        column.render != undefined
+                                                                            ? column.render(data[column.data])
+                                                                            : data[column.data]
+                                                                    }
+                                                                </div>
+                                                            ))
                                                     }
                                                 </td>
-                                            ))
+                                            </tr >
                                         }
-                                    </tr>
+                                    </Fragment>
                                 ))
                                 : <tr>
-                                    <td colSpan={columns.length + (checkBoxArray != undefined ? 1 : 0)} className="text-center">
+                                    <td colSpan={columnShow.length + (checkBoxArray != undefined ? 1 : 0)} className="text-center">
                                         Data not founded.
                                     </td>
                                 </tr>

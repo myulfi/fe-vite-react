@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../api';
+import * as CommonConstants from "../../constants/commonConstants";
 import Button from "../../components/form/button";
 import Table from '../../components/table';
 import Toast from '../../components/toast';
@@ -318,38 +319,44 @@ export default function ExampleTemplate() {
                                     {
                                         data: "name"
                                         , name: "Name"
-                                        , class: "min-mobile text-nowrap"
+                                        , class: "text-nowrap"
                                         , orderable: true
+                                        , minDevice: CommonConstants.MOBILE
                                     }
                                     , {
                                         data: "description"
                                         , name: "Description"
-                                        , class: "min-tablet text-nowrap"
+                                        , class: "text-nowrap"
+                                        , minDevice: CommonConstants.TABLET
                                     }
                                     , {
                                         data: "value"
                                         , name: "Value"
-                                        , class: "min-tablet text-nowrap"
+                                        , class: "text-nowrap"
                                         , width: 10
+                                        , minDevice: CommonConstants.TABLET
                                     }
                                     , {
                                         data: "date"
                                         , name: "Date"
-                                        , class: "min-desktop text-nowrap"
+                                        , class: "text-nowrap"
                                         , width: 10
+                                        , minDevice: CommonConstants.DESKTOP
                                     }
                                     , {
                                         data: "createdBy"
                                         , name: "Created By"
-                                        , class: "min-desktop text-nowrap"
+                                        , class: "text-nowrap"
                                         , width: 10
+                                        , minDevice: CommonConstants.DESKTOP
                                     }
                                     , {
                                         data: "createdDate"
                                         , name: "Created Date"
-                                        , class: "min-desktop text-nowrap"
+                                        , class: "text-nowrap"
                                         , width: 15
                                         , orderable: true
+                                        , minDevice: CommonConstants.DESKTOP
                                     }
                                     , {
                                         data: "id"

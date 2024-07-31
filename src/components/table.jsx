@@ -26,6 +26,7 @@ export default function Table({
 
     const columnShow = columns.filter(column => { return column.minDevice !== CommonConstants.NONE; });
     const columnHide = columns.filter(column => { return column.minDevice !== undefined && column.minDevice !== CommonConstants.MOBILE; });
+    const columnAlwaysHide = columns.filter(column => { return column.minDevice === CommonConstants.NONE; });
 
     const [search, setSearch] = useState("");
     const [currentOrder, setCurrentOrder] = useState(order);
@@ -267,7 +268,7 @@ export default function Table({
                                                         <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`}>
                                                             {
                                                                 index == 0 &&
-                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle" : "bi-plus-circle"} me-2 max-desktop`} role="button" onClick={() => showDetail(indexRow)}></span>
+                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle" : "bi-plus-circle"} me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} role="button" onClick={() => showDetail(indexRow)}></span>
                                                             }
                                                             {
                                                                 column.render != undefined
@@ -280,7 +281,7 @@ export default function Table({
                                         </tr>
                                         {
                                             columnHide.length > 0 && detailRow[indexRow] &&
-                                            <tr className="max-desktop">
+                                            <tr className={columnAlwaysHide.length === 0 ? "max-desktop" : null}>
                                                 <td colSpan={columnShow.length + (checkBoxArray != undefined ? 1 : 0)}>
                                                     {
                                                         columnHide

@@ -65,6 +65,7 @@ export default function Table({
             }
             setOrderColumn(array);
         } else {
+            setDetailRow(dataArray.map(() => false));
             onRender(currentPage, sizePage, search, currentOrder);
         }
     }, [filter]);
@@ -72,6 +73,7 @@ export default function Table({
     const onPageChange = (page, length, search) => {
         setCurrentPage(page);
         setSizePage(length);
+        setDetailRow(dataArray.map(() => false));
         onRender(page, length, search, currentOrder);
     };
 
@@ -79,6 +81,7 @@ export default function Table({
         var array = new Array();
         for (var i = 0; i < orderColumn.length; i++) {
             if (index === i) {
+                setDetailRow(dataArray.map(() => false));
                 if (orderColumn[i] === "bi-sort-down") {
                     array.push("bi-sort-down-alt");
                     setCurrentOrder([data, "asc"]);
@@ -268,11 +271,11 @@ export default function Table({
                                                         <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`}>
                                                             {
                                                                 index == 0 &&
-                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle" : "bi-plus-circle"} me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} role="button" onClick={() => showDetail(indexRow)}></span>
+                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} role="button" onClick={() => showDetail(indexRow)}></span>
                                                             }
                                                             {
                                                                 column.render != undefined
-                                                                    ? column.render(data[column.data])
+                                                                    ? column.render(data[column.data], data)
                                                                     : data[column.data]
                                                             }
                                                         </td>

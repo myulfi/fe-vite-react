@@ -180,10 +180,9 @@ export default function ExampleTemplate() {
                 , submitIcon: "bi-bookmark"
                 , submitLoadingFlag: false
             });
+            modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
+            modalObject.show();
         }
-
-        modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
-        modalObject.show();
     }
 
     const confirmStoreExampleTemplate = () => {

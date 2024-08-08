@@ -14,6 +14,7 @@ import Dropdown from '../../components/dropdown';
 import SelectFilter from '../../components/filter/selectFilter';
 import DateFilter from '../../components/filter/dateFilter';
 import RangeFilter from '../../components/filter/rangeFilter';
+import Label from '../../components/form/label';
 
 export default function ExampleTemplate() {
     const exampleTemplateInitial = {
@@ -24,6 +25,8 @@ export default function ExampleTemplate() {
         , date: ''
         , activeFlag: null
     };
+
+    const [exampleTemplateStateModal, setExampleTemplateStateModal] = useState(CommonConstants.MODAL_IS_ENTRY);
 
     const exampleTemplateFilterTableTableInitial = {
         value: 0,
@@ -120,10 +123,10 @@ export default function ExampleTemplate() {
             });
     }
 
-    const entryExampleTemplate = async (id) => {
+    const viewExampleTemplate = async (id) => {
         setExampleTemplateForm(exampleTemplateInitial);
-        setExampleTemplateFormError([]);
         if (id !== undefined) {
+            setExampleTemplateStateModal(CommonConstants.MODAL_IS_VIEW);
             setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: true } });
             await api.get(`/test/${id}/example-template.json`)
                 .then(response => {
@@ -145,13 +148,31 @@ export default function ExampleTemplate() {
                     setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: false } });
                     setExampleTemplateEntryModal({
                         ...exampleTemplateEntryModal
-                        , title: "Edit"
-                        , submitLabel: "Update"
-                        , submitIcon: "bi-arrow-repeat"
+                        , title: "View"
+                        , submitLabel: "Edit"
+                        , submitIcon: "bi-pencil"
                         , submitLoadingFlag: false
                     });
                 });
+        }
+
+        modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
+        modalObject.show();
+    }
+
+    const entryExampleTemplate = (haveContentFlag) => {
+        setExampleTemplateStateModal(CommonConstants.MODAL_IS_ENTRY);
+        setExampleTemplateFormError([]);
+        if (haveContentFlag) {
+            setExampleTemplateEntryModal({
+                ...exampleTemplateEntryModal
+                , title: "Edit"
+                , submitLabel: "Update"
+                , submitIcon: "bi-arrow-repeat"
+                , submitLoadingFlag: false
+            });
         } else {
+            setExampleTemplateForm(exampleTemplateInitial);
             setExampleTemplateEntryModal({
                 ...exampleTemplateEntryModal
                 , title: "Add"
@@ -168,7 +189,7 @@ export default function ExampleTemplate() {
     const confirmStoreExampleTemplate = () => {
         if (exampleTemplateValidate(exampleTemplateForm)) {
             setDialog({
-                message: "Are you sure to create?"
+                message: exampleTemplateForm.id === undefined ? "Are you sure to create?" : "Are you sure to update?"
                 , type: "confirmation"
                 , onConfirm: (e) => storeExampleTemplate(e)
             });
@@ -272,21 +293,53 @@ export default function ExampleTemplate() {
                 size="md"
                 title={exampleTemplateEntryModal.title}
                 buttonArray={
-                    <Button
-                        label={exampleTemplateEntryModal.submitLabel}
-                        onClick={() => confirmStoreExampleTemplate()}
-                        className="btn-primary"
-                        icon={exampleTemplateEntryModal.submitIcon}
-                        loadingFlag={exampleTemplateEntryModal.submitLoadingFlag}
-                    />
+                    <>
+                        {
+                            CommonConstants.MODAL_IS_ENTRY === exampleTemplateStateModal
+                            && <Button
+                                label={exampleTemplateEntryModal.submitLabel}
+                                onClick={() => confirmStoreExampleTemplate()}
+                                className="btn-primary"
+                                icon={exampleTemplateEntryModal.submitIcon}
+                                loadingFlag={exampleTemplateEntryModal.submitLoadingFlag}
+                            />
+                        }
+                        {
+                            CommonConstants.MODAL_IS_VIEW === exampleTemplateStateModal
+                            && <Button
+                                label={exampleTemplateEntryModal.submitLabel}
+                                onClick={() => entryExampleTemplate(true)}
+                                className="btn-primary"
+                                icon={exampleTemplateEntryModal.submitIcon}
+                                loadingFlag={false}
+                            />
+                        }
+                    </>
+
                 }
             >
-                <Input label="Name" type="text" name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} placeholder="Please input name" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
-                <Textarea label="Description" name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} placeholder="Please input description" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
-                <Select label="Value" name="value" map={selectValueMap} value={exampleTemplateForm.value} onChange={onExampleTemplateFormChange} placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
-                <Input label="Amount" type="number" name="amount" value={exampleTemplateForm.amount} onChange={onExampleTemplateFormChange} placeholder="Please input amount" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
-                <Input label="Date" type="date" name="date" value={exampleTemplateForm.date} onChange={onExampleTemplateFormChange} placeholder="Please input date" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
-                <Radio label="Active Flag" name="activeFlag" value={exampleTemplateForm.activeFlag} map={yesNoMap} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.activeFlag} />
+                {
+                    CommonConstants.MODAL_IS_ENTRY === exampleTemplateStateModal
+                    && <>
+                        <Input label="Name" type="text" name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} placeholder="Please input name" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
+                        <Textarea label="Description" name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} placeholder="Please input description" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
+                        <Select label="Value" name="value" map={selectValueMap} value={exampleTemplateForm.value} onChange={onExampleTemplateFormChange} placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
+                        <Input label="Amount" type="number" name="amount" value={exampleTemplateForm.amount} onChange={onExampleTemplateFormChange} placeholder="Please input amount" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
+                        <Input label="Date" type="date" name="date" value={exampleTemplateForm.date} onChange={onExampleTemplateFormChange} placeholder="Please input date" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
+                        <Radio label="Active Flag" name="activeFlag" value={exampleTemplateForm.activeFlag} map={yesNoMap} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.activeFlag} />
+                    </>
+                }
+                {
+                    CommonConstants.MODAL_IS_VIEW === exampleTemplateStateModal
+                    && <>
+                        <Label text="Name" value={exampleTemplateForm.name} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text="Description" value={exampleTemplateForm.description} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text="Value" value={exampleTemplateForm.value} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text="Amount" value={exampleTemplateForm.amount} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text="Date" value={exampleTemplateForm.date} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text="Active Flag" value={exampleTemplateForm.activeFlag} className="col-md-6 col-sm-6 col-xs-12" />
+                    </>
+                }
             </Modal>
             <Dialog
                 id="dialog_id"
@@ -307,7 +360,7 @@ export default function ExampleTemplate() {
                         <div className="card-body">
                             <Table
                                 labelNewButton="New"
-                                onNewButtonClick={() => entryExampleTemplate()}
+                                onNewButtonClick={() => entryExampleTemplate(false)}
 
                                 bulkOptionLoadingFlag={exampleTemplateBulkOptionLoadingFlag}
                                 bulkOptionArray={
@@ -366,10 +419,10 @@ export default function ExampleTemplate() {
                                             return (
                                                 <>
                                                     <Button
-                                                        label="Edit"
-                                                        onClick={() => entryExampleTemplate(data)}
+                                                        label="View"
+                                                        onClick={() => viewExampleTemplate(data)}
                                                         className="btn-primary"
-                                                        icon="bi-pencil"
+                                                        icon="bi-list-ul"
                                                         loadingFlag={exampleTemplateOptionColumnTable[data]?.updatedButtonFlag}
                                                     />
                                                     <Button

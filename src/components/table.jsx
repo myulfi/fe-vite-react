@@ -98,9 +98,11 @@ export default function Table({
         setOrderColumn(array);
     };
 
-    const onCheckBoxAll = event => {
+    const onCheckBoxAll = () => {
+        const currentCheckBoxStateArray = checkBoxStateArray.length;
+        const currentCheckBoxArray = dataArray.filter(datum => checkBoxArray.includes(datum.id)).length;
         dataArray.forEach(function (dataArray) {
-            if (event.target.checked) {
+            if (currentCheckBoxStateArray !== currentCheckBoxArray) {
                 if (checkBoxArray.includes(dataArray.id) === false) {
                     checkBoxArray.push(dataArray.id);
                 }
@@ -228,12 +230,9 @@ export default function Table({
                             {
                                 checkBoxArray != undefined
                                 && <th scope="col" className="text-center">
-                                    <input
-                                        type="checkbox"
-                                        id="checkall"
-                                        checked={checkBoxStateArray.length > 0 && checkBoxStateArray.every(id => new Set(checkBoxArray).has(id))}
-                                        onChange={onCheckBoxAll}
-                                    />
+                                    <span
+                                        className={dataArray.filter(datum => checkBoxArray.includes(datum.id)).length === 0 ? 'bi-square' : dataArray.filter(datum => checkBoxArray.includes(datum.id)).length === checkBoxStateArray.length ? 'bi-plus-square-fill' : 'bi-dash-square-fill'}
+                                        role="button" onClick={() => onCheckBoxAll()}></span>
                                 </th>
                             }
                             {
@@ -258,11 +257,8 @@ export default function Table({
                                             {
                                                 checkBoxArray != undefined
                                                 && <td className="text-center">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checkBoxArray.indexOf(data.id) >= 0}
-                                                        onChange={() => onCheckBoxSingle(data.id)}
-                                                    />
+                                                    <span className={checkBoxArray.indexOf(data.id) >= 0 ? 'bi-check-square-fill' : 'bi-square'}
+                                                        role="button" onClick={() => onCheckBoxSingle(data.id)}></span>
                                                 </td>
                                             }
                                             {

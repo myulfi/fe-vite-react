@@ -1,9 +1,70 @@
-//import axios
 import axios from 'axios';
+import * as CommonConstants from "../constants/commonConstants";
 
-const Api = axios.create({
-    //set default endpoint API
-    baseURL: 'http://localhost:8080/be-spring'
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL
+    , headers: {
+        'Content-Type': 'application/json'
+    }
 })
 
-export default Api
+const apiRequest = (method, url, params,) => {
+    if (CommonConstants.METHOD_IS_GET === method) {
+        return api.get(
+            url
+            , {
+                headers: {
+                    'Content-Type': 'application/json'
+                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                }
+                , params: params
+            })
+    } else if (CommonConstants.METHOD_IS_POST === method) {
+        return api.post(
+            url
+            , params
+            , {
+                headers: {
+                    'Content-Type': 'application/json'
+                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                }
+            }
+        )
+    } else if (CommonConstants.METHOD_IS_PUT === method) {
+        return api.put(
+            url
+            , params
+            , {
+                headers: {
+                    'Content-Type': 'application/json'
+                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                }
+            }
+        )
+    } else if (CommonConstants.METHOD_IS_PATCH === method) {
+        return api.patch(
+            url
+            , params
+            , {
+                headers: {
+                    'Content-Type': 'application/json'
+                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                }
+            }
+        )
+    } else if (CommonConstants.METHOD_IS_DELETE === method) {
+        return api.delete(
+            url
+            , {
+                headers: {
+                    'Content-Type': 'application/json'
+                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                }
+            }
+        )
+    } else {
+        return null
+    }
+};
+
+export { api, apiRequest }

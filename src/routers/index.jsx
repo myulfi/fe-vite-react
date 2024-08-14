@@ -7,8 +7,8 @@ function RoutesIndex() {
     return (
         <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/test/example-template" element={<ExampleTemplate />} />
+            <Route path="/home.html" element={<Home />} />
+            <Route path="/test/example-template.html" element={<ExampleTemplate />} />
         </Routes>
     )
 }

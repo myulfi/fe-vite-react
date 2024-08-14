@@ -10,7 +10,7 @@ export default function NavbarLink({
                 data.map((datum, index) => (
                     <li key={index} className={`nav-item ${datum.children?.length > 0 ? "dropdown" : null}`}>
                         {
-                            datum.children === undefined
+                            datum.children?.length === 0
                             && <Link to={datum.path} className={level === 0 ? "nav-link" : "dropdown-item"}><i className={datum.icon} />&nbsp;{datum.name}</Link>
                         }
                         {

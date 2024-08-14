@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import api from '../../api';
+import { useState } from 'react';
+import { apiRequest } from '../../api';
 import * as CommonConstants from "../../constants/commonConstants";
 import Button from "../../components/form/button";
 import Table from '../../components/table';
@@ -24,6 +24,7 @@ export default function ExampleTemplate() {
         , amount: 0
         , date: ''
         , activeFlag: null
+        , version: 0
     };
 
     const [exampleTemplateStateModal, setExampleTemplateStateModal] = useState(CommonConstants.MODAL_IS_ENTRY);
@@ -88,39 +89,38 @@ export default function ExampleTemplate() {
 
     // useEffect(() => { getExampleTemplate(); }, []);
 
-    const getExampleTemplate = async (page = 1, length = 5, search = "", order = []) => {
+    const getExampleTemplate = async (page = 1, length = 5, search = "", order = ["createdDate", "desc"]) => {
         setExampleTemplateTableLoadingFlag(true);
-        await api.get(
-            "/test/example-template.json",
-            {
-                params: {
-                    "start": (page - 1) * length,
-                    "length": length,
-                    "search": search,
-                    "orderColumn": order.length > 1 ? order[0] : null,
-                    "orderDir": order.length > 1 ? order[1] : null,
-                    "value": exampleTemplateFilterTable.value,
-                    "date": exampleTemplateFilterTable.date,
-                    "range": exampleTemplateFilterTable.range,
-                }
-            }
-        )
-            .then(response => {
-                const json = response.data;
-                setExampleTemplateArray(json.data);
-                setExampleTemplateDataTotalTable(json.recordsTotal);
 
-                setExampleTemplateOptionColumnTable(
-                    json.data.reduce(function (map, obj) {
-                        //map[obj.id] = obj.name;
-                        map[obj.id] = { "updatedButtonFlag": false, "deletedButtonFlag": false };
-                        return map;
-                    }, {})
-                );
-            })
-            .finally(() => {
-                setExampleTemplateTableLoadingFlag(false);
-            });
+        try {
+            const params = {
+                "start": (page - 1) * length,
+                "length": length,
+                "search": search,
+                "orderColumn": order.length > 1 ? order[0] : null,
+                "orderDir": order.length > 1 ? order[1] : null,
+                "value": exampleTemplateFilterTable.value,
+                "date": exampleTemplateFilterTable.date,
+                "range": exampleTemplateFilterTable.range,
+            }
+
+            const response = await apiRequest(CommonConstants.METHOD_IS_GET, "/test/example-template.json", params)
+            const json = response.data;
+            setExampleTemplateArray(json.data);
+            setExampleTemplateDataTotalTable(json.recordsTotal);
+            setExampleTemplateOptionColumnTable(
+                json.data.reduce(function (map, obj) {
+                    //map[obj.id] = obj.name;
+                    map[obj.id] = { "updatedButtonFlag": false, "deletedButtonFlag": false };
+                    return map;
+                }, {})
+            );
+        } catch (error) {
+            setToast({ type: "failed", message: error.message });
+            toastObject.show();
+        } finally {
+            setExampleTemplateTableLoadingFlag(false);
+        }
     }
 
     const viewExampleTemplate = async (id) => {
@@ -128,36 +128,38 @@ export default function ExampleTemplate() {
         if (id !== undefined) {
             setExampleTemplateStateModal(CommonConstants.MODAL_IS_VIEW);
             setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: true } });
-            await api.get(`/test/${id}/example-template.json`)
-                .then(response => {
-                    const exampleTemplate = response.data.data;
-                    setExampleTemplateForm({
-                        id: exampleTemplate.id
-                        , name: exampleTemplate.name
-                        , description: exampleTemplate.description
-                        , value: exampleTemplate.value
-                        , amount: exampleTemplate.amount
-                        , date: exampleTemplate.date
-                        , activeFlag: exampleTemplate.activeFlag
-                    });
-                })
-                .catch(function (error) {
-                    setToast({ type: "failed", message: error });
-                })
-                .finally(() => {
-                    setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: false } });
-                    setExampleTemplateEntryModal({
-                        ...exampleTemplateEntryModal
-                        , title: "View"
-                        , submitLabel: "Edit"
-                        , submitIcon: "bi-pencil"
-                        , submitLoadingFlag: false
-                    });
-                });
-        }
+            try {
+                const response = await apiRequest(CommonConstants.METHOD_IS_GET, `/test/${id}/example-template.json`)
 
-        modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
-        modalObject.show();
+                const exampleTemplate = response.data.data;
+                setExampleTemplateForm({
+                    id: exampleTemplate.id
+                    , name: exampleTemplate.name
+                    , description: exampleTemplate.description
+                    , value: exampleTemplate.value
+                    , amount: exampleTemplate.amount
+                    , date: exampleTemplate.date
+                    , activeFlag: exampleTemplate.activeFlag
+                    , version: exampleTemplate.version
+                });
+
+                setExampleTemplateEntryModal({
+                    ...exampleTemplateEntryModal
+                    , title: "View"
+                    , submitLabel: "Edit"
+                    , submitIcon: "bi-pencil"
+                    , submitLoadingFlag: false
+                })
+
+                modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
+                modalObject.show();
+            } catch (error) {
+                setToast({ type: "failed", message: error.message });
+                toastObject.show();
+            } finally {
+                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: false } });
+            }
+        }
     }
 
     const entryExampleTemplate = (haveContentFlag) => {
@@ -202,26 +204,25 @@ export default function ExampleTemplate() {
             dialogObject.hide();
             setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: true });
 
-            await api.post(
-                '/test/example-template.json'
-                , JSON.stringify(exampleTemplateForm)
-                , { headers: { 'Content-Type': 'application/json' } }
-            )
-                .then((json) => {
-                    if (json.data.status === "success") {
-                        getExampleTemplate();
-                    }
-                    setToast({ type: json.data.status, message: "Submitted successfully" });
-                })
-                .catch((error) => {
-                    setToast({ type: "failed", message: error });
-                    setExampleTemplateFormError(error.response.data);
-                })
-                .finally(() => {
-                    toastObject.show();
-                    setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: false });
-                    bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
-                });
+            try {
+                const json = await apiRequest(
+                    exampleTemplateForm.id === undefined ? CommonConstants.METHOD_IS_POST : CommonConstants.METHOD_IS_PATCH
+                    , exampleTemplateForm.id === undefined ? '/test/example-template.json' : `/test/${exampleTemplateForm.id}/example-template.json`
+                    , JSON.stringify(exampleTemplateForm)
+                )
+
+                if (json.data.status === "success") {
+                    getExampleTemplate();
+                }
+                setToast({ type: json.data.status, message: json.data.message });
+                bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
+            } catch (error) {
+                setToast({ type: "failed", message: error.message });
+                setExampleTemplateFormError(error.response.data);
+            } finally {
+                toastObject.show();
+                setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: false });
+            }
         }
     }
 
@@ -258,31 +259,25 @@ export default function ExampleTemplate() {
             setExampleTemplateBulkOptionLoadingFlag(true);
         }
 
-        await api.delete(
-            `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`
-            , null
-            , { headers: { 'Content-Type': 'application/json' } }
-        )
-            .then(function (json) {
-                if (json.data.status === "success") {
-                    getExampleTemplate();
-                    if (id === undefined) {
-                        setExampleTemplateCheckBoxTableArray([]);
-                    }
+        try {
+            const json = await apiRequest(CommonConstants.METHOD_IS_DELETE, `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`)
+            if (json.data.status === "success") {
+                getExampleTemplate();
+                if (id === undefined) {
+                    setExampleTemplateCheckBoxTableArray([]);
                 }
-                setToast({ type: json.data.status, message: json.data.message });
-            })
-            .catch(function (error) {
-                setToast({ type: "failed", message: error });
-            })
-            .finally(() => {
-                if (id !== undefined) {
-                    setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } });
-                } else {
-                    setExampleTemplateBulkOptionLoadingFlag(false);
-                }
-                toastObject.show();
-            });
+            }
+            setToast({ type: json.data.status, message: json.data.message });
+        } catch (error) {
+            setToast({ type: "failed", message: error.message });
+        } finally {
+            if (id !== undefined) {
+                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } });
+            } else {
+                setExampleTemplateBulkOptionLoadingFlag(false);
+            }
+            toastObject.show();
+        }
     }
 
     return (

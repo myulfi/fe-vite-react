@@ -23,7 +23,7 @@ export default function ExampleTemplate() {
         name: ''
         , description: ''
         , value: 0
-        , valueMultiple: []
+        // , valueMultiple: []
         , amount: 0
         , date: ''
         , activeFlag: null
@@ -48,6 +48,7 @@ export default function ExampleTemplate() {
     const [exampleTemplateBulkOptionLoadingFlag, setExampleTemplateBulkOptionLoadingFlag] = useState(false);
     const [exampleTemplateCheckBoxTableArray, setExampleTemplateCheckBoxTableArray] = useState([]);
     const [exampleTemplateOptionColumnTable, setExampleTemplateOptionColumnTable] = useState([]);
+    const [exampleTemplateAttributeTable, setExampleTemplateAttributeTable] = useState();
     const [exampleTemplateDataTotalTable, setExampleTemplateDataTotalTable] = useState(0);
     const [exampleTemplateTableLoadingFlag, setExampleTemplateTableLoadingFlag] = useState(false);
 
@@ -77,7 +78,9 @@ export default function ExampleTemplate() {
         { "key": 5, "value": "Lima" },
         { "key": 6, "value": "Enam" },
         { "key": 7, "value": "Tujuh" },
-        { "key": 8, "value": "Delapan" }
+        { "key": 8, "value": "Delapan" },
+        { "key": 9, "value": "Sembilan" },
+        { "key": 10, "value": "Sepuluh" },
     ];
     const yesNoMap = [{ "key": 1, "value": "Yes" }, { "key": 0, "value": "No" }];
 
@@ -101,20 +104,22 @@ export default function ExampleTemplate() {
 
     // useEffect(() => { getExampleTemplate(); }, []);
 
-    const getExampleTemplate = async (page = 1, length = 5, search = "", order = ["createdDate", "desc"]) => {
+    const getExampleTemplate = async (options) => {
         setExampleTemplateTableLoadingFlag(true);
 
         try {
             const params = {
-                "start": (page - 1) * length,
-                "length": length,
-                "search": search,
-                "orderColumn": order.length > 1 ? order[0] : null,
-                "orderDir": order.length > 1 ? order[1] : null,
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
+                "search": options.search,
+                "orderColumn": options.order.length > 1 ? options.order[0] : null,
+                "orderDir": options.order.length > 1 ? options.order[1] : null,
                 "value": exampleTemplateFilterTable.value,
                 "date": exampleTemplateFilterTable.date,
                 "range": exampleTemplateFilterTable.range,
             }
+
+            setExampleTemplateAttributeTable(options);
 
             const response = await apiRequest(CommonConstants.METHOD_IS_GET, "/test/example-template.json", params)
             const json = response.data;
@@ -224,7 +229,7 @@ export default function ExampleTemplate() {
                 )
 
                 if (json.data.status === "success") {
-                    getExampleTemplate();
+                    getExampleTemplate(exampleTemplateAttributeTable);
                 }
                 setToast({ type: json.data.status, message: json.data.message });
                 bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
@@ -274,7 +279,7 @@ export default function ExampleTemplate() {
         try {
             const json = await apiRequest(CommonConstants.METHOD_IS_DELETE, `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`)
             if (json.data.status === "success") {
-                getExampleTemplate();
+                getExampleTemplate(exampleTemplateAttributeTable);
                 if (id === undefined) {
                     setExampleTemplateCheckBoxTableArray([]);
                 }
@@ -330,12 +335,12 @@ export default function ExampleTemplate() {
                         <Input label="Name" type="text" name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} placeholder="Please input name" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
                         <Textarea label="Description" name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} placeholder="Please input description" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
                         <Select label="Value" name="value" map={selectValueMap} value={exampleTemplateForm.value} onChange={onExampleTemplateFormChange} placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
-                        <SelectMultiple label="Value" name="multipleValue" map={selectValueMap} valueMultiple={exampleTemplateForm.valueMultiple}
+                        {/* <SelectMultiple label="Value" name="multipleValue" map={selectValueMap} valueMultiple={exampleTemplateForm.valueMultiple}
                             liveSearch={true}
                             actionBox={true}
                             dataSize={5}
                             onChange={onExampleTemplateFormChange}
-                            placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
+                            placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} /> */}
                         <Input label="Amount" type="number" name="amount" value={exampleTemplateForm.amount} onChange={onExampleTemplateFormChange} placeholder="Please input amount" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
                         <Input label="Date" type="date" name="date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} onChange={onExampleTemplateFormChange} placeholder="Please input date" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
                         <Radio label="Active Flag" name="activeFlag" value={exampleTemplateForm.activeFlag} map={yesNoMap} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.activeFlag} />
@@ -455,7 +460,7 @@ export default function ExampleTemplate() {
                                 onCheckBox={exampleTemplateCheckBoxTableArray => { setExampleTemplateCheckBoxTableArray([...exampleTemplateCheckBoxTableArray]); }}
                                 dataTotal={exampleTemplateDataTotalTable}
                                 filter={exampleTemplateFilterTable}
-                                onRender={(page, length, search, order) => { getExampleTemplate(page = page, length = length, search = search, order = order); }}
+                                onRender={(page, length, search, order) => { getExampleTemplate({ page: page, length: length, search: search, order: order }) }}
                                 loadingFlag={exampleTemplateTableLoadingFlag}
                             />
                         </div>

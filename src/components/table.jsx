@@ -65,8 +65,7 @@ export default function Table({
             }
             setOrderColumn(array);
         } else {
-            setDetailRow(dataArray.map(() => false));
-            onRender(currentPage, sizePage, search, currentOrder);
+            onPageChange(1, sizePage, search)
         }
     }, [filter]);
 

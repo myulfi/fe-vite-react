@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { apiRequest } from '../../api';
 import * as CommonConstants from "../../constants/commonConstants";
+import * as DateHelper from "../../function/dateHelper";
 import Button from "../../components/form/button";
 import Table from '../../components/table';
 import Toast from '../../components/toast';
@@ -15,12 +16,14 @@ import SelectFilter from '../../components/filter/selectFilter';
 import DateFilter from '../../components/filter/dateFilter';
 import RangeFilter from '../../components/filter/rangeFilter';
 import Label from '../../components/form/label';
+import SelectMultiple from '../../components/form/selectMultiple';
 
 export default function ExampleTemplate() {
     const exampleTemplateInitial = {
         name: ''
         , description: ''
         , value: 0
+        , valueMultiple: []
         , amount: 0
         , date: ''
         , activeFlag: null
@@ -66,7 +69,16 @@ export default function ExampleTemplate() {
         setExampleTemplateForm({ ...exampleTemplateForm, [name]: value });
     };
 
-    const selectValueMap = [{ "key": 1, "value": "Satu" }, { "key": 2, "value": "Dua" }, { "key": 3, "value": "Tiga" }, { "key": 4, "value": "Empat" }];
+    const selectValueMap = [
+        { "key": 1, "value": "Satu" },
+        { "key": 2, "value": "Dua" },
+        { "key": 3, "value": "Tiga" },
+        { "key": 4, "value": "Empat" },
+        { "key": 5, "value": "Lima" },
+        { "key": 6, "value": "Enam" },
+        { "key": 7, "value": "Tujuh" },
+        { "key": 8, "value": "Delapan" }
+    ];
     const yesNoMap = [{ "key": 1, "value": "Yes" }, { "key": 0, "value": "No" }];
 
     const exampleTemplateValidate = (data) => {
@@ -111,7 +123,7 @@ export default function ExampleTemplate() {
             setExampleTemplateOptionColumnTable(
                 json.data.reduce(function (map, obj) {
                     //map[obj.id] = obj.name;
-                    map[obj.id] = { "updatedButtonFlag": false, "deletedButtonFlag": false };
+                    map[obj.id] = { "viewedButtonFlag": false, "deletedButtonFlag": false };
                     return map;
                 }, {})
             );
@@ -127,7 +139,7 @@ export default function ExampleTemplate() {
         setExampleTemplateForm(exampleTemplateInitial);
         if (id !== undefined) {
             setExampleTemplateStateModal(CommonConstants.MODAL_IS_VIEW);
-            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: true } });
+            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: true } });
             try {
                 const response = await apiRequest(CommonConstants.METHOD_IS_GET, `/test/${id}/example-template.json`)
 
@@ -157,7 +169,7 @@ export default function ExampleTemplate() {
                 setToast({ type: "failed", message: error.message });
                 toastObject.show();
             } finally {
-                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { updatedButtonFlag: false } });
+                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: false } });
             }
         }
     }
@@ -318,8 +330,14 @@ export default function ExampleTemplate() {
                         <Input label="Name" type="text" name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} placeholder="Please input name" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
                         <Textarea label="Description" name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} placeholder="Please input description" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
                         <Select label="Value" name="value" map={selectValueMap} value={exampleTemplateForm.value} onChange={onExampleTemplateFormChange} placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
+                        <SelectMultiple label="Value" name="multipleValue" map={selectValueMap} valueMultiple={exampleTemplateForm.valueMultiple}
+                            liveSearch={true}
+                            actionBox={true}
+                            dataSize={5}
+                            onChange={onExampleTemplateFormChange}
+                            placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
                         <Input label="Amount" type="number" name="amount" value={exampleTemplateForm.amount} onChange={onExampleTemplateFormChange} placeholder="Please input amount" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
-                        <Input label="Date" type="date" name="date" value={exampleTemplateForm.date} onChange={onExampleTemplateFormChange} placeholder="Please input date" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
+                        <Input label="Date" type="date" name="date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} onChange={onExampleTemplateFormChange} placeholder="Please input date" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
                         <Radio label="Active Flag" name="activeFlag" value={exampleTemplateForm.activeFlag} map={yesNoMap} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.activeFlag} />
                     </>
                 }
@@ -330,7 +348,7 @@ export default function ExampleTemplate() {
                         <Label text="Description" value={exampleTemplateForm.description} className="col-md-6 col-sm-6 col-xs-12" />
                         <Label text="Value" value={exampleTemplateForm.value} className="col-md-6 col-sm-6 col-xs-12" />
                         <Label text="Amount" value={exampleTemplateForm.amount} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text="Date" value={exampleTemplateForm.date} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text="Date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} className="col-md-6 col-sm-6 col-xs-12" />
                         <Label text="Active Flag" value={exampleTemplateForm.activeFlag} className="col-md-6 col-sm-6 col-xs-12" />
                     </>
                 }
@@ -417,7 +435,7 @@ export default function ExampleTemplate() {
                                                         onClick={() => viewExampleTemplate(data)}
                                                         className="btn-primary"
                                                         icon="bi-list-ul"
-                                                        loadingFlag={exampleTemplateOptionColumnTable[data]?.updatedButtonFlag}
+                                                        loadingFlag={exampleTemplateOptionColumnTable[data]?.viewedButtonFlag}
                                                     />
                                                     <Button
                                                         label="Delete"

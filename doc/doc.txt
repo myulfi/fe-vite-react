@@ -1,0 +1,45 @@
+Installation in Local
+--------------------------------------------------------------------------------------
+| Description			| Command
+--------------------------------------------------------------------------------------
+| Create App			| D:\user\development npm create vite@latest fe-vite-react -- --template react
+| Install Library		| D:\user\development\fe-vite-react npm install
+| Router				| D:\user\development\fe-vite-react npm install react-router-dom@6.4.5
+| Axios					| D:\user\development\fe-vite-react npm install axios@1.3.4
+| Chartjs				| D:\user\development\fe-vite-react npm i react-chartjs-2 chart.js
+| Run					| D:\user\development\fe-vite-react npm run dev
+--------------------------------------------------------------------------------------
+
+Installation in Production
+--------------------------------------------------------------------------------------
+| Description			| Command
+--------------------------------------------------------------------------------------
+| Install Nginx
+--------------------------------------------------------------------------------------
+| Install Nginx     	| /home/ubuntu sudo apt install nginx
+| Create Folder     	| /var/www mkdir fe-vite-react
+| CHMOD	Folder	     	| /home/ubuntu sudo chmod -R 777 /var/www/fe-vite-react
+| CHMOD	Log	     		| /home/ubuntu sudo chmod -R 777 /var/log/nginx
+| Create config    		| /home/ubuntu sudo vim /etc/nginx/sites-available/main.conf
+--------------------------------------------------------------------------------------
+server {
+    listen 80;
+    listen [::]:80;
+    server_name fe-vite-react.com;
+    root /var/www/fe-vite-react;
+    index index.html;
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+--------------------------------------------------------------------------------------
+| Setup for access :80	| /home/ubuntu sudo rm /etc/nginx/sites-enabled/default
+| Configuration Changes	| /home/ubuntu sudo rm /etc/nginx/sites-enabled/main.conf
+| Update Configuration	| /home/ubuntu sudo vim /etc/nginx/sites-available/main.conf
+| Symlink				| /home/ubuntu sudo ln -s /etc/nginx/sites-available/main.conf /etc/nginx/sites-enabled/
+| Check Configuration	| /home/ubuntu sudo nginx -t
+| Reload Configuration	| /home/ubuntu sudo systemctl reload nginx
+| Restart Nginx			| /home/ubuntu sudo systemctl restart nginx.service
+| Start Nginx			| /home/ubuntu sudo systemctl start nginx
+| Status Nginx			| /home/ubuntu sudo systemctl status nginx
+--------------------------------------------------------------------------------------

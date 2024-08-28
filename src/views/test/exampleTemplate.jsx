@@ -133,7 +133,7 @@ export default function ExampleTemplate() {
                 }, {})
             );
         } catch (error) {
-            setToast({ type: "failed", message: error.message });
+            setToast({ type: "failed", message: error.response.data.message ?? error.message })
             toastObject.show();
         } finally {
             setExampleTemplateTableLoadingFlag(false);
@@ -171,7 +171,7 @@ export default function ExampleTemplate() {
                 modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
                 modalObject.show();
             } catch (error) {
-                setToast({ type: "failed", message: error.message });
+                setToast({ type: "failed", message: error.response.data.message ?? error.message })
                 toastObject.show();
             } finally {
                 setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: false } });
@@ -230,11 +230,11 @@ export default function ExampleTemplate() {
 
                 if (json.data.status === "success") {
                     getExampleTemplate(exampleTemplateAttributeTable);
+                    bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
                 }
                 setToast({ type: json.data.status, message: json.data.message });
-                bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
             } catch (error) {
-                setToast({ type: "failed", message: error.message });
+                setToast({ type: "failed", message: error.response.data.message ?? error.message })
                 setExampleTemplateFormError(error.response.data);
             } finally {
                 toastObject.show();
@@ -286,7 +286,7 @@ export default function ExampleTemplate() {
             }
             setToast({ type: json.data.status, message: json.data.message });
         } catch (error) {
-            setToast({ type: "failed", message: error.message });
+            setToast({ type: "failed", message: error.response.data.message ?? error.message })
         } finally {
             if (id !== undefined) {
                 setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } });

@@ -288,7 +288,7 @@ export default function Table({
                                                                     <label className="fw-bold me-2">{column.name}</label>
                                                                     {
                                                                         column.render != undefined
-                                                                            ? column.render(data[column.data])
+                                                                            ? column.render(data[column.data], data)
                                                                             : data[column.data]
                                                                     }
                                                                 </div>

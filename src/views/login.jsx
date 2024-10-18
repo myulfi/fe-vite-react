@@ -2,7 +2,7 @@ import './login.css';
 import logo from '../assets/react.svg'
 import { useState } from 'react';
 import { apiRequest } from '../api';
-import { METHOD_IS_POST } from '../constants/commonConstants';
+import * as CommonConstants from '../constants/commonConstants';
 
 export default function Login() {
     const loginInitial = {
@@ -58,7 +58,7 @@ export default function Login() {
                 )
 
                 if (response.data.status === "success") {
-                    localStorage.setItem("accessToken", response.data.data.token);
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN, response.data.data.token);
                     window.location.reload(false);
                 } else {
                     setLoginFormError(response.data.message);

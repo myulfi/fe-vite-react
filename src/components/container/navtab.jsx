@@ -1,6 +1,6 @@
 export default function Navtab({
-    tabArray
-    , initialActiveTab = 0
+    tabArray,
+    initialActiveTab = 0
 }) {
     return (
         <>
@@ -21,5 +21,5 @@ export default function Navtab({
                 }
             </div >
         </>
-    );
+    )
 }

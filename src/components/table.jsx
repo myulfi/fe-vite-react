@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Fragment } from 'react';
 import './table.css';
 import * as CommonConstants from "../constants/commonConstants";
+import { getNestedValue } from '../function/commonHelper';
 
 export default function Table({
     labelNewButton
@@ -263,15 +264,15 @@ export default function Table({
                                             {
                                                 columnShow
                                                     .map((column, index) => (
-                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`}>
+                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`} role={index == 0 && columnAlwaysHide.length > 0 ? "button" : null} onClick={() => showDetail(indexRow)}>
                                                             {
                                                                 index == 0 &&
-                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} role="button" onClick={() => showDetail(indexRow)}></span>
+                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} />
                                                             }
                                                             {
                                                                 column.render != undefined
                                                                     ? column.render(data[column.data], data)
-                                                                    : data[column.data]
+                                                                    : getNestedValue(data, column.data)
                                                             }
                                                         </td>
                                                     ))
@@ -289,7 +290,7 @@ export default function Table({
                                                                     {
                                                                         column.render != undefined
                                                                             ? column.render(data[column.data], data)
-                                                                            : data[column.data]
+                                                                            : getNestedValue(data, column.data)
                                                                     }
                                                                 </div>
                                                             ))

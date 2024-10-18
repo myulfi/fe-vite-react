@@ -2,69 +2,69 @@ import axios from 'axios';
 import * as CommonConstants from "../constants/commonConstants";
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL
-    , headers: {
+    baseURL: import.meta.env.VITE_API_URL,
+    headers: {
         'Content-Type': 'application/json'
     }
 })
 
 const apiRequest = (method, url, params,) => {
-    if (CommonConstants.METHOD_IS_GET === method) {
+    if (CommonConstants.METHOD.GET === method) {
         return api.get(
-            url
-            , {
+            url,
+            {
                 headers: {
-                    'Content-Type': 'application/json'
-                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
-                }
-                , params: params
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN)}`
+                },
+                params: params
             })
-    } else if (CommonConstants.METHOD_IS_POST === method) {
+    } else if (CommonConstants.METHOD.POST === method) {
         return api.post(
-            url
-            , params
-            , {
+            url,
+            params,
+            {
                 headers: {
-                    'Content-Type': 'application/json'
-                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                    'Content-Type': params instanceof FormData ? 'multipart/form-data' : 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN)}`
                 }
             }
         )
-    } else if (CommonConstants.METHOD_IS_PUT === method) {
+    } else if (CommonConstants.METHOD.PUT === method) {
         return api.put(
-            url
-            , params
-            , {
+            url,
+            params,
+            {
                 headers: {
-                    'Content-Type': 'application/json'
-                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                    'Content-Type': params instanceof FormData ? 'multipart/form-data' : 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN)}`
                 }
             }
         )
-    } else if (CommonConstants.METHOD_IS_PATCH === method) {
+    } else if (CommonConstants.METHOD.PATCH === method) {
         return api.patch(
-            url
-            , params
-            , {
+            url,
+            params,
+            {
                 headers: {
-                    'Content-Type': 'application/json'
-                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                    'Content-Type': params instanceof FormData ? 'multipart/form-data' : 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN)}`
                 }
             }
         )
-    } else if (CommonConstants.METHOD_IS_DELETE === method) {
+    } else if (CommonConstants.METHOD.DELETE === method) {
         return api.delete(
-            url
-            , {
+            url,
+            {
                 headers: {
-                    'Content-Type': 'application/json'
-                    , 'Authorization': `Bearer ${localStorage.getItem("accessToken")}`
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN)}`
                 }
             }
         )
     } else {
         return null
     }
-};
+}
 
 export { api, apiRequest }

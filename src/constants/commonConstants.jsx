@@ -1,12 +1,22 @@
-export const NONE = 0;
-export const MOBILE = 1;
-export const TABLET = 2;
-export const DESKTOP = 3;
-export const TV = 4;
-export const MODAL_IS_ENTRY = 1;
-export const MODAL_IS_VIEW = 2;
-export const METHOD_IS_GET = 1;
-export const METHOD_IS_POST = 2;
-export const METHOD_IS_PUT = 3;
-export const METHOD_IS_PATCH = 4;
-export const METHOD_IS_DELETE = 5;
+export const DEVICE = {
+    NONE: 0,
+    MOBILE: 1,
+    TABLET: 2,
+    DESKTOP: 3,
+    TV: 4,
+}
+export const MODAL = {
+    ENTRY: 1,
+    VIEW: 2,
+}
+export const METHOD = {
+    GET: 1,
+    POST: 2,
+    PUT: 3,
+    PATCH: 4,
+    DELETE: 5,
+}
+export const LOCAL_STORAGE = {
+    ACCESS_TOKEN: "accessToken",
+    NAME: "name",
+}

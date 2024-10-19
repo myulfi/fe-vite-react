@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next"
 
-export default function Textarea({
+export default function InputDate({
     label,
     name,
-    rows,
     value,
+    disabled = false,
     onChange,
     className,
     error,
@@ -12,9 +12,8 @@ export default function Textarea({
     const { t } = useTranslation()
     return (
         <div className={`form-group mb-3 ${className}`}>
-            <label className="form-label fw-bold">{label}</label>
-            <textarea className="form-control" name={name} rows={rows} value={value} onChange={onChange} placeholder={t("common.text.inputName", { name: label })}></textarea>
+            <input className="form-control" name={name} type="date" value={value} disabled={disabled} onChange={onChange} placeholder={t("common.text.selectName", { name: label })} />
             {error && <small className="text-danger mt-1 px-1">{error}</small>}
         </div>
-    );
+    )
 }

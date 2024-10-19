@@ -1,173 +1,176 @@
-import { useEffect, useRef, useState } from 'react';
-import { Fragment } from 'react';
-import './table.css';
-import * as CommonConstants from "../constants/commonConstants";
-import { getNestedValue } from '../function/commonHelper';
+import { useEffect, useRef, useState } from "react"
+import { Fragment } from "react"
+import "./table.css"
+import * as CommonConstants from "../constants/commonConstants"
+import { getNestedValue } from "../function/commonHelper"
+import { useTranslation } from "react-i18next"
 
 export default function Table({
-    labelNewButton
-    , onNewButtonClick = () => { alert("Please define your function!") }
-    , bulkOptionLoadingFlag = false
-    , bulkOptionArray
-    , dataArray = []
-    , columns
-    , order = []
-    , checkBoxArray
-    , onCheckBox = () => { alert("Please define your function!") }
-    , dataTotal = 0
-    , initialSizePage = 10
-    , limitPaginationButton = 7
-    , filter
-    , onRender
-    , loadingFlag = false
+    labelNewButton,
+    onNewButtonClick = () => { alert("Please define your function!") },
+    bulkOptionLoadingFlag = false,
+    bulkOptionArray,
+    searchFlag = true,
+    dataArray = [],
+    columns,
+    order = [],
+    checkBoxArray,
+    onCheckBox = () => { alert("Please define your function!") },
+    dataTotal = 0,
+    initialSizePage = 10,
+    limitPaginationButton = 7,
+    filter,
+    onRender,
+    loadingFlag = false,
 }) {
+    const { t } = useTranslation()
     const checkBoxStateArray = dataArray.map(function (obj) {
-        return obj['id'];
-    });
+        return obj['id']
+    })
 
-    const columnShow = columns.filter(column => { return column.minDevice !== CommonConstants.NONE; });
-    const columnHide = columns.filter(column => { return column.minDevice !== undefined && column.minDevice !== CommonConstants.MOBILE; });
-    const columnAlwaysHide = columns.filter(column => { return column.minDevice === CommonConstants.NONE; });
+    const columnShow = columns.filter(column => { return column.minDevice !== CommonConstants.DEVICE.NONE })
+    const columnHide = columns.filter(column => { return column.minDevice !== undefined && column.minDevice !== CommonConstants.DEVICE.MOBILE })
+    const columnAlwaysHide = columns.filter(column => { return column.minDevice === CommonConstants.DEVICE.NONE })
 
-    const [search, setSearch] = useState("");
-    const [currentOrder, setCurrentOrder] = useState(order);
-    const [orderColumn, setOrderColumn] = useState([]);
-    const [detailRow, setDetailRow] = useState(dataArray.map(() => false));
+    const [search, setSearch] = useState("")
+    const [currentOrder, setCurrentOrder] = useState(order)
+    const [orderColumn, setOrderColumn] = useState([])
+    const [detailRow, setDetailRow] = useState(dataArray.map(() => false))
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const [sizePage, setSizePage] = useState(initialSizePage);
+    const [currentPage, setCurrentPage] = useState(1)
+    const [sizePage, setSizePage] = useState(initialSizePage)
 
-    const pages = Array.from({ length: Math.ceil(dataTotal / sizePage) }, (_, i) => i + 1);
-    const lengthArray = [5, 10, 25, 50, 100];
+    const pages = Array.from({ length: Math.ceil(dataTotal / sizePage) }, (_, i) => i + 1)
+    const lengthArray = [5, 10, 25, 50, 100]
 
     useEffect(() => {
         if (orderColumn.length === 0) {
-            var array = new Array();
+            var array = new Array()
             for (var i = 0; i < columnShow.length; i++) {
-                array.push(columnShow[i].orderable ? "bi-three-dots-vertical" : null);
+                array.push(columnShow[i].orderable ? "bi-three-dots-vertical" : null)
             }
 
             if (order.length > 0) {
                 for (var i = 0; i < order.length; i++) {
                     if ("asc" === order[i][1]) {
-                        array[order[i][0]] = "bi-sort-down-alt";
-                        setCurrentOrder([columnShow[order[i][0]]["data"], "asc"]);
-                        onRender(currentPage, sizePage, search, [columnShow[order[i][0]]["data"], "asc"]);
-                        break;
+                        array[order[i][0]] = "bi-sort-down-alt"
+                        setCurrentOrder([columnShow[order[i][0]]["data"], "asc"])
+                        onRender(currentPage, sizePage, search, [columnShow[order[i][0]]["data"], "asc"])
+                        break
                     } else if ("desc" === order[i][1]) {
-                        array[order[i][0]] = "bi-sort-down";
-                        setCurrentOrder([columnShow[order[i][0]]["data"], "desc"]);
-                        onRender(currentPage, sizePage, search, [columnShow[order[i][0]]["data"], "desc"]);
-                        break;
+                        array[order[i][0]] = "bi-sort-down"
+                        setCurrentOrder([columnShow[order[i][0]]["data"], "desc"])
+                        onRender(currentPage, sizePage, search, [columnShow[order[i][0]]["data"], "desc"])
+                        break
                     }
                 }
             } else {
-                onRender(currentPage, sizePage, search);
+                onRender(currentPage, sizePage, search)
             }
-            setOrderColumn(array);
+            setOrderColumn(array)
         } else {
             onPageChange(1, sizePage, search)
         }
-    }, [filter]);
+    }, [filter])
 
     const onPageChange = (page, length, search) => {
-        setCurrentPage(page);
-        setSizePage(length);
-        setDetailRow(dataArray.map(() => false));
-        onRender(page, length, search, currentOrder);
-    };
+        setCurrentPage(page)
+        setSizePage(length)
+        setDetailRow(dataArray.map(() => false))
+        onRender(page, length, search, currentOrder)
+    }
 
     const onOrderChange = (data, index) => {
-        var array = new Array();
+        var array = new Array()
         for (var i = 0; i < orderColumn.length; i++) {
             if (index === i) {
-                setDetailRow(dataArray.map(() => false));
+                setDetailRow(dataArray.map(() => false))
                 if (orderColumn[i] === "bi-sort-down") {
-                    array.push("bi-sort-down-alt");
-                    setCurrentOrder([data, "asc"]);
-                    onRender(currentPage, sizePage, search, [data, "asc"]);
+                    array.push("bi-sort-down-alt")
+                    setCurrentOrder([data, "asc"])
+                    onRender(currentPage, sizePage, search, [data, "asc"])
                 } else {
-                    array.push("bi-sort-down");
-                    setCurrentOrder([data, "desc"]);
-                    onRender(currentPage, sizePage, search, [data, "desc"]);
+                    array.push("bi-sort-down")
+                    setCurrentOrder([data, "desc"])
+                    onRender(currentPage, sizePage, search, [data, "desc"])
                 }
             } else {
-                array.push(orderColumn[i] !== null ? "bi-three-dots-vertical" : null);
+                array.push(orderColumn[i] !== null ? "bi-three-dots-vertical" : null)
             }
         }
-        setOrderColumn(array);
-    };
+        setOrderColumn(array)
+    }
 
     const onCheckBoxAll = () => {
-        const currentCheckBoxStateArray = checkBoxStateArray.length;
-        const currentCheckBoxArray = dataArray.filter(datum => checkBoxArray.includes(datum.id)).length;
+        const currentCheckBoxStateArray = checkBoxStateArray.length
+        const currentCheckBoxArray = dataArray.filter(datum => checkBoxArray.includes(datum.id)).length
         dataArray.forEach(function (dataArray) {
             if (currentCheckBoxStateArray !== currentCheckBoxArray) {
                 if (checkBoxArray.includes(dataArray.id) === false) {
-                    checkBoxArray.push(dataArray.id);
+                    checkBoxArray.push(dataArray.id)
                 }
             } else {
                 if (checkBoxArray.includes(dataArray.id)) {
                     checkBoxArray.splice(checkBoxArray.indexOf(dataArray.id), 1)
                 }
             }
-        });
+        })
 
-        onCheckBox(checkBoxArray);
-    };
+        onCheckBox(checkBoxArray)
+    }
 
     const onCheckBoxSingle = (id) => {
         if (checkBoxArray.includes(id)) {
             checkBoxArray.splice(checkBoxArray.indexOf(id), 1)
         } else {
-            checkBoxArray.push(id);
+            checkBoxArray.push(id)
         }
 
-        onCheckBox(checkBoxArray);
-    };
+        onCheckBox(checkBoxArray)
+    }
 
     const showDetail = (index) => {
-        setDetailRow({ ...detailRow, [index]: !detailRow[index] });
+        setDetailRow({ ...detailRow, [index]: !detailRow[index] })
     }
 
     const paginationRange = (len, start) => {
-        var end;
+        var end
 
         if (start === undefined) {
-            start = 1;
-            end = len;
+            start = 1
+            end = len
         } else {
-            end = start;
-            start = len;
+            end = start
+            start = len
         }
 
-        var out = [];
-        for (var i = start; i <= end; i++) { out.push(i); }
-        return out;
+        var out = []
+        for (var i = start; i <= end; i++) { out.push(i) }
+        return out
     }
 
     const paginationButton = (currentPage, pageAmount, limitButton) => {
-        const halfLimitButon = Math.floor(limitButton / 2);
-        var buttonArray;
+        const halfLimitButon = Math.floor(limitButton / 2)
+        var buttonArray
         if (pageAmount <= limitButton) {
-            buttonArray = paginationRange(1, pageAmount);
+            buttonArray = paginationRange(1, pageAmount)
         } else if (currentPage <= halfLimitButon) {
-            buttonArray = paginationRange(1, limitButton);
-            buttonArray[limitButton - 2] = "...";
-            buttonArray[limitButton - 1] = pageAmount;
+            buttonArray = paginationRange(1, limitButton)
+            buttonArray[limitButton - 2] = "..."
+            buttonArray[limitButton - 1] = pageAmount
         } else if (currentPage >= pageAmount - halfLimitButon) {
-            buttonArray = paginationRange(pageAmount - limitButton + 1, pageAmount);
-            buttonArray[0] = 1;
-            buttonArray[1] = "...";
+            buttonArray = paginationRange(pageAmount - limitButton + 1, pageAmount)
+            buttonArray[0] = 1
+            buttonArray[1] = "..."
         } else {
-            buttonArray = paginationRange(currentPage - halfLimitButon, currentPage + halfLimitButon);
-            buttonArray[0] = 1;
-            buttonArray[1] = "...";
-            buttonArray[limitButton - 2] = "...";
-            buttonArray[limitButton - 1] = pageAmount;
+            buttonArray = paginationRange(currentPage - halfLimitButon, currentPage + halfLimitButon)
+            buttonArray[0] = 1
+            buttonArray[1] = "..."
+            buttonArray[limitButton - 2] = "..."
+            buttonArray[limitButton - 1] = pageAmount
         }
 
-        return buttonArray;
+        return buttonArray
     }
 
     return (
@@ -188,7 +191,7 @@ export default function Table({
                             <div className="btn-group">
                                 <button className="btn btn-outline-dark shadow-sm dropdown-toggle" disabled={bulkOptionLoadingFlag} data-bs-toggle="dropdown">
                                     <span className={bulkOptionLoadingFlag ? "spinner-border spinner-border-sm mx-2" : null} role="status" aria-hidden="true" />
-                                    <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : null}Bulk Option</span>
+                                    <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : null}{t("common.button.bulkOption")}</span>
                                 </button>
                                 <div className="dropdown-menu">
                                     {bulkOptionArray}
@@ -207,17 +210,20 @@ export default function Table({
                             }
                         </select>&nbsp;entires
                     </div>
-                    <div className="float-sm-end d-grid d-sm-flex mb-2">
-                        <input
-                            autoFocus
-                            type="text"
-                            value={search}
-                            placeholder="Search"
-                            className="form-control form-control-sm"
-                            onChange={event => setSearch(event.target.value)}
-                            onKeyDown={event => { if (event.key === "Enter") { onPageChange(1, sizePage, search) } }}
-                        />
-                    </div>
+                    {
+                        searchFlag &&
+                        <div className="float-sm-end d-grid d-sm-flex mb-2">
+                            <input
+                                autoFocus
+                                type="text"
+                                value={search}
+                                placeholder={t("common.text.search")}
+                                className="form-control form-control-sm"
+                                onChange={event => setSearch(event.target.value)}
+                                onKeyDown={event => { if (event.key === "Enter") { onPageChange(1, sizePage, search) } }}
+                            />
+                        </div>
+                    }
                 </div>
             </div>
             <div className="table-responsive">
@@ -237,7 +243,7 @@ export default function Table({
                             }
                             {
                                 columnShow.map((column, index) => (
-                                    <th key={index} scope="col" className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`} width={column.width != null ? `${column.width}%` : null}>
+                                    <th key={index} scope="col" className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} width={column.width != null ? `${column.width}%` : null}>
                                         {column.name}
                                         {
                                             orderColumn[index] != null &&
@@ -264,14 +270,14 @@ export default function Table({
                                             {
                                                 columnShow
                                                     .map((column, index) => (
-                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.TABLET ? "min-tablet" : ""}`} role={index == 0 && columnAlwaysHide.length > 0 ? "button" : null} onClick={() => showDetail(indexRow)}>
+                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} role={index === 0 && columnAlwaysHide.length > 0 ? "button" : null} onClick={index == 0 && columnAlwaysHide.length > 0 ? () => showDetail(indexRow) : null}>
                                                             {
                                                                 index == 0 &&
                                                                 <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} />
                                                             }
                                                             {
                                                                 column.render != undefined
-                                                                    ? column.render(data[column.data], data)
+                                                                    ? column.render(getNestedValue(data, column.data), data)
                                                                     : getNestedValue(data, column.data)
                                                             }
                                                         </td>
@@ -285,11 +291,11 @@ export default function Table({
                                                     {
                                                         columnHide
                                                             .map((column, index) => (
-                                                                <div key={index} className={`border-bottom mx-2 px-2 py-2 ${column.minDevice == CommonConstants.TABLET ? "max-tablet" : column.minDevice == CommonConstants.DESKTOP ? "max-desktop" : ""}`}>
+                                                                <div key={index} className={`border-bottom mx-2 px-2 py-2 ${column.minDevice == CommonConstants.DEVICE.TABLET ? "max-tablet" : column.minDevice == CommonConstants.DEVICE.DESKTOP ? "max-desktop" : ""}`}>
                                                                     <label className="fw-bold me-2">{column.name}</label>
                                                                     {
                                                                         column.render != undefined
-                                                                            ? column.render(data[column.data], data)
+                                                                            ? column.render(getNestedValue(data, column.data), data)
                                                                             : getNestedValue(data, column.data)
                                                                     }
                                                                 </div>
@@ -302,7 +308,7 @@ export default function Table({
                                 ))
                                 : <tr>
                                     <td colSpan={columnShow.length + (checkBoxArray != undefined ? 1 : 0)} className="text-center">
-                                        Data not founded.
+                                        {t("datatable.text.emptyTable")}
                                     </td>
                                 </tr>
                         }
@@ -313,7 +319,16 @@ export default function Table({
                 dataTotal > 0
                 && <div>
                     <div className="float-sm-start d-grid d-sm-flex mt-2">
-                        Showing {((currentPage - 1) * sizePage + 1) > dataTotal ? "0" : `${((currentPage - 1) * sizePage) + 1} to ${currentPage * sizePage > dataTotal ? dataTotal : currentPage * sizePage}`} of {dataTotal} entries
+                        {t
+                            (
+                                "datatable.text.info",
+                                {
+                                    start: ((currentPage - 1) * sizePage + 1) > dataTotal > 0 ? 0 : (((currentPage - 1) * sizePage) + 1),
+                                    end: ((currentPage - 1) * sizePage + 1) > dataTotal > 0 ? 0 : (currentPage * sizePage > dataTotal ? dataTotal : (currentPage * sizePage)),
+                                    total: dataTotal
+                                }
+                            )
+                        }
                     </div>
                     <div className="float-sm-end d-grid d-sm-flex mt-2">
                         {
@@ -322,9 +337,9 @@ export default function Table({
                                 <li className="page-item d-none d-sm-block">
                                     {
                                         currentPage === 1
-                                            ? <a className="page-link disabled">Previous</a>
+                                            ? <a className="page-link disabled">{t("datatable.text.previous")}</a>
                                             : <a className="page-link" onClick={() => onPageChange(currentPage - 1, sizePage, search)} role="button">
-                                                Previous
+                                                {t("datatable.text.previous")}
                                             </a>
                                     }
                                 </li>
@@ -349,9 +364,9 @@ export default function Table({
                                 <li className="page-item d-none d-sm-block">
                                     {
                                         currentPage === pages.length
-                                            ? <a className="page-link disabled">Next</a>
+                                            ? <a className="page-link disabled">{t("datatable.text.next")}</a>
                                             : <a className="page-link" onClick={() => onPageChange(currentPage + 1, sizePage, search)} role="button">
-                                                Next
+                                                {t("datatable.text.next")}
                                             </a>
                                     }
                                 </li>
@@ -361,5 +376,5 @@ export default function Table({
                 </div>
             }
         </>
-    );
+    )
 }

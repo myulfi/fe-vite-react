@@ -20,3 +20,6 @@ export const LOCAL_STORAGE = {
     ACCESS_TOKEN: "accessToken",
     NAME: "name",
 }
+export const COOKIES = {
+    LANGUAGE: "language"
+}

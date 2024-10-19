@@ -1,7 +1,7 @@
 export default function Label({
-    text
-    , value
-    , className
+    text,
+    value,
+    className,
 }) {
     return (
         <div className={`form-group mb-3 ${className}`}>

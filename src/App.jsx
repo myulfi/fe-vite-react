@@ -1,16 +1,14 @@
-//import Link from react router dom
-import { Link } from "react-router-dom";
-import { useEffect, useState } from 'react';
-
-//import routes
-import Routes from './routers';
-import Navbar from "./components/container/navbar";
-import Footer from "./components/container/footer";
-import Login from "./views/login";
-import { apiRequest } from "./api";
-import * as CommonConstants from "./constants/commonConstants";
+import { useEffect, useState } from "react"
+import Routes from "./routers"
+import Navbar from "./components/container/navbar"
+import Footer from "./components/container/footer"
+import Login from "./views/login"
+import { apiRequest } from "./api"
+import * as CommonConstants from "./constants/commonConstants"
+import { useTranslation } from "react-i18next"
 
 export default function App() {
+    const { i18n } = useTranslation();
     const [menuList, setMenuList] = useState([]);
 
     const getMenu = async () => {
@@ -21,9 +19,12 @@ export default function App() {
             } catch (error) { }
         }
     }
-    useEffect(() => { getMenu(); }, []);
+    useEffect(() => {
+        i18n.changeLanguage(Cookies.get(CommonConstants.COOKIES.LANGUAGE) ?? "en")
+        getMenu()
+    }, []);
 
-    document.title = import.meta.env.VITE_APP_TITLE;
+    document.title = import.meta.env.VITE_APP_TITLE
     return (
         <>
             {
@@ -35,7 +36,7 @@ export default function App() {
                 </>
             }
             {
-                localStorage.getItem("accessToken") === null
+                localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN) === null
                 && <Login />
             }
         </>

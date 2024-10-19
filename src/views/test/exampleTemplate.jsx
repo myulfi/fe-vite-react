@@ -1,74 +1,78 @@
-import { useState } from 'react';
-import { apiRequest } from '../../api';
-import * as CommonConstants from "../../constants/commonConstants";
-import * as DateHelper from "../../function/dateHelper";
-import Button from "../../components/form/button";
-import Table from '../../components/table';
-import Toast from '../../components/toast';
-import Dialog from '../../components/dialog';
-import Modal from '../../components/modal';
-import Input from '../../components/form/input';
-import Textarea from '../../components/form/textarea';
-import Select from '../../components/form/select';
-import Radio from '../../components/form/radio';
-import Dropdown from '../../components/dropdown';
-import SelectFilter from '../../components/filter/selectFilter';
-import DateFilter from '../../components/filter/dateFilter';
-import RangeFilter from '../../components/filter/rangeFilter';
-import Label from '../../components/form/label';
-import SelectMultiple from '../../components/form/selectMultiple';
+import { useState } from "react"
+import { apiRequest } from "../../api"
+import * as CommonConstants from "../../constants/commonConstants"
+import * as DateHelper from "../../function/dateHelper"
+import { useTranslation } from 'react-i18next'
+import Button from "../../components/form/button"
+import Table from "../../components/table"
+import Toast from "../../components/toast"
+import Dialog from "../../components/dialog"
+import Modal from "../../components/modal"
+import Input from "../../components/form/input"
+import Textarea from "../../components/form/textarea"
+import Select from "../../components/form/select"
+import Radio from "../../components/form/radio"
+import Dropdown from "../../components/dropdown"
+import SelectFilter from "../../components/filter/selectFilter"
+import DateFilter from "../../components/filter/dateFilter"
+import RangeFilter from "../../components/filter/rangeFilter"
+import Label from "../../components/form/label"
+import Select from "../../components/form/select"
+import InputText from "../../components/form/inputText"
+import InputDate from "../../components/form/inputDate"
 
 export default function ExampleTemplate() {
+    const { t } = useTranslation()
     const exampleTemplateInitial = {
-        name: ''
-        , description: ''
-        , value: 0
-        // , valueMultiple: []
-        , amount: 0
-        , date: ''
-        , activeFlag: null
-        , version: 0
-    };
+        name: '',
+        description: '',
+        value: 0,
+        // valueMultiple: [],
+        amount: 0,
+        date: '',
+        activeFlag: null,
+        version: 0,
+    }
 
-    const [exampleTemplateStateModal, setExampleTemplateStateModal] = useState(CommonConstants.MODAL_IS_ENTRY);
+    const [exampleTemplateStateModal, setExampleTemplateStateModal] = useState(CommonConstants.MODAL.ENTRY)
 
     const exampleTemplateFilterTableTableInitial = {
         value: 0,
         date: "",
         range: 0,
-    };
+    }
 
-    const [exampleTemplateFilterTable, setExampleTemplateFilterTable] = useState(exampleTemplateFilterTableTableInitial);
+    const [exampleTemplateFilterTable, setExampleTemplateFilterTable] = useState(exampleTemplateFilterTableTableInitial)
 
     const onExampleTemplateFilterTableChange = (e) => {
-        const { name, value } = e.target;
-        setExampleTemplateFilterTable({ ...exampleTemplateFilterTable, [name]: value });
-    };
+        const { name, value } = e.target
+        setExampleTemplateFilterTable({ ...exampleTemplateFilterTable, [name]: value })
+    }
 
-    const [exampleTemplateBulkOptionLoadingFlag, setExampleTemplateBulkOptionLoadingFlag] = useState(false);
-    const [exampleTemplateCheckBoxTableArray, setExampleTemplateCheckBoxTableArray] = useState([]);
-    const [exampleTemplateOptionColumnTable, setExampleTemplateOptionColumnTable] = useState([]);
-    const [exampleTemplateAttributeTable, setExampleTemplateAttributeTable] = useState();
-    const [exampleTemplateDataTotalTable, setExampleTemplateDataTotalTable] = useState(0);
-    const [exampleTemplateTableLoadingFlag, setExampleTemplateTableLoadingFlag] = useState(false);
+    const [exampleTemplateBulkOptionLoadingFlag, setExampleTemplateBulkOptionLoadingFlag] = useState(false)
+    const [exampleTemplateCheckBoxTableArray, setExampleTemplateCheckBoxTableArray] = useState([])
+    const [exampleTemplateOptionColumnTable, setExampleTemplateOptionColumnTable] = useState([])
+    const [exampleTemplateAttributeTable, setExampleTemplateAttributeTable] = useState()
+    const [exampleTemplateDataTotalTable, setExampleTemplateDataTotalTable] = useState(0)
+    const [exampleTemplateTableLoadingFlag, setExampleTemplateTableLoadingFlag] = useState(false)
 
-    const [exampleTemplateArray, setExampleTemplateArray] = useState([]);
+    const [exampleTemplateArray, setExampleTemplateArray] = useState([])
 
     const [exampleTemplateEntryModal, setExampleTemplateEntryModal] = useState({
-        title: ""
-        , submitLabel: ""
-        , submitClass: ""
-        , submitIcon: ""
-        , submitLoadingFlag: false
-    });
+        title: "",
+        submitLabel: "",
+        submitClass: "",
+        submitIcon: "",
+        submitLoadingFlag: false,
+    })
 
-    const [exampleTemplateForm, setExampleTemplateForm] = useState(exampleTemplateInitial);
-    const [exampleTemplateFormError, setExampleTemplateFormError] = useState([]);
+    const [exampleTemplateForm, setExampleTemplateForm] = useState(exampleTemplateInitial)
+    const [exampleTemplateFormError, setExampleTemplateFormError] = useState([])
 
     const onExampleTemplateFormChange = (e) => {
-        const { name, value } = e.target;
-        setExampleTemplateForm({ ...exampleTemplateForm, [name]: value });
-    };
+        const { name, value } = e.target
+        setExampleTemplateForm({ ...exampleTemplateForm, [name]: value })
+    }
 
     const selectValueMap = [
         { "key": 1, "value": "Satu" },
@@ -81,31 +85,39 @@ export default function ExampleTemplate() {
         { "key": 8, "value": "Delapan" },
         { "key": 9, "value": "Sembilan" },
         { "key": 10, "value": "Sepuluh" },
-    ];
-    const yesNoMap = [{ "key": 1, "value": "Yes" }, { "key": 0, "value": "No" }];
+    ]
+    const yesNoMap = [{ "key": 1, "value": "Yes" }, { "key": 0, "value": "No" }]
 
     const exampleTemplateValidate = (data) => {
-        const error = {};
-        if (!data.name.trim()) error.name = 'Username is required';
-        if (!data.description.trim()) error.description = 'Description is required';
-        if (data.value <= 0) error.value = 'Value is required';
+        const error = {}
+        if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
+        if (!data.description.trim()) error.description = t("validate.text.required", { name: t("common.text.description") })
+        if (data.value <= 0) error.value = t("validate.text.required", { name: t("common.text.value") })
 
-        // if (!data.email.trim()) error.email = 'Email is required';
-        // else if (!/\S+@\S+\.\S+/.test(data.email)) error.email = 'Email is invalid';
-        setExampleTemplateFormError(error);
-        return Object.keys(error).length === 0;
-    };
+        // if (!data.email.trim()) error.email = t("validate.text.required", { name: t("common.text.email") })
+        // else if (!/\S+@\S+\.\S+/.test(data.email)) error.email = t("validate.text.invalid", { name: t("common.text.email") })
+        setExampleTemplateFormError(error)
+        return Object.keys(error).length === 0
+    }
 
-    const [toast, setToast] = useState({});
-    const [dialog, setDialog] = useState({});
-    var toastObject = new bootstrap.Toast(document.getElementById("toast_id"), "data-bs-animation-delay");
-    var dialogObject;
-    var modalObject;
+    const [toast, setToast] = useState({})
+    useEffect(() => {
+        if (toast?.message !== undefined) {
+            ToastHelper.show("toast_example_template")
+        }
+    }, [toast])
 
-    // useEffect(() => { getExampleTemplate(); }, []);
+    const [dialog, setDialog] = useState({})
+    useEffect(() => {
+        if (dialog?.message !== undefined) {
+            ModalHelper.show("dialog_example_template")
+        }
+    }, [dialog])
+
+    // useEffect(() => { getExampleTemplate() }, [])
 
     const getExampleTemplate = async (options) => {
-        setExampleTemplateTableLoadingFlag(true);
+        setExampleTemplateTableLoadingFlag(true)
 
         try {
             const params = {
@@ -118,195 +130,184 @@ export default function ExampleTemplate() {
                 "date": exampleTemplateFilterTable.date,
                 "range": exampleTemplateFilterTable.range,
             }
+            setExampleTemplateAttributeTable(options)
 
-            setExampleTemplateAttributeTable(options);
-
-            const response = await apiRequest(CommonConstants.METHOD_IS_GET, "/test/example-template.json", params)
-            const json = response.data;
-            setExampleTemplateArray(json.data);
-            setExampleTemplateDataTotalTable(json.recordsTotal);
+            const response = await apiRequest(CommonConstants.METHOD.GET, "/test/example-template.json", params)
+            const json = response.data
+            setExampleTemplateArray(json.data)
+            setExampleTemplateDataTotalTable(json.recordsTotal)
             setExampleTemplateOptionColumnTable(
                 json.data.reduce(function (map, obj) {
-                    //map[obj.id] = obj.name;
-                    map[obj.id] = { "viewedButtonFlag": false, "deletedButtonFlag": false };
-                    return map;
+                    //map[obj.id] = obj.name
+                    map[obj.id] = { "viewedButtonFlag": false, "deletedButtonFlag": false }
+                    return map
                 }, {})
-            );
+            )
         } catch (error) {
-            setToast({ type: "failed", message: error.response.data.message ?? error.message })
-            toastObject.show();
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
-            setExampleTemplateTableLoadingFlag(false);
+            setExampleTemplateTableLoadingFlag(false)
         }
     }
 
     const viewExampleTemplate = async (id) => {
-        setExampleTemplateForm(exampleTemplateInitial);
+        setExampleTemplateForm(exampleTemplateInitial)
         if (id !== undefined) {
-            setExampleTemplateStateModal(CommonConstants.MODAL_IS_VIEW);
-            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: true } });
+            setExampleTemplateStateModal(CommonConstants.MODAL.VIEW)
+            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: true } })
             try {
-                const response = await apiRequest(CommonConstants.METHOD_IS_GET, `/test/${id}/example-template.json`)
+                const response = await apiRequest(CommonConstants.METHOD.GET, `/test/${id}/example-template.json`)
 
-                const exampleTemplate = response.data.data;
+                const exampleTemplate = response.data.data
                 setExampleTemplateForm({
-                    id: exampleTemplate.id
-                    , name: exampleTemplate.name
-                    , description: exampleTemplate.description
-                    , value: exampleTemplate.value
-                    , amount: exampleTemplate.amount
-                    , date: exampleTemplate.date
-                    , activeFlag: exampleTemplate.activeFlag
-                    , version: exampleTemplate.version
-                });
-
-                setExampleTemplateEntryModal({
-                    ...exampleTemplateEntryModal
-                    , title: "View"
-                    , submitLabel: "Edit"
-                    , submitIcon: "bi-pencil"
-                    , submitLoadingFlag: false
+                    id: exampleTemplate.id,
+                    name: exampleTemplate.name,
+                    description: exampleTemplate.description,
+                    value: exampleTemplate.value,
+                    amount: exampleTemplate.amount,
+                    date: exampleTemplate.date,
+                    activeFlag: exampleTemplate.activeFlag,
+                    version: exampleTemplate.version,
                 })
 
-                modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
-                modalObject.show();
+                setExampleTemplateEntryModal({
+                    ...exampleTemplateEntryModal,
+                    title: exampleTemplate.name,
+                    submitLabel: t("common.button.edit"),
+                    submitIcon: "bi-pencil",
+                    submitLoadingFlag: false,
+                })
+
+                ModalHelper.show("modal_example_template")
             } catch (error) {
-                setToast({ type: "failed", message: error.response.data.message ?? error.message })
-                toastObject.show();
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
             } finally {
-                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: false } });
+                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: false } })
             }
         }
     }
 
     const entryExampleTemplate = (haveContentFlag) => {
-        setExampleTemplateStateModal(CommonConstants.MODAL_IS_ENTRY);
-        setExampleTemplateFormError([]);
+        setExampleTemplateStateModal(CommonConstants.MODAL.ENTRY)
+        setExampleTemplateFormError([])
         if (haveContentFlag) {
             setExampleTemplateEntryModal({
-                ...exampleTemplateEntryModal
-                , title: "Edit"
-                , submitLabel: "Update"
-                , submitIcon: "bi-arrow-repeat"
-                , submitLoadingFlag: false
-            });
+                ...exampleTemplateEntryModal,
+                title: exampleTemplateForm.name,
+                submitLabel: t("common.button.update"),
+                submitIcon: "bi-arrow-repeat",
+                submitLoadingFlag: false,
+            })
         } else {
-            setExampleTemplateForm(exampleTemplateInitial);
+            setExampleTemplateForm(exampleTemplateInitial)
             setExampleTemplateEntryModal({
-                ...exampleTemplateEntryModal
-                , title: "Add"
-                , submitLabel: "Save"
-                , submitIcon: "bi-bookmark"
-                , submitLoadingFlag: false
-            });
-            modalObject = new bootstrap.Modal(document.getElementById("modal_id"), { backdrop: false, keyboard: true, focus: true });
-            modalObject.show();
+                ...exampleTemplateEntryModal,
+                title: t("common.button.createNew"),
+                submitLabel: t("common.button.save"),
+                submitIcon: "bi-bookmark",
+                submitLoadingFlag: false,
+            })
+            ModalHelper.show("modal_example_template")
         }
     }
 
     const confirmStoreExampleTemplate = () => {
         if (exampleTemplateValidate(exampleTemplateForm)) {
             setDialog({
-                message: exampleTemplateForm.id === undefined ? "Are you sure to create?" : "Are you sure to update?"
-                , type: "confirmation"
-                , onConfirm: (e) => storeExampleTemplate(e)
-            });
-            dialogObject = new bootstrap.Modal(document.getElementById("dialog_id"), { backdrop: false, keyboard: true, focus: true });
-            dialogObject.show();
+                message: exampleTemplateForm.id === undefined ? t("common.confirmation.create", { name: exampleTemplateForm.name }) : t("common.confirmation.update", { name: exampleTemplateForm.name }),
+                type: "confirmation",
+                onConfirm: (e) => storeExampleTemplate(e),
+            })
         }
     }
 
     const storeExampleTemplate = async () => {
         if (exampleTemplateValidate(exampleTemplateForm)) {
-            dialogObject.hide();
-            setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: true });
+            dialogObject.hide()
+            setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: true })
 
             try {
                 const json = await apiRequest(
-                    exampleTemplateForm.id === undefined ? CommonConstants.METHOD_IS_POST : CommonConstants.METHOD_IS_PATCH
-                    , exampleTemplateForm.id === undefined ? '/test/example-template.json' : `/test/${exampleTemplateForm.id}/example-template.json`
-                    , JSON.stringify(exampleTemplateForm)
+                    exampleTemplateForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                    exampleTemplateForm.id === undefined ? '/test/example-template.json' : `/test/${exampleTemplateForm.id}/example-template.json`,
+                    JSON.stringify(exampleTemplateForm),
                 )
 
                 if (json.data.status === "success") {
-                    getExampleTemplate(exampleTemplateAttributeTable);
-                    bootstrap.Modal.getInstance(document.getElementById('modal_id')).hide();
+                    getExampleTemplate(exampleTemplateAttributeTable)
+                    ModalHelper.hide("modal_example_template")
                 }
-                setToast({ type: json.data.status, message: json.data.message });
+                setToast({ type: json.data.status, message: json.data.message })
             } catch (error) {
                 setToast({ type: "failed", message: error.response.data.message ?? error.message })
-                setExampleTemplateFormError(error.response.data);
+                setExampleTemplateFormError(error.response.data)
             } finally {
-                toastObject.show();
-                setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: false });
+                setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: false })
             }
         }
     }
 
-    const confirmDeleteExampleTemplate = (id) => {
+    const confirmDeleteExampleTemplate = (id, name) => {
         if (id !== undefined) {
             setDialog({
-                message: `Are you sure to delete ${id}?`
-                , type: "warning"
-                , onConfirm: () => deleteExampleTemplate(id)
-            });
+                message: t("common.confirmation.delete", { name: name }),
+                type: "warning",
+                onConfirm: () => deleteExampleTemplate(id),
+            })
         } else {
             if (exampleTemplateCheckBoxTableArray.length > 0) {
                 setDialog({
-                    message: `Are you sure to delete ${exampleTemplateCheckBoxTableArray.length} items(s)?`
-                    , type: "warning"
-                    , onConfirm: () => deleteExampleTemplate()
-                });
+                    message: t("common.confirmation.delete", { name: t("common.text.amountItem", { amount: exampleTemplateCheckBoxTableArray.length }) }),
+                    type: "warning",
+                    onConfirm: () => deleteExampleTemplate(),
+                })
             } else {
                 setDialog({
-                    message: "Please tick at least an item"
-                    , type: "alert"
-                });
+                    message: t("validate.text.pleaseTickAtLeastAnItem"),
+                    type: "alert"
+                })
             }
         }
-        dialogObject = new bootstrap.Modal(document.getElementById("dialog_id"), { backdrop: false, keyboard: true, focus: true });
-        dialogObject.show();
     }
 
     const deleteExampleTemplate = async (id) => {
-        dialogObject.hide();
+        ModalHelper.hide("dialog_example_template")
         if (id !== undefined) {
-            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: true } });
+            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: true } })
         } else {
-            setExampleTemplateBulkOptionLoadingFlag(true);
+            setExampleTemplateBulkOptionLoadingFlag(true)
         }
 
         try {
             const json = await apiRequest(CommonConstants.METHOD_IS_DELETE, `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`)
             if (json.data.status === "success") {
-                getExampleTemplate(exampleTemplateAttributeTable);
+                getExampleTemplate(exampleTemplateAttributeTable)
                 if (id === undefined) {
-                    setExampleTemplateCheckBoxTableArray([]);
+                    setExampleTemplateCheckBoxTableArray([])
                 }
             }
-            setToast({ type: json.data.status, message: json.data.message });
+            setToast({ type: json.data.status, message: json.data.message })
         } catch (error) {
-            setToast({ type: "failed", message: error.response.data.message ?? error.message })
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
             if (id !== undefined) {
-                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } });
+                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } })
             } else {
-                setExampleTemplateBulkOptionLoadingFlag(false);
+                setExampleTemplateBulkOptionLoadingFlag(false)
             }
-            toastObject.show();
         }
     }
 
     return (
         <div className="container mt-4 mb-4">
             <Modal
-                id="modal_id"
+                id="modal_example_template"
                 size="md"
                 title={exampleTemplateEntryModal.title}
                 buttonArray={
                     <>
                         {
-                            CommonConstants.MODAL_IS_ENTRY === exampleTemplateStateModal
+                            CommonConstants.MODAL.ENTRY === exampleTemplateStateModal
                             && <Button
                                 label={exampleTemplateEntryModal.submitLabel}
                                 onClick={() => confirmStoreExampleTemplate()}
@@ -316,7 +317,7 @@ export default function ExampleTemplate() {
                             />
                         }
                         {
-                            CommonConstants.MODAL_IS_VIEW === exampleTemplateStateModal
+                            CommonConstants.MODAL.VIEW === exampleTemplateStateModal
                             && <Button
                                 label={exampleTemplateEntryModal.submitLabel}
                                 onClick={() => entryExampleTemplate(true)}
@@ -332,119 +333,114 @@ export default function ExampleTemplate() {
                 {
                     CommonConstants.MODAL_IS_ENTRY === exampleTemplateStateModal
                     && <>
-                        <Input label="Name" type="text" name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} placeholder="Please input name" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
-                        <Textarea label="Description" name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} placeholder="Please input description" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
-                        <Select label="Value" name="value" map={selectValueMap} value={exampleTemplateForm.value} onChange={onExampleTemplateFormChange} placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
-                        {/* <SelectMultiple label="Value" name="multipleValue" map={selectValueMap} valueMultiple={exampleTemplateForm.valueMultiple}
+                        <InputText label={t("common.text.name")} name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
+                        <Textarea label={t("common.text.description")} name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
+                        <Select label={t("common.text.value")} name="value" map={selectValueMap} value={exampleTemplateForm.value} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} />
+                        {/* <Select label={t("common.text.value")} name="multipleValue" map={selectValueMap} value={exampleTemplateForm.valueMultiple} multiple={true}
                             liveSearch={true}
                             actionBox={true}
                             dataSize={5}
                             onChange={onExampleTemplateFormChange}
-                            placeholder="Please select value" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} /> */}
-                        <Input label="Amount" type="number" name="amount" value={exampleTemplateForm.amount} onChange={onExampleTemplateFormChange} placeholder="Please input amount" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
-                        <Input label="Date" type="date" name="date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} onChange={onExampleTemplateFormChange} placeholder="Please input date" className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
-                        <Radio label="Active Flag" name="activeFlag" value={exampleTemplateForm.activeFlag} map={yesNoMap} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.activeFlag} />
+                            className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} /> */}
+                        <InputDecimal label={t("common.text.amount")} name="amount" value={exampleTemplateForm.amount} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
+                        <InputDate label={t("common.text.date")} type="date" name="date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
+                        <Radio label={t("common.text.activeFlag")} name="activeFlag" value={exampleTemplateForm.activeFlag} map={yesNoMap} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.activeFlag} />
                     </>
                 }
                 {
                     CommonConstants.MODAL_IS_VIEW === exampleTemplateStateModal
                     && <>
-                        <Label text="Name" value={exampleTemplateForm.name} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text="Description" value={exampleTemplateForm.description} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text="Value" value={exampleTemplateForm.value} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text="Amount" value={exampleTemplateForm.amount} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text="Date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text="Active Flag" value={exampleTemplateForm.activeFlag} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.name")} value={exampleTemplateForm.name} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.description")} value={exampleTemplateForm.description} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.value")} value={exampleTemplateForm.value} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.amount")} value={exampleTemplateForm.amount} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.date")} value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.activeFlag")} value={exampleTemplateForm.activeFlag} className="col-md-6 col-sm-6 col-xs-12" />
                     </>
                 }
             </Modal>
-            <Dialog
-                id="dialog_id"
-                type={dialog.type}
-                message={dialog.message}
-                onConfirm={dialog.onConfirm}
-            />
-            <Toast id="toast_id" type={toast.type} message={toast.message} />
-            <div className="row"><h3><span className="bi-puzzle">&nbsp;Example</span></h3></div>
+            <Dialog id="dialog_example_template" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
+            <Toast id="toast_example_template" type={toast.type} message={toast.message} />
+            <div className="row"><h3><span className="bi-puzzle">&nbsp;{t("common.menu.exampleTemplate")}</span></h3></div>
             <div className="row">
-                <SelectFilter label="Value" name="value" map={selectValueMap} value={exampleTemplateFilterTable.value} onChange={onExampleTemplateFilterTableChange} placeholder="All" delay="1" className="col-md-4 col-sm-6 col-xs-12" />
-                <DateFilter label="Date" name="date" value={exampleTemplateFilterTable.date} onChange={onExampleTemplateFilterTableChange} delay="2" className="col-md-4 col-sm-6 col-xs-12" />
-                <RangeFilter label="Range" name="range" value={exampleTemplateFilterTable.range} onChange={onExampleTemplateFilterTableChange} delay="3" className="col-md-4 col-sm-6 col-xs-12" />
+                <SelectFilter label={t("common.text.value")} name="value" map={selectValueMap} value={exampleTemplateFilterTable.value} onChange={onExampleTemplateFilterTableChange} placeholder={t("common.text.all")} delay="1" className="col-md-4 col-sm-6 col-xs-12" />
+                <DateFilter label={t("common.text.date")} name="date" value={exampleTemplateFilterTable.date} onChange={onExampleTemplateFilterTableChange} delay="2" className="col-md-4 col-sm-6 col-xs-12" />
+                <RangeFilter label={t("common.text.range")} name="range" value={exampleTemplateFilterTable.range} onChange={onExampleTemplateFilterTableChange} delay="3" className="col-md-4 col-sm-6 col-xs-12" />
             </div>
             <div className="row">
                 <div className="col-md-12">
                     <div className="card border-0 rounded shadow">
                         <div className="card-body">
                             <Table
-                                labelNewButton="New"
+                                labelNewButton={t("common.button.createNew")}
                                 onNewButtonClick={() => entryExampleTemplate(false)}
 
                                 bulkOptionLoadingFlag={exampleTemplateBulkOptionLoadingFlag}
                                 bulkOptionArray={
-                                    <Dropdown label="Delete" icon="bi-trash" onClick={() => confirmDeleteExampleTemplate()} />
+                                    <Dropdown label={t("common.button.delete")} icon="bi-trash" onClick={() => confirmDeleteExampleTemplate()} />
                                 }
 
                                 dataArray={exampleTemplateArray}
                                 columns={[
                                     {
-                                        data: "name"
-                                        , name: "Name"
-                                        , class: "text-nowrap"
-                                        , orderable: true
-                                        , minDevice: CommonConstants.MOBILE
-                                    }
-                                    , {
-                                        data: "description"
-                                        , name: "Description"
-                                        , class: "text-nowrap"
-                                        , minDevice: CommonConstants.TABLET
-                                    }
-                                    , {
-                                        data: "value"
-                                        , name: "Value"
-                                        , class: "text-nowrap"
-                                        , width: 10
-                                        , minDevice: CommonConstants.TABLET
-                                    }
-                                    , {
-                                        data: "date"
-                                        , name: "Date"
-                                        , class: "text-nowrap"
-                                        , width: 10
-                                        , minDevice: CommonConstants.DESKTOP
-                                    }
-                                    , {
-                                        data: "createdBy"
-                                        , name: "Created By"
-                                        , class: "text-nowrap"
-                                        , width: 10
-                                        , minDevice: CommonConstants.DESKTOP
-                                    }
-                                    , {
-                                        data: "createdDate"
-                                        , name: "Created Date"
-                                        , class: "text-nowrap"
-                                        , width: 15
-                                        , orderable: true
-                                        , minDevice: CommonConstants.DESKTOP
-                                    }
-                                    , {
-                                        data: "id"
-                                        , name: "Option"
-                                        , class: "text-center"
-                                        , render: function (data) {
+                                        data: "name",
+                                        name: t("common.text.name"),
+                                        class: "text-nowrap",
+                                        orderable: true,
+                                        minDevice: CommonConstants.DEVICE.MOBILE,
+                                    },
+                                    {
+                                        data: "description",
+                                        name: t("common.text.description"),
+                                        class: "text-nowrap",
+                                        minDevice: CommonConstants.DEVICE.TABLET,
+                                    },
+                                    {
+                                        data: "value",
+                                        name: t("common.text.value"),
+                                        class: "text-nowrap",
+                                        width: 10,
+                                        minDevice: CommonConstants.DEVICE.TABLET,
+                                    },
+                                    {
+                                        data: "date",
+                                        name: t("common.text.date"),
+                                        class: "text-nowrap",
+                                        width: 10,
+                                        minDevice: CommonConstants.DEVICE.DESKTOP
+                                    },
+                                    {
+                                        data: "createdBy",
+                                        name: t("common.text.createdBy"),
+                                        class: "text-nowrap",
+                                        width: 10,
+                                        minDevice: CommonConstants.DEVICE.DESKTOP
+                                    },
+                                    {
+                                        data: "createdDate",
+                                        name: t("common.text.createdDate"),
+                                        class: "text-nowrap",
+                                        width: 15,
+                                        orderable: true,
+                                        minDevice: CommonConstants.DEVICE.DESKTOP,
+                                    },
+                                    {
+                                        data: "id",
+                                        name: t("common.text.option"),
+                                        class: "text-center",
+                                        render: function (data, row) {
                                             return (
                                                 <>
                                                     <Button
-                                                        label="View"
+                                                        label={t("common.button.view")}
                                                         onClick={() => viewExampleTemplate(data)}
                                                         className="btn-primary"
                                                         icon="bi-list-ul"
                                                         loadingFlag={exampleTemplateOptionColumnTable[data]?.viewedButtonFlag}
                                                     />
                                                     <Button
-                                                        label="Delete"
-                                                        onClick={() => confirmDeleteExampleTemplate(data)}
+                                                        label={t("common.button.delete")}
+                                                        onClick={() => confirmDeleteExampleTemplate(data, row.name)}
                                                         className="btn-danger"
                                                         icon="bi-trash"
                                                         loadingFlag={exampleTemplateOptionColumnTable[data]?.deletedButtonFlag}
@@ -457,7 +453,7 @@ export default function ExampleTemplate() {
                                 order={[[5, "desc"]]}
 
                                 checkBoxArray={exampleTemplateCheckBoxTableArray}
-                                onCheckBox={exampleTemplateCheckBoxTableArray => { setExampleTemplateCheckBoxTableArray([...exampleTemplateCheckBoxTableArray]); }}
+                                onCheckBox={exampleTemplateCheckBoxTableArray => { setExampleTemplateCheckBoxTableArray([...exampleTemplateCheckBoxTableArray]) }}
                                 dataTotal={exampleTemplateDataTotalTable}
                                 filter={exampleTemplateFilterTable}
                                 onRender={(page, length, search, order) => { getExampleTemplate({ page: page, length: length, search: search, order: order }) }}

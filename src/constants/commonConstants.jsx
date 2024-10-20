@@ -1,3 +1,7 @@
+export const TABLE = {
+    PAGINATION: 1,
+    LOAD_MORE: 2,
+}
 export const DEVICE = {
     NONE: 0,
     MOBILE: 1,

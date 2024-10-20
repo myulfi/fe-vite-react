@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Fragment } from "react"
 import "./table.css"
 import * as CommonConstants from "../constants/commonConstants"
@@ -6,6 +6,7 @@ import { getNestedValue } from "../function/commonHelper"
 import { useTranslation } from "react-i18next"
 
 export default function Table({
+    type = CommonConstants.TABLE.PAGINATION,
     labelNewButton,
     onNewButtonClick = () => { alert("Please define your function!") },
     bulkOptionLoadingFlag = false,
@@ -24,7 +25,19 @@ export default function Table({
     loadingFlag = false,
 }) {
     const { t } = useTranslation()
-    const checkBoxStateArray = dataArray.map(function (obj) {
+    const [loadMoreButtonFlag, setLoadMoreButtonFlag] = useState(true)
+    const [itemArray, setItemArray] = useState(dataArray)
+
+    useEffect(() => {
+        if (CommonConstants.TABLE.PAGINATION === type) {
+            setItemArray(dataArray)
+        } else if (CommonConstants.TABLE.LOAD_MORE === type) {
+            setItemArray([...itemArray, ...dataArray])
+            setLoadMoreButtonFlag(dataArray.length == sizePage)
+        }
+    }, [dataArray])
+
+    const checkBoxStateArray = itemArray.map(function (obj) {
         return obj['id']
     })
 
@@ -35,7 +48,7 @@ export default function Table({
     const [search, setSearch] = useState("")
     const [currentOrder, setCurrentOrder] = useState(order)
     const [orderColumn, setOrderColumn] = useState([])
-    const [detailRow, setDetailRow] = useState(dataArray.map(() => false))
+    const [detailRow, setDetailRow] = useState(itemArray.map(() => false))
 
     const [currentPage, setCurrentPage] = useState(1)
     const [sizePage, setSizePage] = useState(initialSizePage)
@@ -74,9 +87,19 @@ export default function Table({
     }, [filter])
 
     const onPageChange = (page, length, search) => {
+        if (CommonConstants.TABLE.LOAD_MORE === type && page === 1) {
+            setItemArray([])
+        }
         setCurrentPage(page)
         setSizePage(length)
-        setDetailRow(dataArray.map(() => false))
+        setDetailRow(itemArray.map(() => false))
+        onRender(page, length, search, currentOrder)
+    }
+
+    const onPageLoadMore = (page, length, search) => {
+        setCurrentPage(page)
+        setSizePage(length)
+        setDetailRow(itemArray.map(() => false))
         onRender(page, length, search, currentOrder)
     }
 
@@ -84,7 +107,7 @@ export default function Table({
         var array = new Array()
         for (var i = 0; i < orderColumn.length; i++) {
             if (index === i) {
-                setDetailRow(dataArray.map(() => false))
+                setDetailRow(itemArray.map(() => false))
                 if (orderColumn[i] === "bi-sort-down") {
                     array.push("bi-sort-down-alt")
                     setCurrentOrder([data, "asc"])
@@ -103,15 +126,15 @@ export default function Table({
 
     const onCheckBoxAll = () => {
         const currentCheckBoxStateArray = checkBoxStateArray.length
-        const currentCheckBoxArray = dataArray.filter(datum => checkBoxArray.includes(datum.id)).length
-        dataArray.forEach(function (dataArray) {
+        const currentCheckBoxArray = itemArray.filter(datum => checkBoxArray.includes(datum.id)).length
+        itemArray.forEach(function (itemArray) {
             if (currentCheckBoxStateArray !== currentCheckBoxArray) {
-                if (checkBoxArray.includes(dataArray.id) === false) {
-                    checkBoxArray.push(dataArray.id)
+                if (checkBoxArray.includes(itemArray.id) === false) {
+                    checkBoxArray.push(itemArray.id)
                 }
             } else {
-                if (checkBoxArray.includes(dataArray.id)) {
-                    checkBoxArray.splice(checkBoxArray.indexOf(dataArray.id), 1)
+                if (checkBoxArray.includes(itemArray.id)) {
+                    checkBoxArray.splice(checkBoxArray.indexOf(itemArray.id), 1)
                 }
             }
         })
@@ -211,8 +234,8 @@ export default function Table({
                         </select>&nbsp;entires
                     </div>
                     {
-                        searchFlag &&
-                        <div className="float-sm-end d-grid d-sm-flex mb-2">
+                        searchFlag
+                        && <div className="float-sm-end d-grid d-sm-flex mb-2">
                             <input
                                 autoFocus
                                 type="text"
@@ -228,7 +251,12 @@ export default function Table({
             </div>
             <div className="table-responsive">
                 {
-                    loadingFlag && <div className="spinner-border text-primary position-absolute top-50 start-50"></div>
+                    loadingFlag
+                    && (
+                        CommonConstants.TABLE.PAGINATION === type
+                        || (CommonConstants.TABLE.LOAD_MORE === type && itemArray.length === 0)
+                    )
+                    && <div className="spinner-border text-primary position-absolute top-50 start-50"></div>
                 }
                 <table className="table table-bordered table-hover my-1 align-middle">
                     <thead className="border border-bottom-0">
@@ -237,7 +265,7 @@ export default function Table({
                                 checkBoxArray != undefined
                                 && <th scope="col" className="text-center">
                                     <span
-                                        className={dataArray.filter(datum => checkBoxArray.includes(datum.id)).length === 0 ? 'bi-square' : dataArray.filter(datum => checkBoxArray.includes(datum.id)).length === checkBoxStateArray.length ? 'bi-plus-square-fill' : 'bi-dash-square-fill'}
+                                        className={itemArray.filter(datum => checkBoxArray.includes(datum.id)).length === 0 ? 'bi-square' : itemArray.filter(datum => checkBoxArray.includes(datum.id)).length === checkBoxStateArray.length ? 'bi-plus-square-fill' : 'bi-dash-square-fill'}
                                         role="button" onClick={() => onCheckBoxAll()}></span>
                                 </th>
                             }
@@ -256,8 +284,8 @@ export default function Table({
                     </thead>
                     <tbody>
                         {
-                            dataArray.length > 0
-                                ? dataArray.map((data, indexRow) => (
+                            itemArray.length > 0
+                                ? itemArray.map((data, indexRow) => (
                                     <Fragment key={indexRow}>
                                         <tr>
                                             {
@@ -270,7 +298,7 @@ export default function Table({
                                             {
                                                 columnShow
                                                     .map((column, index) => (
-                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} role={index === 0 && columnAlwaysHide.length > 0 ? "button" : null} onClick={index == 0 && columnAlwaysHide.length > 0 ? () => showDetail(indexRow) : null}>
+                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} role={index === 0 && columnAlwaysHide.length > 0 ? "button" : null} onClick={index === 0 && columnAlwaysHide.length > 0 ? () => showDetail(indexRow) : null}>
                                                             {
                                                                 index == 0 &&
                                                                 <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} />
@@ -316,7 +344,8 @@ export default function Table({
                 </table>
             </div>
             {
-                dataTotal > 0
+                CommonConstants.TABLE.PAGINATION === type
+                && dataTotal > 0
                 && <div>
                     <div className="float-sm-start d-grid d-sm-flex mt-2">
                         {t
@@ -374,6 +403,24 @@ export default function Table({
                         }
                     </div>
                 </div>
+            }
+            {
+                CommonConstants.TABLE.LOAD_MORE === type
+                && itemArray.length > 0
+                && <Fragment>
+                    <div className="mt-2">
+                        {t("common.text.amountItem", { amount: itemArray.length })}
+                    </div>
+                    {
+                        loadMoreButtonFlag
+                        && <div className="text-center mt-2">
+                            <button className="btn btn-md btn-primary rounded border-0 shadow-sm" disabled={loadingFlag} type="button" onClick={() => onPageLoadMore(currentPage + 1, sizePage, search)}>
+                                <span className={loadingFlag ? "spinner-border spinner-border-sm mx-2" : null} role="status" aria-hidden="true" />
+                                <span className="bi-arrow-down-circle">&nbsp;&nbsp;{t("common.button.loadMore")}</span>
+                            </button>
+                        </div>
+                    }
+                </Fragment>
             }
         </>
     )

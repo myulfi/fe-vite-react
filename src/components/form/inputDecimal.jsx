@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 export default function InputDecimal({
@@ -17,6 +17,7 @@ export default function InputDecimal({
     error,
 }) {
     const { t } = useTranslation()
+    const inputRef = useRef(null)
     const [valueInput, setValueInput] = useState("")
 
     useEffect(() => {
@@ -31,15 +32,18 @@ export default function InputDecimal({
     }
 
     const onInputChange = (e) => {
-        const { name, value } = e.target
+        const { name, value, selectionStart } = e.target
         const formattedValue = formatToMoney(value)
         setValueInput(formattedValue)
         onChange({
             target: {
                 name: name,
-                value: Number(formattedValue.replace(".", "").replace(",", "."))
+                value: Number(formattedValue.replace(/\./g, "").replace(/,/g, "."))
             }
         })
+        setTimeout(() => {
+            inputRef.current.setSelectionRange(selectionStart > 3 ? selectionStart + 1 : selectionStart, selectionStart > 3 ? selectionStart + 1 : selectionStart)
+        }, 0)
     }
 
     const onInputUnitChange = (e) => {
@@ -58,6 +62,7 @@ export default function InputDecimal({
             {
                 positionUnit === undefined
                 && <input
+                    ref={inputRef}
                     className="form-control"
                     name={name} type="text"
                     value={valueInput}
@@ -84,6 +89,7 @@ export default function InputDecimal({
                         </select>
                     }
                     <input
+                        ref={inputRef}
                         className="form-control"
                         name={name} type="text"
                         value={valueInput}

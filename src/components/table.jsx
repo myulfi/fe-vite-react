@@ -9,6 +9,7 @@ export default function Table({
     type = CommonConstants.TABLE.PAGINATION,
     labelNewButton,
     onNewButtonClick = () => { alert("Please define your function!") },
+    additionalButtonArray = [],
     bulkOptionLoadingFlag = false,
     bulkOptionArray,
     lengthFlag = true,
@@ -208,6 +209,17 @@ export default function Table({
                                 <span className="bi-plus-circle">&nbsp;{labelNewButton}</span>
                             </button>
                         </div>
+                    }
+                    {
+                        additionalButtonArray.length > 0
+                        && additionalButtonArray.map((additionalButton, index) => (
+                            <div key={index} className="float-sm-start d-grid d-sm-flex mb-2 ms-sm-3">
+                                <button className="btn btn-md btn-primary rounded border-0 shadow-sm" disabled={additionalButton.loadingFlag} type="button" onClick={() => additionalButton.onClick()}>
+                                    <span className={additionalButton.loadingFlag ? "spinner-grow spinner-grow-sm mx-2" : null} role="status" aria-hidden="true" />
+                                    <span className={additionalButton.icon}>&nbsp;{additionalButton.label}</span>
+                                </button>
+                            </div>
+                        ))
                     }
                     {
                         bulkOptionArray !== undefined

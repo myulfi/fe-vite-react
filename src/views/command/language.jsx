@@ -40,6 +40,8 @@ export default function Language() {
 
     const [languageFilterTable, setLanguageFilterTable] = useState(languageFilterTableTableInitial)
 
+    const [implementLoadingFlag, setImplementLoadingFlag] = useState(false)
+
     const onLanguageFilterTableChange = (e) => {
         const { name, value } = e.target
         setLanguageFilterTable({ ...languageFilterTable, [name]: value })
@@ -271,10 +273,13 @@ export default function Language() {
 
     const implementLanguage = async () => {
         try {
+            setImplementLoadingFlag(true)
             const json = await apiRequest(CommonConstants.METHOD.PUT, "/command/implement-language.json")
             setToast({ type: json.data.status, message: json.data.message })
         } catch (error) {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setImplementLoadingFlag(false)
         }
     }
 
@@ -386,12 +391,12 @@ export default function Language() {
                 {
                     CommonConstants.MODAL.VIEW === languageStateModal
                     && <>
-                        <Label text={t("common.text.name")} value={languageForm.name} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.description")} value={languageForm.description} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.value")} value={languageForm.value} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.amount")} value={languageForm.amount} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.date")} value={DateHelper.formatDate(new Date(languageForm.date), "yyyy-MM-dd")} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.activeFlag")} value={languageForm.activeFlag} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.key")} value={`${languageForm.code}.${languageForm.key}`} className="col-md-12 col-sm-12 col-xs-12" />
+                        {
+                            masterLanguageArray.map((column, index) => (
+                                <Label key={index} text={column.value} value={languageForm[`value_${column.key}`]} className="col-md-6 col-sm-6 col-xs-12" />
+                            ))
+                        }
                     </>
                 }
             </Modal>
@@ -400,8 +405,6 @@ export default function Language() {
             <div className="row"><h3><span className="bi-puzzle">&nbsp;{t("common.menu.language")}</span></h3></div>
             <div className="row">
                 <SelectFilter label={t("common.text.value")} name="value" map={selectValueMap} value={languageFilterTable.value} onChange={onLanguageFilterTableChange} placeholder={t("common.text.all")} delay="1" className="col-md-4 col-sm-6 col-xs-12" />
-                <DateFilter label={t("common.text.date")} name="date" value={languageFilterTable.date} onChange={onLanguageFilterTableChange} delay="2" className="col-md-4 col-sm-6 col-xs-12" />
-                <RangeFilter label={t("common.text.range")} name="range" value={languageFilterTable.range} onChange={onLanguageFilterTableChange} delay="3" className="col-md-4 col-sm-6 col-xs-12" />
             </div>
             <div className="row">
                 <div className="col-md-12">
@@ -410,6 +413,15 @@ export default function Language() {
                             <Table
                                 labelNewButton={t("common.button.createNew")}
                                 onNewButtonClick={() => entryLanguage(false)}
+
+                                additionalButtonArray={[
+                                    {
+                                        label: t("common.button.implement"),
+                                        onClick: () => implementLanguage(),
+                                        icon: "bi-gear-fill",
+                                        loadingFlag: implementLoadingFlag
+                                    }
+                                ]}
 
                                 bulkOptionLoadingFlag={languageBulkOptionLoadingFlag}
                                 bulkOptionArray={
@@ -493,15 +505,6 @@ export default function Language() {
                             />
                         </div>
                     </div>
-                </div>
-                <div className="col-md-12">
-                    <Button
-                        label={t("common.button.implement")}
-                        onClick={() => implementLanguage()}
-                        className="btn-primary"
-                        icon={"bi"}
-                        loadingFlag={languageEntryModal.submitLoadingFlag}
-                    />
                 </div>
             </div>
         </div>

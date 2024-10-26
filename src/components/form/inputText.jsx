@@ -26,7 +26,7 @@ export default function InputText({
                 positionUnit !== undefined
                 && <div className="input-group">
                     {
-                        positionUnit === "left"
+                        positionUnit === "left" && valueUnitList === undefined
                         && <span className="input-group-text">{valueUnit}</span>
                     }
                     {

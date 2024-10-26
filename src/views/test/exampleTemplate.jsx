@@ -1,7 +1,9 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { apiRequest } from "../../api"
 import * as CommonConstants from "../../constants/commonConstants"
 import * as DateHelper from "../../function/dateHelper"
+import * as ToastHelper from "../../function/toastHelper"
+import * as ModalHelper from "../../function/modalHelper"
 import { useTranslation } from "react-i18next"
 import Button from "../../components/form/button"
 import Table from "../../components/table"
@@ -9,7 +11,6 @@ import Toast from "../../components/toast"
 import Dialog from "../../components/dialog"
 import Modal from "../../components/modal"
 import Textarea from "../../components/form/textarea"
-import Select from "../../components/form/select"
 import Radio from "../../components/form/radio"
 import Dropdown from "../../components/dropdown"
 import SelectFilter from "../../components/filter/selectFilter"
@@ -18,6 +19,7 @@ import RangeFilter from "../../components/filter/rangeFilter"
 import Label from "../../components/form/label"
 import Select from "../../components/form/select"
 import InputText from "../../components/form/inputText"
+import InputDecimal from "../../components/form/inputDecimal"
 import InputDate from "../../components/form/inputDate"
 
 export default function ExampleTemplate() {
@@ -71,6 +73,7 @@ export default function ExampleTemplate() {
     const onExampleTemplateFormChange = (e) => {
         const { name, value } = e.target
         setExampleTemplateForm({ ...exampleTemplateForm, [name]: value })
+        setExampleTemplateFormError({ ...exampleTemplateFormError, [name]: undefined })
     }
 
     const selectValueMap = [
@@ -122,12 +125,12 @@ export default function ExampleTemplate() {
             const params = {
                 "start": (options.page - 1) * options.length,
                 "length": options.length,
-                "search": options.search,
+                "search": encodeURIComponent(options.search),
                 "orderColumn": options.order.length > 1 ? options.order[0] : null,
                 "orderDir": options.order.length > 1 ? options.order[1] : null,
-                "value": exampleTemplateFilterTable.value,
-                "date": exampleTemplateFilterTable.date,
-                "range": exampleTemplateFilterTable.range,
+                // "value": exampleTemplateFilterTable.value,
+                // "date": exampleTemplateFilterTable.date,
+                // "range": exampleTemplateFilterTable.range,
             }
             setExampleTemplateAttributeTable(options)
 
@@ -222,7 +225,7 @@ export default function ExampleTemplate() {
 
     const storeExampleTemplate = async () => {
         if (exampleTemplateValidate(exampleTemplateForm)) {
-            dialogObject.hide()
+            ModalHelper.hide("dialog_example_template")
             setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: true })
 
             try {
@@ -238,7 +241,7 @@ export default function ExampleTemplate() {
                 }
                 setToast({ type: json.data.status, message: json.data.message })
             } catch (error) {
-                setToast({ type: "failed", message: error.response.data.message ?? error.message })
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
                 setExampleTemplateFormError(error.response.data)
             } finally {
                 setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: false })
@@ -278,7 +281,7 @@ export default function ExampleTemplate() {
         }
 
         try {
-            const json = await apiRequest(CommonConstants.METHOD_IS_DELETE, `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`)
+            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`)
             if (json.data.status === "success") {
                 getExampleTemplate(exampleTemplateAttributeTable)
                 if (id === undefined) {
@@ -330,7 +333,7 @@ export default function ExampleTemplate() {
                 }
             >
                 {
-                    CommonConstants.MODAL_IS_ENTRY === exampleTemplateStateModal
+                    CommonConstants.MODAL.ENTRY === exampleTemplateStateModal
                     && <>
                         <InputText label={t("common.text.name")} name="name" value={exampleTemplateForm.name} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.name} />
                         <Textarea label={t("common.text.description")} name="description" rows="3" value={exampleTemplateForm.description} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.description} />
@@ -347,7 +350,7 @@ export default function ExampleTemplate() {
                     </>
                 }
                 {
-                    CommonConstants.MODAL_IS_VIEW === exampleTemplateStateModal
+                    CommonConstants.MODAL.VIEW === exampleTemplateStateModal
                     && <>
                         <Label text={t("common.text.name")} value={exampleTemplateForm.name} className="col-md-6 col-sm-6 col-xs-12" />
                         <Label text={t("common.text.description")} value={exampleTemplateForm.description} className="col-md-6 col-sm-6 col-xs-12" />

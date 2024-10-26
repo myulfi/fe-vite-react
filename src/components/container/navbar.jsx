@@ -2,8 +2,14 @@ import NavbarLink from "./navbarLink"
 import "./navbar.css"
 import { Link } from "react-router-dom"
 import { apiRequest } from "../../api"
+import { useTranslation } from "react-i18next"
 import * as CommonConstants from "../../constants/commonConstants"
-import { useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
+import Modal from "../modal"
+import Dialog from "../dialog"
+import Toast from "../toast"
+import Button from "../form/button"
+import InputPassword from "../form/inputPassword"
 
 export default function Navbar({
     data
@@ -53,6 +59,7 @@ export default function Navbar({
         }
     }, [toast])
 
+    const [dialog, setDialog] = useState({})
     useEffect(() => {
         if (dialog?.message !== undefined) {
             ModalHelper.show("dialog_navbar")
@@ -115,16 +122,6 @@ export default function Navbar({
         }
     }
 
-    const generateLanguage = async () => {
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.PUT, "/main/generate-language.json")
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            setChangePasswordFormError(error.response?.data ?? [])
-        }
-    }
-
     return (
         <Fragment>
             <Modal
@@ -165,10 +162,6 @@ export default function Navbar({
                         <ul className="dropdown-menu dropdown-menu-end text-small shadow" aria-labelledby="dropdownUser1">
                             <li><a className="dropdown-item" role="button" onClick={() => openChangePassword()}><span className="bi-person-lock" />&nbsp;{t("common.button.changePassword")}</a></li>
                             {/* <li><hr className="dropdown-divider" /></li> */}
-                            {
-                                localStorage.getItem(CommonConstants.LOCAL_STORAGE.ROLE).includes(0)
-                                && <li><a className="dropdown-item" role="button" onClick={() => generateLanguage()}><span className="bi-translate" />&nbsp;{t("common.button.generateLanguage")}</a></li>
-                            }
                             <li><a className="dropdown-item" role="button" onClick={() => doLogout()}><span className="bi-arrow-right-square" />&nbsp;{t("common.button.logout")}</a></li>
                         </ul>
                     </div>

@@ -60,8 +60,10 @@ export default function Login() {
                 )
 
                 if (response.data.status === "success") {
-                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN, response.data.data.token);
-                    window.location.reload(false);
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN, response.data.data.token)
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.NAME, response.data.data.user.nickName)
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ROLE, response.data.data.user.roleList)
+                    window.location.reload(false)
                 } else {
                     setLoginFormError(response.data.message);
                 }

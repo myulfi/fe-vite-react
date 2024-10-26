@@ -23,6 +23,7 @@ export const METHOD = {
 export const LOCAL_STORAGE = {
     ACCESS_TOKEN: "accessToken",
     NAME: "name",
+    ROLE: "roleList",
 }
 export const COOKIES = {
     LANGUAGE: "language"

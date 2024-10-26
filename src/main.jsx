@@ -1,6 +1,7 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+import React from "react"
+import ReactDOM from "react-dom/client"
+import App from "./App"
+import "./i18n"
 
 //import BrowserRouter dari react router
 import { BrowserRouter } from 'react-router-dom';

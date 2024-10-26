@@ -3,7 +3,7 @@ import { Fragment } from "react"
 import "./table.css"
 import * as CommonConstants from "../constants/commonConstants"
 import { getNestedValue } from "../function/commonHelper"
-import { useTranslation } from "react-i18next"
+import { useTranslation, Trans } from "react-i18next"
 
 export default function Table({
     type = CommonConstants.TABLE.PAGINATION,
@@ -11,6 +11,7 @@ export default function Table({
     onNewButtonClick = () => { alert("Please define your function!") },
     bulkOptionLoadingFlag = false,
     bulkOptionArray,
+    lengthFlag = true,
     searchFlag = true,
     dataArray = [],
     columns,
@@ -224,15 +225,23 @@ export default function Table({
                     }
                 </div>
                 <div className="clearfix">
-                    <div className="float-sm-start mb-2">
-                        Show&nbsp;<select className="p-1" value={sizePage} onChange={(e) => onPageChange(1, e.target.value, search)}>
-                            {
-                                lengthArray.map((length) => (
-                                    <option value={length} key={length}>{length}</option>
-                                ))
-                            }
-                        </select>&nbsp;entires
-                    </div>
+                    {
+                        lengthFlag
+                        && <div className="float-sm-start mb-2">
+                            <Trans
+                                i18nKey="datatable.text.lengthMenu"
+                                components={{
+                                    menu: <select className="p-1" value={sizePage} onChange={(e) => onPageChange(1, e.target.value, search)}>
+                                        {
+                                            lengthArray.map((length) => (
+                                                <option value={length} key={length}>{length}</option>
+                                            ))
+                                        }
+                                    </select>
+                                }}
+                            />
+                        </div>
+                    }
                     {
                         searchFlag
                         && <div className="float-sm-end d-grid d-sm-flex mb-2">
@@ -298,7 +307,7 @@ export default function Table({
                                             {
                                                 columnShow
                                                     .map((column, index) => (
-                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} role={index === 0 && columnAlwaysHide.length > 0 ? "button" : null} onClick={index === 0 && columnAlwaysHide.length > 0 ? () => showDetail(indexRow) : null}>
+                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} role={index === 0 ? "button" : null} onClick={index === 0 ? () => showDetail(indexRow) : null}>
                                                             {
                                                                 index == 0 &&
                                                                 <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} />

@@ -2,7 +2,7 @@ import NavbarLink from "./navbarLink"
 import "./navbar.css"
 import { Link } from "react-router-dom"
 import { apiRequest } from "../../api"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import * as CommonConstants from "../../constants/commonConstants"
 import { useState, useEffect, Fragment } from "react"
 import Modal from "../modal"
@@ -10,6 +10,7 @@ import Dialog from "../dialog"
 import Toast from "../toast"
 import Button from "../form/button"
 import InputPassword from "../form/inputPassword"
+import * as ModalHelper from "../../function/modalHelper"
 
 export default function Navbar({
     data
@@ -156,7 +157,12 @@ export default function Navbar({
                     </div>
                     <div className="dropdown text-end">
                         <a href="#" className="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                            Hello&nbsp;<b>{localStorage.getItem(CommonConstants.LOCAL_STORAGE.NAME)}</b>
+                            <Trans
+                                i18nKey="common.text.hello"
+                                components={{
+                                    name: <b>{localStorage.getItem(CommonConstants.LOCAL_STORAGE.NAME)}</b>
+                                }}
+                            />
                             &nbsp;<div width="32" height="32" className="bg-dark rounded-circle p-3" />
                         </a>
                         <ul className="dropdown-menu dropdown-menu-end text-small shadow" aria-labelledby="dropdownUser1">

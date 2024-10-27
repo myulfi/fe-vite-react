@@ -10,42 +10,21 @@ import Table from "../../components/table"
 import Toast from "../../components/toast"
 import Dialog from "../../components/dialog"
 import Modal from "../../components/modal"
-import Textarea from "../../components/form/textarea"
-import Radio from "../../components/form/radio"
 import Dropdown from "../../components/dropdown"
-import SelectFilter from "../../components/filter/selectFilter"
-import DateFilter from "../../components/filter/dateFilter"
-import RangeFilter from "../../components/filter/rangeFilter"
 import Label from "../../components/form/label"
-import Select from "../../components/form/select"
 import InputText from "../../components/form/inputText"
-import InputDecimal from "../../components/form/inputDecimal"
-import InputDate from "../../components/form/inputDate"
 
 export default function Language() {
     const { t } = useTranslation()
     const languageInitial = {
-        code: "common.button",
+        code: "common.text",
         key: "",
         version: 0,
     }
 
     const [languageStateModal, setLanguageStateModal] = useState(CommonConstants.MODAL.ENTRY)
 
-    const languageFilterTableTableInitial = {
-        value: 0,
-        date: "",
-        range: 0,
-    }
-
-    const [languageFilterTable, setLanguageFilterTable] = useState(languageFilterTableTableInitial)
-
     const [implementLoadingFlag, setImplementLoadingFlag] = useState(false)
-
-    const onLanguageFilterTableChange = (e) => {
-        const { name, value } = e.target
-        setLanguageFilterTable({ ...languageFilterTable, [name]: value })
-    }
 
     const [languageBulkOptionLoadingFlag, setLanguageBulkOptionLoadingFlag] = useState(false)
     const [languageCheckBoxTableArray, setLanguageCheckBoxTableArray] = useState([])
@@ -88,6 +67,11 @@ export default function Language() {
     const codeKeyMap = [
         { "key": "common.text", "value": "common.text." },
         { "key": "common.button", "value": "common.button." },
+        { "key": "common.confirmation", "value": "common.confirmation." },
+        { "key": "common.information", "value": "common.information." },
+        { "key": "common.menu", "value": "common.menu." },
+        { "key": "validate.text", "value": "validate.text." },
+        { "key": "datatable.text", "value": "datatable.text." },
     ]
 
     const languageValidate = (data) => {
@@ -225,7 +209,7 @@ export default function Language() {
     const confirmStoreLanguage = () => {
         if (languageValidate(languageForm)) {
             setDialog({
-                message: languageForm.id === undefined ? t("common.confirmation.create", { name: languageForm.name }) : t("common.confirmation.update", { name: languageForm.name }),
+                message: languageForm.id === undefined ? t("common.confirmation.create", { name: languageForm.key }) : t("common.confirmation.update", { name: languageForm.key }),
                 type: "confirmation",
                 onConfirm: (e) => storeLanguage(e),
             })
@@ -404,9 +388,6 @@ export default function Language() {
             <Toast id="toast_language" type={toast.type} message={toast.message} />
             <div className="row"><h3><span className="bi-puzzle">&nbsp;{t("common.menu.language")}</span></h3></div>
             <div className="row">
-                <SelectFilter label={t("common.text.value")} name="value" map={selectValueMap} value={languageFilterTable.value} onChange={onLanguageFilterTableChange} placeholder={t("common.text.all")} delay="1" className="col-md-4 col-sm-6 col-xs-12" />
-            </div>
-            <div className="row">
                 <div className="col-md-12">
                     <div className="card border-0 rounded shadow">
                         <div className="card-body">
@@ -484,7 +465,7 @@ export default function Language() {
                                                     />
                                                     <Button
                                                         label={t("common.button.delete")}
-                                                        onClick={() => confirmDeleteLanguage(data, row.name)}
+                                                        onClick={() => confirmDeleteLanguage(data, row.keyCode)}
                                                         className="btn-danger"
                                                         icon="bi-trash"
                                                         loadingFlag={languageOptionColumnTable[data]?.deletedButtonFlag}
@@ -499,7 +480,6 @@ export default function Language() {
                                 checkBoxArray={languageCheckBoxTableArray}
                                 onCheckBox={languageCheckBoxTableArray => { setLanguageCheckBoxTableArray([...languageCheckBoxTableArray]) }}
                                 dataTotal={languageDataTotalTable}
-                                filter={languageFilterTable}
                                 onRender={(page, length, search, order) => { getLanguage({ page: page, length: length, search: search, order: order }) }}
                                 loadingFlag={languageTableLoadingFlag}
                             />

@@ -1,5 +1,5 @@
-import axios from 'axios';
-import * as CommonConstants from "../constants/commonConstants";
+import axios from 'axios'
+import * as CommonConstants from "../constants/commonConstants"
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -19,6 +19,18 @@ const apiRequest = (method, url, params,) => {
                 },
                 params: params
             })
+    } else if (CommonConstants.METHOD.GET_BLOB === method) {
+        return api.get(
+            url,
+            {
+                headers: {
+                    'Content-Type': 'text/csv',
+                    'Authorization': `Bearer ${localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN)}`
+                },
+                params: params,
+                responseType: "blob"
+            }
+        )
     } else if (CommonConstants.METHOD.POST === method) {
         return api.post(
             url,

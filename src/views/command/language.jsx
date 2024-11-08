@@ -10,7 +10,6 @@ import Table from "../../components/table"
 import Toast from "../../components/toast"
 import Dialog from "../../components/dialog"
 import Modal from "../../components/modal"
-import Dropdown from "../../components/dropdown"
 import Label from "../../components/form/label"
 import InputText from "../../components/form/inputText"
 
@@ -405,9 +404,13 @@ export default function Language() {
                                 ]}
 
                                 bulkOptionLoadingFlag={languageBulkOptionLoadingFlag}
-                                bulkOptionArray={
-                                    <Dropdown label={t("common.button.delete")} icon="bi-trash" onClick={() => confirmDeleteLanguage()} />
-                                }
+                                bulkOptionArray={[
+                                    {
+                                        label: t("common.button.delete"),
+                                        icon: "bi-trash",
+                                        onClick: () => confirmDeleteLanguage(),
+                                    }
+                                ]}
 
                                 dataArray={languageArray}
                                 columns={[

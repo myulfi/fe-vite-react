@@ -12,7 +12,6 @@ import Dialog from "../../components/dialog"
 import Modal from "../../components/modal"
 import Textarea from "../../components/form/textarea"
 import Radio from "../../components/form/radio"
-import Dropdown from "../../components/dropdown"
 import SelectFilter from "../../components/filter/selectFilter"
 import DateFilter from "../../components/filter/dateFilter"
 import RangeFilter from "../../components/filter/rangeFilter"
@@ -378,9 +377,13 @@ export default function Branch() {
                                 onNewButtonClick={() => entryBranch(false)}
 
                                 bulkOptionLoadingFlag={branchBulkOptionLoadingFlag}
-                                bulkOptionArray={
-                                    <Dropdown label={t("common.button.delete")} icon="bi-trash" onClick={() => confirmDeleteBranch()} />
-                                }
+                                bulkOptionArray={[
+                                    {
+                                        label: t("common.button.delete"),
+                                        icon: "bi-trash",
+                                        onClick: () => confirmDeleteBranch(),
+                                    }
+                                ]}
 
                                 dataArray={branchArray}
                                 columns={[

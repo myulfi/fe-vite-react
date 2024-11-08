@@ -4,6 +4,7 @@ import "./table.css"
 import * as CommonConstants from "../constants/commonConstants"
 import { getNestedValue } from "../function/commonHelper"
 import { useTranslation, Trans } from "react-i18next"
+import Dropdown from "./dropdown"
 
 export default function Table({
     type = CommonConstants.TABLE.PAGINATION,
@@ -11,7 +12,7 @@ export default function Table({
     onNewButtonClick = () => { alert("Please define your function!") },
     additionalButtonArray = [],
     bulkOptionLoadingFlag = false,
-    bulkOptionArray,
+    bulkOptionArray = [],
     lengthFlag = true,
     searchFlag = true,
     dataArray = [],
@@ -204,7 +205,7 @@ export default function Table({
                 <div className="clearfix">
                     {
                         labelNewButton != undefined
-                        && <div className="float-sm-start d-grid d-sm-flex mb-2">
+                        && <div className="float-sm-start d-grid d-sm-flex mb-2 me-sm-3">
                             <button className="btn btn-md btn-primary rounded border-0 shadow-sm" type="button" onClick={() => onNewButtonClick()}>
                                 <span className="bi-plus-circle">&nbsp;{labelNewButton}</span>
                             </button>
@@ -213,7 +214,7 @@ export default function Table({
                     {
                         additionalButtonArray.length > 0
                         && additionalButtonArray.map((additionalButton, index) => (
-                            <div key={index} className="float-sm-start d-grid d-sm-flex mb-2 ms-sm-3">
+                            <div key={index} className="float-sm-start d-grid d-sm-flex mb-2 me-sm-3">
                                 <button className="btn btn-md btn-primary rounded border-0 shadow-sm" disabled={additionalButton.loadingFlag} type="button" onClick={() => additionalButton.onClick()}>
                                     <span className={additionalButton.loadingFlag ? "spinner-grow spinner-grow-sm mx-2" : null} role="status" aria-hidden="true" />
                                     <span className={additionalButton.icon}>&nbsp;{additionalButton.label}</span>
@@ -222,7 +223,7 @@ export default function Table({
                         ))
                     }
                     {
-                        bulkOptionArray !== undefined
+                        bulkOptionArray.length > 0
                         && <div className="float-sm-end d-grid d-sm-flex mb-2">
                             <div className="btn-group">
                                 <button className="btn btn-outline-dark shadow-sm dropdown-toggle" disabled={bulkOptionLoadingFlag} data-bs-toggle="dropdown">
@@ -230,7 +231,11 @@ export default function Table({
                                     <span className="bi-stack">&nbsp;{checkBoxArray?.length > 0 ? `(${checkBoxArray?.length}) ` : null}{t("common.button.bulkOption")}</span>
                                 </button>
                                 <div className="dropdown-menu">
-                                    {bulkOptionArray}
+                                    {
+                                        bulkOptionArray.map((bulkOption, index) => (
+                                            <Dropdown key={index} label={bulkOption.label} icon={bulkOption.icon} onClick={() => bulkOption.onClick()}></Dropdown>
+                                        ))
+                                    }
                                 </div>
                             </div>
                         </div>

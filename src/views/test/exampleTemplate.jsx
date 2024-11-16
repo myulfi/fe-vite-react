@@ -24,12 +24,12 @@ import InputDate from "../../components/form/inputDate"
 export default function ExampleTemplate() {
     const { t } = useTranslation()
     const exampleTemplateInitial = {
-        name: '',
-        description: '',
+        name: undefined,
+        description: undefined,
         value: 0,
         // valueMultiple: [],
         amount: 0,
-        date: '',
+        date: undefined,
         activeFlag: null,
         version: 0,
     }
@@ -428,6 +428,9 @@ export default function ExampleTemplate() {
                                         width: 15,
                                         orderable: true,
                                         minDevice: CommonConstants.DEVICE.DESKTOP,
+                                        render: function (data) {
+                                            return DateHelper.formatDate(new Date(data), "dd MMM yyyy HH:mm:ss")
+                                        }
                                     },
                                     {
                                         data: "id",

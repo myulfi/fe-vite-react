@@ -17,7 +17,7 @@ export default function Language() {
     const { t } = useTranslation()
     const languageInitial = {
         code: "common.text",
-        key: "",
+        key: undefined,
         version: 0,
     }
 
@@ -51,18 +51,6 @@ export default function Language() {
         setLanguageFormError({ ...languageFormError, [name]: undefined })
     }
 
-    const selectValueMap = [
-        { "key": 1, "value": "Satu" },
-        { "key": 2, "value": "Dua" },
-        { "key": 3, "value": "Tiga" },
-        { "key": 4, "value": "Empat" },
-        { "key": 5, "value": "Lima" },
-        { "key": 6, "value": "Enam" },
-        { "key": 7, "value": "Tujuh" },
-        { "key": 8, "value": "Delapan" },
-        { "key": 9, "value": "Sembilan" },
-        { "key": 10, "value": "Sepuluh" },
-    ]
     const codeKeyMap = [
         { "key": "common.text", "value": "common.text." },
         { "key": "common.button", "value": "common.button." },

@@ -332,7 +332,7 @@ export default function Table({
                                                             {
                                                                 column.render != undefined
                                                                     ? column.render(getNestedValue(data, column.data), data)
-                                                                    : getNestedValue(data, column.data)
+                                                                    : getNestedValue(data, column.data) ?? (column.defaultContent() ?? "")
                                                             }
                                                         </td>
                                                     ))

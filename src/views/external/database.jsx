@@ -4,6 +4,7 @@ import * as CommonConstants from "../../constants/commonConstants"
 import * as DateHelper from "../../function/dateHelper"
 import * as ToastHelper from "../../function/toastHelper"
 import * as ModalHelper from "../../function/modalHelper"
+import * as CommonHelper from "../../function/commonHelper"
 import { useTranslation } from "react-i18next"
 import Navtab from "../../components/container/navtab"
 import Button from "../../components/form/button"
@@ -14,6 +15,8 @@ import Modal from "../../components/modal"
 import Textarea from "../../components/form/textarea"
 import Label from "../../components/form/label"
 import InputText from "../../components/form/inputText"
+import InputDecimal from "../../components/form/inputDecimal"
+import Radio from "../../components/form/radio"
 
 export default function Database() {
     const { t } = useTranslation()
@@ -306,9 +309,39 @@ export default function Database() {
     const [databaseId, setDatabaseId] = useState(0)
     const [queryManualId, setQueryManualId] = useState(0)
 
+    const databaseQueryExportInitial = {
+        formatId: 1,
+        headerFlag: 1,
+        delimiter: ",",
+        insertFlag: 1,
+        includeColumnNameFlag: 1,
+        numberOfLinePerAction: 1,
+        multipleLineFlag: 0,
+        firstAmountConditioned: 1,
+        firstAmountCombined: 0,
+        saveAs: 1,
+    }
+
+    const FORMAT = {
+        SQL: 1,
+        XLS: 2,
+        CSV: 3,
+        JSON: 4,
+        XML: 5,
+    }
+
+    const queryExportFormatMap = [{ "key": 1, "value": "SQL" }, { "key": 2, "value": "XLS" }, { "key": 3, "value": "CSV" }, { "key": 4, "value": "JSON" }, { "key": 5, "value": "XML" }]
+    const yesNoMap = [{ "key": 1, "value": t("common.text.yes") }, { "key": 0, "value": t("common.text.no") }]
+    const insertMap = [{ "key": 1, "value": "INSERT" }, { "key": 0, "value": "UPDATE" }]
+    const saveAsMap = [{ "key": 1, "value": t("common.button.clipboard") }, { "key": 2, "value": t("common.button.file") }]
+
     const [queryManualTableFlag, setQueryManualTableFlag] = useState(false)
     const [queryManualDataArray, setQueryManualDataArray] = useState([])
-    const [queryManualColumn, setQueryManualColumn] = useState([])
+    const [queryManualColumn, setQueryManualColumn] = useState([{
+        data: "action",
+        name: "Result Information",
+        class: "text-nowrap"
+    }])
     const [queryManualDataTotalTable, setQueryManualDataTotalTable] = useState(0)
     const [queryManualTableLoadingFlag, setQueryManualTableLoadingFlag] = useState(false)
 
@@ -354,7 +387,7 @@ export default function Database() {
                 setQueryManualTableFlag(true)
 
                 setQueryManualColumn(
-                    json.data.header.map(element => {
+                    json.data.data.header.map(element => {
                         if (element.type !== undefined) {
                             return {
                                 data: element.name,
@@ -383,11 +416,11 @@ export default function Database() {
                     })
                 )
 
-                if (json.data.data[0].queryManualId !== undefined) {
-                    setQueryManualId(json.data.data[0].queryManualId)
-                    getQueryManual({ id: json.data.data[0].queryManualId, page: 1, length: 10 })
+                if (json.data.data.queryManualId !== undefined) {
+                    setQueryManualId(json.data.data.queryManualId)
+                    getQueryManual({ id: json.data.data.queryManualId, page: 1, length: 10 })
                 } else {
-                    setQueryManualDataArray(json.data.data)
+                    setQueryManualDataArray(json.data.data.result)
                 }
             }
         } catch (error) {
@@ -414,6 +447,114 @@ export default function Database() {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
             setQueryManualTableLoadingFlag(false)
+        }
+    }
+
+
+    const [databaseQueryExportLoadingFlag, setDatabaseQueryExportLoadingFlag] = useState(false)
+
+    const databaseQueryExportConditionForm = {
+        headerFlag: () => { return FORMAT.CSV === databaseQueryExportForm.formatId },
+        delimiter: () => { return FORMAT.CSV === databaseQueryExportForm.formatId },
+        insertFlag: () => { return FORMAT.SQL === databaseQueryExportForm.formatId },
+        includeColumnNameFlag: () => {
+            return FORMAT.SQL === databaseQueryExportForm.formatId
+                && CommonConstants.FLAG.YES === databaseQueryExportForm.insertFlag
+        },
+        numberOfLinePerAction: () => {
+            return FORMAT.SQL === databaseQueryExportForm.formatId
+                && CommonConstants.FLAG.YES === databaseQueryExportForm.insertFlag
+        },
+        multipleLineFlag: () => {
+            return FORMAT.SQL === databaseQueryExportForm.formatId
+                && CommonConstants.FLAG.NO === databaseQueryExportForm.insertFlag
+        },
+        firstAmountConditioned: () => {
+            return FORMAT.SQL === databaseQueryExportForm.formatId
+                && CommonConstants.FLAG.NO === databaseQueryExportForm.insertFlag
+        },
+        firstAmountCombined: () => { return FORMAT.XLS === databaseQueryExportForm.formatId },
+        saveAs: () => { return [FORMAT.SQL, FORMAT.CSV, FORMAT.JSON, FORMAT.XML].includes(databaseQueryExportForm.formatId) },
+    }
+
+    const [databaseQueryExportForm, setDatabaseQueryExportForm] = useState(databaseQueryExportInitial)
+    const [databaseQueryExportFormError, setDatabaseQueryExportFormError] = useState([])
+
+    const onDatabaseQueryExportFormChange = (e) => {
+        const { name, value } = e.target
+        setDatabaseQueryExportForm({ ...databaseQueryExportForm, [name]: value })
+        setDatabaseQueryExportFormError({ ...databaseQueryExportFormError, [name]: undefined })
+    }
+
+    const databaseQueryExportValidate = (data) => {
+        const error = {}
+        if (data.formatId <= 0) error.formatId = t("validate.text.required", { name: t("common.text.format") })
+        if (databaseQueryExportConditionForm.headerFlag() && data.headerFlag < 0) error.headerFlag = t("validate.text.required", { name: t("common.text.header") })
+        if (databaseQueryExportConditionForm.delimiter() && !data.delimiter.trim()) error.delimiter = t("validate.text.required", { name: t("common.text.delimiter") })
+        if (databaseQueryExportConditionForm.insertFlag() && data.insertFlag < 0) error.insertFlag = t("validate.text.required", { name: t("common.text.statement") })
+        if (databaseQueryExportConditionForm.includeColumnNameFlag() && data.includeColumnNameFlag < 0) error.includeColumnNameFlag = t("validate.text.required", { name: t("common.text.includeColumnName") })
+        if (databaseQueryExportConditionForm.numberOfLinePerAction() && data.numberOfLinePerAction <= 0) error.numberOfLinePerAction = t("validate.text.required", { name: t("common.text.numberOfLinePerAction") })
+        if (databaseQueryExportConditionForm.firstAmountConditioned() && data.firstAmountConditioned <= 0) error.firstAmountConditioned = t("validate.text.required", { name: t("common.text.firstAmountConditioned") })
+        if (databaseQueryExportConditionForm.firstAmountConditioned() && data.firstAmountCombined < 0) error.firstAmountCombined = t("validate.text.required", { name: t("common.text.firstAmountCombined") })
+        if (databaseQueryExportConditionForm.saveAs() && data.saveAs <= 0) error.saveAs = t("validate.text.required", { name: t("common.text.saveAs") })
+
+        setDatabaseQueryExportFormError(error)
+        return Object.keys(error).length === 0
+    }
+
+    const viewDatabaseQueryExport = () => {
+        setDatabaseQueryExportForm(databaseQueryExportInitial)
+        ModalHelper.show("modal_database_query_export")
+    }
+
+    const confirmExportDatabaseQuery = () => {
+        if (databaseQueryExportValidate(databaseQueryExportForm)) {
+            setDialog({
+                message: t("common.confirmation.export", { name: queryExportFormatMap.find(item => item.key === databaseQueryExportForm.formatId).value }),
+                type: "confirmation",
+                onConfirm: async (e) => {
+                    ModalHelper.hide("dialog_database")
+                    setDatabaseQueryExportLoadingFlag(true)
+
+                    let url = ""
+
+                    if (FORMAT.SQL === databaseQueryExportForm.formatId) {
+                        if (CommonConstants.FLAG.YES === databaseQueryExportForm.insertFlag) {
+                            url = `/external/${databaseId}/1/${queryManualId}/insert/${databaseQueryExportForm.includeColumnNameFlag}/${databaseQueryExportForm.numberOfLinePerAction}/database-query-sql.json`
+                        } else {
+                            url = `/external/${databaseId}/1/${queryManualId}/update/${databaseQueryExportForm.multipleLineFlag}/${databaseQueryExportForm.firstAmountConditioned}/database-query-sql.json`
+                        }
+                    } else if (FORMAT.CSV === databaseQueryExportForm.formatId) {
+                        url = `/external/${databaseId}/1/${queryManualId}/${databaseQueryExportForm.headerFlag}/${databaseQueryExportForm.delimiter}/database-query-csv.json`
+                    } else if (FORMAT.JSON === databaseQueryExportForm.formatId) {
+                        url = `/external/${databaseId}/1/${queryManualId}/database-query-json.json`
+                    } else if (FORMAT.XML === databaseQueryExportForm.formatId) {
+                        url = `/external/${databaseId}/1/${queryManualId}/database-query-xml.json`
+                    }
+
+                    try {
+                        const json = await apiRequest(CommonConstants.METHOD.GET, url)
+
+                        if (json.data.status === "success") {
+                            if (databaseQueryExportForm.saveAs === 1) {
+                                await navigator.clipboard.writeText(FORMAT.JSON === databaseQueryExportForm.formatId ? JSON.stringify(json.data.data) : json.data.data)
+                                setToast({ type: json.data.status, message: "common.information.exported" })
+                            } else {
+                                const nameArray = [...databaseQueryManualValue.matchAll(new RegExp("FROM (\\w+)", "gmi"))];
+                                const name = nameArray.length > 0 && nameArray[0].length > 0 && nameArray[0][0].toLowerCase().startsWith("from ") ? nameArray[0][0].substr(5).trim() : "manual";
+                                CommonHelper.downloadFile(`${name}@${DateHelper.formatDate(new Date(), "yyyyMMddHHmmss")}.${queryExportFormatMap.find(item => item.key === databaseQueryExportForm.formatId).value.toLowerCase()}`, [json.data.data])
+                            }
+                            ModalHelper.hide("modal_database_query_export")
+                        } else {
+                            setToast({ type: json.data.status, message: json.data.message })
+                        }
+                    } catch (error) {
+                        setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+                    } finally {
+                        setDatabaseQueryExportLoadingFlag(false)
+                    }
+                },
+            })
         }
     }
 
@@ -519,7 +660,7 @@ export default function Database() {
                                                                         ? [
                                                                             {
                                                                                 label: t("common.button.export"),
-                                                                                onClick: () => implementLanguage(),
+                                                                                onClick: () => viewDatabaseQueryExport(),
                                                                                 icon: "bi-download",
                                                                             },
                                                                             {
@@ -537,12 +678,14 @@ export default function Database() {
                                                                 }
                                                                 lengthFlag={false}
                                                                 searchFlag={false}
-                                                                dataArray={queryManualDataArray}
+                                                                dataArray={queryManualDataArray ?? []}
                                                                 columns={queryManualColumn}
 
                                                                 dataTotal={queryManualColumn.length > 1 ? queryManualDataTotalTable : 0}
                                                                 onRender={(page, length) => {
-                                                                    getQueryManual({ id: queryManualId, page: page, length: length })
+                                                                    if (queryManualId > 0) {
+                                                                        getQueryManual({ id: queryManualId, page: page, length: length })
+                                                                    }
                                                                 }}
                                                                 loadingFlag={queryManualTableLoadingFlag}
                                                             />
@@ -635,6 +778,60 @@ export default function Database() {
                         />
                     </div>
                 </div>
+            </Modal>
+            <Modal
+                id="modal_database_query_export"
+                size="sm"
+                title={t("common.text.export")}
+                buttonArray={
+                    <>
+                        <Button
+                            label={t("common.button.export")}
+                            onClick={() => confirmExportDatabaseQuery()}
+                            className="btn-primary"
+                            icon="bi-download"
+                            loadingFlag={databaseQueryExportLoadingFlag}
+                        />
+                    </>
+                }
+            >
+                <Radio label={t("common.text.format")} name="formatId" value={databaseQueryExportForm.formatId} map={queryExportFormatMap} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.formatId} />
+                {
+                    databaseQueryExportConditionForm.headerFlag()
+                    && <Radio label={t("common.text.header")} name="headerFlag" value={databaseQueryExportForm.headerFlag} map={yesNoMap} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.headerFlag} />
+                }
+                {
+                    databaseQueryExportConditionForm.delimiter()
+                    && <InputText label={t("common.text.delimiter")} name="delimiter" value={databaseQueryExportForm.delimiter} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.delimiter} />
+                }
+                {
+                    databaseQueryExportConditionForm.insertFlag()
+                    && <Radio label={t("common.text.statement")} name="insertFlag" value={databaseQueryExportForm.insertFlag} map={insertMap} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.insertFlag} />
+                }
+                {
+                    databaseQueryExportConditionForm.includeColumnNameFlag()
+                    && <Radio label={t("common.text.includeColumnName")} name="includeColumnNameFlag" value={databaseQueryExportForm.includeColumnNameFlag} map={yesNoMap} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.includeColumnNameFlag} />
+                }
+                {
+                    databaseQueryExportConditionForm.numberOfLinePerAction()
+                    && <InputDecimal label={t("common.text.numberOfLinePerAction")} name="numberOfLinePerAction" value={databaseQueryExportForm.numberOfLinePerAction} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.numberOfLinePerAction} />
+                }
+                {
+                    databaseQueryExportConditionForm.multipleLineFlag()
+                    && <Radio label={t("common.text.multipleLine")} name="multipleLineFlag" value={databaseQueryExportForm.multipleLineFlag} map={yesNoMap} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.multipleLineFlag} />
+                }
+                {
+                    databaseQueryExportConditionForm.firstAmountConditioned()
+                    && <InputDecimal label={t("common.text.firstAmountConditioned")} name="firstAmountConditioned" value={databaseQueryExportForm.firstAmountConditioned} onChange={onDatabaseQueryExportFormChange} valueUnit={t("common.text.column")} className="col-12" error={databaseQueryExportFormError.firstAmountConditioned} />
+                }
+                {
+                    databaseQueryExportConditionForm.firstAmountCombined()
+                    && <InputDecimal label={t("common.text.firstAmountCombined")} name="firstAmountCombined" value={databaseQueryExportForm.firstAmountCombined} onChange={onDatabaseQueryExportFormChange} valueUnit={t("common.text.column")} className="col-12" error={databaseQueryExportFormError.firstAmountCombined} />
+                }
+                {
+                    databaseQueryExportConditionForm.saveAs()
+                    && <Radio label={t("common.text.saveAs")} name="saveAs" value={databaseQueryExportForm.saveAs} map={saveAsMap} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.multipleLineFlag} />
+                }
             </Modal>
             <Dialog id="dialog_database" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_database" type={toast.type} message={toast.message} />

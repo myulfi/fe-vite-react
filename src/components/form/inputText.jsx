@@ -20,7 +20,7 @@ export default function InputText({
             <label className="form-label fw-bold">{label}</label>
             {
                 positionUnit === undefined
-                && <input className="form-control" name={name} type="text" value={value} disabled={disabled} onChange={onChange} placeholder={t("common.text.inputName", { name: label })} />
+                && <input className="form-control" name={name} type="text" value={value ?? ""} disabled={disabled} onChange={onChange} placeholder={t("common.text.inputName", { name: label })} />
             }
             {
                 positionUnit !== undefined
@@ -39,7 +39,7 @@ export default function InputText({
                             }
                         </select>
                     }
-                    <input className="form-control" name={name} type="text" value={value} disabled={disabled} onChange={onChange} placeholder={t("common.text.inputName", { name: label })} />
+                    <input className="form-control" name={name} type="text" value={value ?? ""} disabled={disabled} onChange={onChange} placeholder={t("common.text.inputName", { name: label })} />
                     {
                         positionUnit !== "left" && valueUnitList === undefined
                         && <span className="input-group-text">{valueUnit}</span>

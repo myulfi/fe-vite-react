@@ -25,7 +25,7 @@ export default function Radio({
         onChange({
             target: {
                 name: name,
-                value: value
+                value: Number(value)
             }
         })
     }

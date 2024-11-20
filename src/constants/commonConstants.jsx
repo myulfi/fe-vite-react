@@ -2,6 +2,10 @@ export const TABLE = {
     PAGINATION: 1,
     LOAD_MORE: 2,
 }
+export const FLAG = {
+    YES: 1,
+    NO: 0,
+}
 export const DEVICE = {
     NONE: 0,
     MOBILE: 1,

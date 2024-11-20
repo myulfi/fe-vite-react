@@ -21,7 +21,7 @@ export default function InputDecimal({
     const [valueInput, setValueInput] = useState("")
 
     useEffect(() => {
-        setValueInput(formatToMoney(value.toString().replace(".", ",")))
+        setValueInput(formatToMoney((value ?? "").toString().replace(".", ",")))
     }, [value])
 
     const formatToMoney = (input) => {

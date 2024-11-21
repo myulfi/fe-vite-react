@@ -353,12 +353,26 @@ export default function Database() {
     const connectDatabase = async (row) => {
         setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [row.id]: { connectedButtonFlag: true } })
         try {
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${row.id}/test-connetion-database.json`)
+            const json = await apiRequest(CommonConstants.METHOD.GET, `/external/${row.id}/test-connetion-database.json`)
 
-            if (response.data.status === "success") {
+            if (json.data.status === "success") {
                 setDatabaseId(row.id)
                 setDatabaseConnectionTitleModal(`${row.code} | ${row.databaseConnection}`)
+                setDatabaseQueryManualValue("")
+                setQueryManualTableFlag(false)
+
+                getDatabaseQueryObject(
+                    row.id,
+                    {
+                        "page": 1,
+                        "length": 10,
+                        "search": "",
+                        "order": ["object_id", "desc"],
+                    }
+                )
                 ModalHelper.show("modal_database_connection")
+            } else {
+                setToast({ type: json.data.status, message: json.data.message })
             }
         } catch (error) {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
@@ -450,7 +464,6 @@ export default function Database() {
         }
     }
 
-
     const [databaseQueryExportLoadingFlag, setDatabaseQueryExportLoadingFlag] = useState(false)
 
     const databaseQueryExportConditionForm = {
@@ -537,7 +550,7 @@ export default function Database() {
 
                         if (json.data.status === "success") {
                             if (databaseQueryExportForm.saveAs === 1) {
-                                await navigator.clipboard.writeText(FORMAT.JSON === databaseQueryExportForm.formatId ? JSON.stringify(json.data.data) : json.data.data)
+                                await navigator.clipboard.writeText(json.data.data)
                                 setToast({ type: json.data.status, message: "common.information.exported" })
                             } else {
                                 const nameArray = [...databaseQueryManualValue.matchAll(new RegExp("FROM (\\w+)", "gmi"))];
@@ -555,6 +568,42 @@ export default function Database() {
                     }
                 },
             })
+        }
+    }
+
+    const [queryObjectDataArray, setQueryObjectDataArray] = useState([])
+    const [databaseQueryObjectOptionColumnTable, setDatabaseQueryObjectOptionColumnTable] = useState([])
+    const [databaseQueryObjectDataTotalTable, setDatabaseQueryObjectDataTotalTable] = useState(0)
+    const [databaseQueryObjectTableLoadingFlag, setDatabaseQueryObjectTableLoadingFlag] = useState(false)
+
+    const getDatabaseQueryObject = async (databaseId, options) => {
+        setDatabaseQueryObjectTableLoadingFlag(true)
+
+        try {
+            const params = {
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
+                "search": encodeURIComponent(options.search),
+                "orderColumn": options.order.length > 1 ? options.order[0] : null,
+                "orderDir": options.order.length > 1 ? options.order[1] : null,
+            }
+
+            if (databaseId > 0) {
+                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-object-database.json`, params)
+                const json = response.data
+                setQueryObjectDataArray(json.data)
+                setDatabaseQueryObjectDataTotalTable(json.recordsTotal)
+                setDatabaseQueryObjectOptionColumnTable(
+                    json.data.reduce(function (map, obj) {
+                        map[obj.id] = { "definitionViewedButtonFlag": false, "dataViewedButtonFlag": false }
+                        return map
+                    }, {})
+                )
+            }
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setDatabaseQueryObjectTableLoadingFlag(false)
         }
     }
 
@@ -696,84 +745,72 @@ export default function Database() {
                                         )
                                     }
                                 },
-                                // {
-                                //     "label": t("common.text.vehicle"),
-                                //     "component": function () {
-                                //         return (
-                                //             <div className="row">
-                                //                 <Table
-                                //                     lengthFlag={false}
-                                //                     searchFlag={false}
-                                //                     dataArray={vehicleArray}
-                                //                     columns={[
-                                //                         {
-                                //                             data: "id",
-                                //                             name: t("common.text.plateNumber"),
-                                //                             class: "text-nowrap",
-                                //                             minDevice: CommonConstants.DEVICE.MOBILE,
-                                //                         },
-                                //                         {
-                                //                             data: "ownerName",
-                                //                             name: t("common.text.name"),
-                                //                             class: "text-nowrap",
-                                //                             minDevice: CommonConstants.DEVICE.MOBILE
-                                //                         },
-                                //                         {
-                                //                             data: "address",
-                                //                             name: t("common.text.address"),
-                                //                             class: "text-nowrap",
-                                //                             minDevice: CommonConstants.DEVICE.NONE
-                                //                         },
-                                //                         {
-                                //                             data: "brand",
-                                //                             name: t("common.text.brand"),
-                                //                             minDevice: CommonConstants.DEVICE.TABLET,
-                                //                         },
-                                //                         {
-                                //                             data: "model",
-                                //                             name: t("common.text.model"),
-                                //                             minDevice: CommonConstants.DEVICE.TABLET,
-                                //                         },
-                                //                         {
-                                //                             data: "vehicleCategoryName",
-                                //                             name: t("common.text.category"),
-                                //                             minDevice: CommonConstants.DEVICE.DESKTOP,
-                                //                         },
-                                //                         {
-                                //                             data: "manufactureYear",
-                                //                             name: t("common.text.year"),
-                                //                             minDevice: CommonConstants.DEVICE.DESKTOP
-                                //                         },
-                                //                         {
-                                //                             data: "cylinder",
-                                //                             name: t("common.text.cylinder"),
-                                //                             minDevice: CommonConstants.DEVICE.DESKTOP
-                                //                         },
-                                //                         {
-                                //                             data: "color",
-                                //                             name: t("common.text.color"),
-                                //                             minDevice: CommonConstants.DEVICE.DESKTOP
-                                //                         },
-                                //                         {
-                                //                             data: "vin",
-                                //                             name: "VIN",
-                                //                             minDevice: CommonConstants.DEVICE.NONE
-                                //                         },
-                                //                         {
-                                //                             data: "engineNumber",
-                                //                             name: t("common.text.engineNumber"),
-                                //                             minDevice: CommonConstants.DEVICE.NONE,
-                                //                         },
-                                //                     ]}
+                                {
+                                    "label": t("common.text.object"),
+                                    "component": () => {
+                                        return (
+                                            <div className="row">
+                                                <div className="col-md-12 col-sm-12 col-xs-12">
+                                                    <div className="row">
+                                                        <Table
+                                                            dataArray={queryObjectDataArray}
+                                                            columns={[
+                                                                {
+                                                                    data: "object_id",
+                                                                    name: t("common.text.id"),
+                                                                    class: "text-nowrap",
+                                                                    minDevice: CommonConstants.DEVICE.MOBILE,
+                                                                },
+                                                                {
+                                                                    data: "object_name",
+                                                                    name: t("common.text.name"),
+                                                                    class: "text-nowrap",
+                                                                    minDevice: CommonConstants.DEVICE.MOBILE
+                                                                },
+                                                                {
+                                                                    data: "object_type",
+                                                                    name: t("common.text.type"),
+                                                                    class: "text-nowrap",
+                                                                    minDevice: CommonConstants.DEVICE.TABLET
+                                                                },
+                                                                {
+                                                                    data: "object_id",
+                                                                    name: t("common.text.option"),
+                                                                    class: "text-center",
+                                                                    render: function (data, row) {
+                                                                        return (
+                                                                            <>
+                                                                                <Button
+                                                                                    label={t("common.button.definition")}
+                                                                                    onClick={() => viewDefinitionQueryObject(row)}
+                                                                                    className="btn-primary"
+                                                                                    icon="bi-plugin"
+                                                                                    loadingFlag={databaseQueryObjectOptionColumnTable[data]?.definitionViewedButtonFlag}
+                                                                                />
+                                                                                <Button
+                                                                                    label={t("common.button.data")}
+                                                                                    onClick={() => viewDataQueryObject(data)}
+                                                                                    className="btn-primary"
+                                                                                    icon="bi-list-ul"
+                                                                                    loadingFlag={databaseQueryObjectOptionColumnTable[data]?.dataViewedButtonFlag}
+                                                                                />
+                                                                            </>
+                                                                        )
+                                                                    }
+                                                                },
+                                                            ]}
+                                                            order={[[0, "desc"]]}
 
-                                //                     dataTotal={vehicleDataTotalTable}
-                                //                     onRender={(page, length, search) => { getVehicle(residentView.id, page = page, length = length, search = search); }}
-                                //                     loadingFlag={vehicleTableLoadingFlag}
-                                //                 />
-                                //             </div>
-                                //         )
-                                //     }
-                                // }
+                                                            dataTotal={databaseQueryObjectDataTotalTable}
+                                                            onRender={(page, length, search, order) => { getDatabaseQueryObject(databaseId, { page: page, length: length, search: search, order: order }) }}
+                                                            loadingFlag={databaseQueryObjectTableLoadingFlag}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                }
                             ]}
                         />
                     </div>

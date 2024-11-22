@@ -308,6 +308,7 @@ export default function Database() {
 
     const [databaseId, setDatabaseId] = useState(0)
     const [queryManualId, setQueryManualId] = useState(0)
+    const [queryObjectName, setQueryObjectName] = useState("-")
 
     const databaseQueryExportInitial = {
         formatId: 1,
@@ -335,21 +336,7 @@ export default function Database() {
     const insertMap = [{ "key": 1, "value": "INSERT" }, { "key": 0, "value": "UPDATE" }]
     const saveAsMap = [{ "key": 1, "value": t("common.button.clipboard") }, { "key": 2, "value": t("common.button.file") }]
 
-    const [queryManualTableFlag, setQueryManualTableFlag] = useState(false)
-    const [queryManualDataArray, setQueryManualDataArray] = useState([])
-    const [queryManualColumn, setQueryManualColumn] = useState([{
-        data: "action",
-        name: "Result Information",
-        class: "text-nowrap"
-    }])
-    const [queryManualDataTotalTable, setQueryManualDataTotalTable] = useState(0)
-    const [queryManualTableLoadingFlag, setQueryManualTableLoadingFlag] = useState(false)
-
     const [databaseConnectionTitleModal, setDatabaseConnectionTitleModal] = useState(undefined)
-    const [databaseQueryManualValue, setDatabaseQueryManualValue] = useState()
-    const [databaseQueryManualValueError, setDatabaseQueryManualValueError] = useState([])
-    const [databaseQueryManualButtonFlag, setDatabaseQueryManualButtonFlag] = useState(false)
-
     const connectDatabase = async (row) => {
         setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [row.id]: { connectedButtonFlag: true } })
         try {
@@ -359,7 +346,7 @@ export default function Database() {
                 setDatabaseId(row.id)
                 setDatabaseConnectionTitleModal(`${row.code} | ${row.databaseConnection}`)
                 setDatabaseQueryManualValue("")
-                setQueryManualTableFlag(false)
+                setDatabaseQueryManualTableFlag(false)
 
                 getDatabaseQueryObject(
                     row.id,
@@ -381,26 +368,41 @@ export default function Database() {
         }
     }
 
+    const [databaseQueryManualTableFlag, setDatabaseQueryManualTableFlag] = useState(false)
+    const [databaseQueryManualDataArray, setDatabaseQueryManualDataArray] = useState([])
+    const [databaseQueryManualColumn, setDatabaseQueryManualColumn] = useState([{
+        data: "action",
+        name: "Result Information",
+        class: "text-nowrap"
+    }])
+    const [databaseQueryManualDataTotalTable, setDatabaseQueryManualDataTotalTable] = useState(0)
+    const [databaseQueryManualTableLoadingFlag, setDatabaseQueryManualTableLoadingFlag] = useState(false)
+
+    const [databaseQueryManualValue, setDatabaseQueryManualValue] = useState()
+    const [databaseQueryManualValueError, setDatabaseQueryManualValueError] = useState([])
+    const [databaseQueryManualButtonFlag, setDatabaseQueryManualButtonFlag] = useState(false)
+
     const onDatabaseQueryManualValueChange = (e) => {
         const { name, value } = e.target
         setDatabaseQueryManualValue(value)
         setDatabaseQueryManualValueError(undefined)
     }
+
     const onDatabaseQueryManualValueKeyDown = (e) => {
         if (e.ctrlKey && 13 === e.which && !databaseQueryManualButtonFlag) {
-            runQueryManual()
+            runDatabaseQueryManual()
         }
     }
 
-    const runQueryManual = async (e) => {
+    const runDatabaseQueryManual = async (e) => {
         setDatabaseQueryManualButtonFlag(true)
         try {
             const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/query-manual-database.json`, JSON.stringify({ query: databaseQueryManualValue }))
 
             if (json.data.status === "success") {
-                setQueryManualTableFlag(true)
+                setDatabaseQueryManualTableFlag(true)
 
-                setQueryManualColumn(
+                setDatabaseQueryManualColumn(
                     json.data.data.header.map(element => {
                         if (element.type !== undefined) {
                             return {
@@ -432,9 +434,10 @@ export default function Database() {
 
                 if (json.data.data.queryManualId !== undefined) {
                     setQueryManualId(json.data.data.queryManualId)
-                    getQueryManual({ id: json.data.data.queryManualId, page: 1, length: 10 })
+                    console.log("run-query-manual")
+                    getDatabaseQueryManual({ id: json.data.data.queryManualId, page: 1, length: 10 })
                 } else {
-                    setQueryManualDataArray(json.data.data.result)
+                    setDatabaseQueryManualDataArray(json.data.data.result)
                 }
             }
         } catch (error) {
@@ -444,8 +447,8 @@ export default function Database() {
         }
     }
 
-    const getQueryManual = async (options) => {
-        setQueryManualTableLoadingFlag(true)
+    const getDatabaseQueryManual = async (options) => {
+        setDatabaseQueryManualTableLoadingFlag(true)
 
         try {
             const params = {
@@ -455,12 +458,12 @@ export default function Database() {
 
             const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${options.id}/query-manual-database.json`, params)
             const json = response.data
-            setQueryManualDataArray(json.data)
-            setQueryManualDataTotalTable(json.recordsTotal)
+            setDatabaseQueryManualDataArray(json.data)
+            setDatabaseQueryManualDataTotalTable(json.recordsTotal)
         } catch (error) {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
-            setQueryManualTableLoadingFlag(false)
+            setDatabaseQueryManualTableLoadingFlag(false)
         }
     }
 
@@ -571,7 +574,9 @@ export default function Database() {
         }
     }
 
-    const [queryObjectDataArray, setQueryObjectDataArray] = useState([])
+    const [databaseExactTitleModal, setDatabaseExactTitleModal] = useState(undefined)
+
+    const [databaseQueryObjectDataArray, setDatabaseQueryObjectDataArray] = useState([])
     const [databaseQueryObjectOptionColumnTable, setDatabaseQueryObjectOptionColumnTable] = useState([])
     const [databaseQueryObjectDataTotalTable, setDatabaseQueryObjectDataTotalTable] = useState(0)
     const [databaseQueryObjectTableLoadingFlag, setDatabaseQueryObjectTableLoadingFlag] = useState(false)
@@ -591,7 +596,7 @@ export default function Database() {
             if (databaseId > 0) {
                 const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-object-database.json`, params)
                 const json = response.data
-                setQueryObjectDataArray(json.data)
+                setDatabaseQueryObjectDataArray(json.data)
                 setDatabaseQueryObjectDataTotalTable(json.recordsTotal)
                 setDatabaseQueryObjectOptionColumnTable(
                     json.data.reduce(function (map, obj) {
@@ -604,6 +609,70 @@ export default function Database() {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
             setDatabaseQueryObjectTableLoadingFlag(false)
+        }
+    }
+
+    const [databaseQueryExactDataArray, setDatabaseQueryExactDataArray] = useState([])
+    const [databaseQueryExactColumn, setDatabaseQueryExactColumn] = useState([])
+    const [databaseQueryExactDataTotalTable, setDatabaseQueryExactDataTotalTable] = useState(0)
+    const [databaseQueryExactTableLoadingFlag, setDatabaseQueryExactTableLoadingFlag] = useState(false)
+
+    const [databaseQueryExactButtonFlag, setDatabaseQueryExactButtonFlag] = useState(false)
+
+    const viewDataQueryObject = async (data) => {
+        setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [data]: { dataViewedButtonFlag: true } })
+        try {
+            setQueryObjectName(data)
+            setDatabaseExactTitleModal(`${databaseConnectionTitleModal} | ${data}`)
+
+
+            setDatabaseQueryExactButtonFlag(true)
+            const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/${data}/query-object-data-database.json`)
+            if (json.data.status === "success") {
+                setDatabaseQueryExactColumn(
+                    json.data.data.header.map(element => {
+                        return {
+                            data: element.name,
+                            name: `${element.name} (${element.type})`,
+                            class: "text-nowrap",
+                            defaultContent: () => { return <i>NULL</i> }
+                        }
+                    })
+                )
+
+                getDatabaseQueryObjectData({ id: data, page: 1, length: 10 })
+            }
+
+            ModalHelper.show("modal_database_exact")
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setDatabaseQueryExactButtonFlag(false)
+            setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [data]: { dataViewedButtonFlag: false } })
+        }
+    }
+
+    const runDatabaseQueryObjectData = async (e) => {
+
+    }
+
+    const getDatabaseQueryObjectData = async (options) => {
+        setDatabaseQueryExactTableLoadingFlag(true)
+
+        try {
+            const params = {
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
+            }
+
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${options.id}/query-object-data-database.json`, params)
+            const json = response.data
+            setDatabaseQueryExactDataArray(json.data)
+            setDatabaseQueryExactDataTotalTable(json.recordsTotal)
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setDatabaseQueryExactTableLoadingFlag(false)
         }
     }
 
@@ -693,7 +762,7 @@ export default function Database() {
                                                             label={
                                                                 <Button
                                                                     label={t("common.button.run")}
-                                                                    onClick={(e) => runQueryManual(e)}
+                                                                    onClick={(e) => runDatabaseQueryManual(e)}
                                                                     className="btn-primary"
                                                                     icon="bi-play-fill"
                                                                     loadingFlag={databaseQueryManualButtonFlag}
@@ -701,44 +770,43 @@ export default function Database() {
                                                             }
                                                             name="value" rows="3" value={databaseQueryManualValue} onChange={onDatabaseQueryManualValueChange} onKeyDown={onDatabaseQueryManualValueKeyDown} className="col-md-12 col-sm-12 col-xs-12" placeholder={t("common.text.onHere", { name: t("common.text.query") })} error={databaseQueryManualValueError}
                                                         />
-                                                        {
-                                                            queryManualTableFlag
-                                                            && <Table
-                                                                additionalButtonArray={
-                                                                    queryManualColumn.length > 1
-                                                                        ? [
-                                                                            {
-                                                                                label: t("common.button.export"),
-                                                                                onClick: () => viewDatabaseQueryExport(),
-                                                                                icon: "bi-download",
-                                                                            },
-                                                                            {
-                                                                                label: t("common.button.whitelist"),
-                                                                                onClick: () => implementLanguage(),
-                                                                                icon: "bi-plus-circle-fill",
-                                                                            },
-                                                                            {
-                                                                                label: t("common.button.chart"),
-                                                                                onClick: () => implementLanguage(),
-                                                                                icon: "bi-bar-chart-line-fill",
-                                                                            }
-                                                                        ]
-                                                                        : []
-                                                                }
-                                                                lengthFlag={false}
-                                                                searchFlag={false}
-                                                                dataArray={queryManualDataArray ?? []}
-                                                                columns={queryManualColumn}
+                                                        <Table
+                                                            showFlag={databaseQueryManualTableFlag}
+                                                            additionalButtonArray={
+                                                                databaseQueryManualColumn.length > 1
+                                                                    ? [
+                                                                        {
+                                                                            label: t("common.button.export"),
+                                                                            onClick: () => viewDatabaseQueryExport(),
+                                                                            icon: "bi-download",
+                                                                        },
+                                                                        {
+                                                                            label: t("common.button.whitelist"),
+                                                                            onClick: () => implementLanguage(),
+                                                                            icon: "bi-plus-circle-fill",
+                                                                        },
+                                                                        {
+                                                                            label: t("common.button.chart"),
+                                                                            onClick: () => implementLanguage(),
+                                                                            icon: "bi-bar-chart-line-fill",
+                                                                        }
+                                                                    ]
+                                                                    : []
+                                                            }
+                                                            lengthFlag={false}
+                                                            searchFlag={false}
+                                                            dataArray={databaseQueryManualDataArray ?? []}
+                                                            columns={databaseQueryManualColumn}
 
-                                                                dataTotal={queryManualColumn.length > 1 ? queryManualDataTotalTable : 0}
-                                                                onRender={(page, length) => {
-                                                                    if (queryManualId > 0) {
-                                                                        getQueryManual({ id: queryManualId, page: page, length: length })
-                                                                    }
-                                                                }}
-                                                                loadingFlag={queryManualTableLoadingFlag}
-                                                            />
-                                                        }
+                                                            dataTotal={databaseQueryManualColumn.length > 1 ? databaseQueryManualDataTotalTable : 0}
+                                                            onRender={(page, length) => {
+                                                                if (queryManualId > 0) {
+                                                                    console.log({ id: queryManualId, page: page, length: length })
+                                                                    getDatabaseQueryManual({ id: queryManualId, page: page, length: length })
+                                                                }
+                                                            }}
+                                                            loadingFlag={databaseQueryManualTableLoadingFlag}
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
@@ -753,7 +821,7 @@ export default function Database() {
                                                 <div className="col-md-12 col-sm-12 col-xs-12">
                                                     <div className="row">
                                                         <Table
-                                                            dataArray={queryObjectDataArray}
+                                                            dataArray={databaseQueryObjectDataArray}
                                                             columns={[
                                                                 {
                                                                     data: "object_id",
@@ -774,24 +842,24 @@ export default function Database() {
                                                                     minDevice: CommonConstants.DEVICE.TABLET
                                                                 },
                                                                 {
-                                                                    data: "object_id",
+                                                                    data: "object_name",
                                                                     name: t("common.text.option"),
                                                                     class: "text-center",
-                                                                    render: function (data, row) {
+                                                                    render: function (data) {
                                                                         return (
                                                                             <>
                                                                                 <Button
                                                                                     label={t("common.button.definition")}
-                                                                                    onClick={() => viewDefinitionQueryObject(row)}
+                                                                                    onClick={() => viewDefinitionQueryObject(data)}
                                                                                     className="btn-primary"
-                                                                                    icon="bi-plugin"
+                                                                                    icon="bi-code-slash"
                                                                                     loadingFlag={databaseQueryObjectOptionColumnTable[data]?.definitionViewedButtonFlag}
                                                                                 />
                                                                                 <Button
                                                                                     label={t("common.button.data")}
                                                                                     onClick={() => viewDataQueryObject(data)}
                                                                                     className="btn-primary"
-                                                                                    icon="bi-list-ul"
+                                                                                    icon="bi-file-earmark-text"
                                                                                     loadingFlag={databaseQueryObjectOptionColumnTable[data]?.dataViewedButtonFlag}
                                                                                 />
                                                                             </>
@@ -817,8 +885,48 @@ export default function Database() {
                 </div>
             </Modal>
             <Modal
+                id="modal_database_exact"
+                size="xl"
+                title={databaseExactTitleModal}
+            >
+                <div className="row">
+                    <div className="col-md-12 col-sm-12 col-xs-12">
+                        <div className="row">
+                            <Table
+                                additionalButtonArray={
+                                    databaseQueryExactColumn.length > 1
+                                        ? [
+                                            {
+                                                label: t("common.button.export"),
+                                                onClick: () => viewDatabaseQueryExport(),
+                                                icon: "bi-download",
+                                            },
+                                            {
+                                                label: t("common.button.chart"),
+                                                onClick: () => implementLanguage(),
+                                                icon: "bi-bar-chart-line-fill",
+                                            }
+                                        ]
+                                        : []
+                                }
+                                lengthFlag={false}
+                                searchFlag={false}
+                                dataArray={databaseQueryExactDataArray ?? []}
+                                columns={databaseQueryExactColumn}
+
+                                dataTotal={databaseQueryExactDataTotalTable}
+                                onRender={(page, length) => {
+                                    getDatabaseQueryObjectData({ id: queryObjectName, page: page, length: length })
+                                }}
+                                loadingFlag={databaseQueryExactTableLoadingFlag}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+            <Modal
                 id="modal_database_query_export"
-                size="sm"
+                size="md"
                 title={t("common.text.export")}
                 buttonArray={
                     <>
@@ -904,6 +1012,12 @@ export default function Database() {
                                         name: t("common.text.description"),
                                         class: "text-nowrap",
                                         minDevice: CommonConstants.DEVICE.TABLET,
+                                    },
+                                    {
+                                        data: "description",
+                                        name: t("common.text.description"),
+                                        class: "text-nowrap",
+                                        minDevice: CommonConstants.DEVICE.NONE,
                                     },
                                     {
                                         data: "createdDate",

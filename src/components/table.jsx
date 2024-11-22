@@ -7,6 +7,7 @@ import { useTranslation, Trans } from "react-i18next"
 import Dropdown from "./dropdown"
 
 export default function Table({
+    showFlag = true,
     type = CommonConstants.TABLE.PAGINATION,
     labelNewButton,
     onNewButtonClick = () => { alert("Please define your function!") },
@@ -200,7 +201,7 @@ export default function Table({
     }
 
     return (
-        <>
+        <div className={showFlag ? "d-block" : "d-none"}>
             <div>
                 <div className="clearfix">
                     {
@@ -448,6 +449,6 @@ export default function Table({
                     }
                 </Fragment>
             }
-        </>
+        </div>
     )
 }

@@ -357,6 +357,16 @@ export default function Database() {
                         "order": ["object_id", "desc"],
                     }
                 )
+
+                getDatabaseQueryWhitelist(
+                    row.id,
+                    {
+                        "page": 1,
+                        "length": 10,
+                        "search": "",
+                        "order": ["createdDate", "desc"],
+                    }
+                )
                 ModalHelper.show("modal_database_connection")
             } else {
                 setToast({ type: json.data.status, message: json.data.message })
@@ -467,6 +477,144 @@ export default function Database() {
         }
     }
 
+    const [databaseQueryObjectDataArray, setDatabaseQueryObjectDataArray] = useState([])
+    const [databaseQueryObjectOptionColumnTable, setDatabaseQueryObjectOptionColumnTable] = useState([])
+    const [databaseQueryObjectDataTotalTable, setDatabaseQueryObjectDataTotalTable] = useState(0)
+    const [databaseQueryObjectTableLoadingFlag, setDatabaseQueryObjectTableLoadingFlag] = useState(false)
+
+    const getDatabaseQueryObject = async (databaseId, options) => {
+        setDatabaseQueryObjectTableLoadingFlag(true)
+
+        try {
+            const params = {
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
+                "search": encodeURIComponent(options.search),
+                "orderColumn": options.order.length > 1 ? options.order[0] : null,
+                "orderDir": options.order.length > 1 ? options.order[1] : null,
+            }
+
+            if (databaseId > 0) {
+                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-object-database.json`, params)
+                const json = response.data
+                setDatabaseQueryObjectDataArray(json.data)
+                setDatabaseQueryObjectDataTotalTable(json.recordsTotal)
+                setDatabaseQueryObjectOptionColumnTable(
+                    json.data.reduce(function (map, obj) {
+                        map[obj.id] = { "definitionViewedButtonFlag": false, "dataViewedButtonFlag": false }
+                        return map
+                    }, {})
+                )
+            }
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setDatabaseQueryObjectTableLoadingFlag(false)
+        }
+    }
+
+    const [databaseQueryWhitelistDataArray, setDatabaseQueryWhitelistDataArray] = useState([])
+    const [databaseQueryWhitelistOptionColumnTable, setDatabaseQueryWhitelistOptionColumnTable] = useState([])
+    const [databaseQueryWhitelistDataTotalTable, setDatabaseQueryWhitelistDataTotalTable] = useState(0)
+    const [databaseQueryWhitelistTableLoadingFlag, setDatabaseQueryWhitelistTableLoadingFlag] = useState(false)
+
+    const getDatabaseQueryWhitelist = async (databaseId, options) => {
+        setDatabaseQueryWhitelistTableLoadingFlag(true)
+
+        try {
+            const params = {
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
+                "search": encodeURIComponent(options.search),
+                "orderColumn": options.order.length > 1 ? options.order[0] : null,
+                "orderDir": options.order.length > 1 ? options.order[1] : null,
+            }
+
+            if (databaseId > 0) {
+                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-whitelist-database.json`, params)
+                const json = response.data
+                setDatabaseQueryWhitelistDataArray(json.data)
+                setDatabaseQueryWhitelistDataTotalTable(json.recordsTotal)
+                setDatabaseQueryWhitelistOptionColumnTable(
+                    json.data.reduce(function (map, obj) {
+                        map[obj.id] = { "definitionViewedButtonFlag": false, "dataViewedButtonFlag": false }
+                        return map
+                    }, {})
+                )
+            }
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setDatabaseQueryWhitelistTableLoadingFlag(false)
+        }
+    }
+
+    const [databaseExactTitleModal, setDatabaseExactTitleModal] = useState(undefined)
+    const [databaseQueryExactDataArray, setDatabaseQueryExactDataArray] = useState([])
+    const [databaseQueryExactColumn, setDatabaseQueryExactColumn] = useState([])
+    const [databaseQueryExactDataTotalTable, setDatabaseQueryExactDataTotalTable] = useState(0)
+    const [databaseQueryExactTableLoadingFlag, setDatabaseQueryExactTableLoadingFlag] = useState(false)
+
+    const viewDataQueryExact = async (id, name) => {
+        if (typeof id === "string") {
+            setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [id]: { dataViewedButtonFlag: true } })
+        } else {
+            setDatabaseQueryWhitelistOptionColumnTable({ databaseQueryWhitelistOptionColumnTable, [id]: { dataViewedButtonFlag: true } })
+        }
+
+        try {
+            setQueryObjectName(id)
+            setDatabaseExactTitleModal(`${databaseConnectionTitleModal} | ${name ?? id}`)
+            const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/${id}/query-exact-data-database.json`)
+            if (json.data.status === "success") {
+                setDatabaseQueryExactColumn(
+                    json.data.data.header.map(element => {
+                        return {
+                            data: element.name,
+                            name: `${element.name} (${element.type})`,
+                            class: "text-nowrap",
+                            defaultContent: () => { return <i>NULL</i> }
+                        }
+                    })
+                )
+
+                getDatabaseQueryExactData({ id: id, page: 1, length: 10 })
+            }
+
+            ModalHelper.show("modal_database_exact")
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            if (typeof id === "string") {
+                setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [id]: { dataViewedButtonFlag: false } })
+            } else {
+                setDatabaseQueryWhitelistOptionColumnTable({ databaseQueryWhitelistOptionColumnTable, [id]: { dataViewedButtonFlag: false } })
+            }
+        }
+    }
+
+    const getDatabaseQueryExactData = async (options) => {
+        if (databaseId > 0) {
+            setDatabaseQueryExactTableLoadingFlag(true)
+
+            try {
+                const params = {
+                    "start": (options.page - 1) * options.length,
+                    "length": options.length,
+                }
+
+                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${options.id}/query-exact-data-database.json`, params)
+                const json = response.data
+                setDatabaseQueryExactDataArray(json.data)
+                setDatabaseQueryExactDataTotalTable(json.recordsTotal)
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+            } finally {
+                setDatabaseQueryExactTableLoadingFlag(false)
+            }
+        }
+    }
+
     const [databaseQueryExportLoadingFlag, setDatabaseQueryExportLoadingFlag] = useState(false)
 
     const databaseQueryExportConditionForm = {
@@ -571,108 +719,6 @@ export default function Database() {
                     }
                 },
             })
-        }
-    }
-
-    const [databaseExactTitleModal, setDatabaseExactTitleModal] = useState(undefined)
-
-    const [databaseQueryObjectDataArray, setDatabaseQueryObjectDataArray] = useState([])
-    const [databaseQueryObjectOptionColumnTable, setDatabaseQueryObjectOptionColumnTable] = useState([])
-    const [databaseQueryObjectDataTotalTable, setDatabaseQueryObjectDataTotalTable] = useState(0)
-    const [databaseQueryObjectTableLoadingFlag, setDatabaseQueryObjectTableLoadingFlag] = useState(false)
-
-    const getDatabaseQueryObject = async (databaseId, options) => {
-        setDatabaseQueryObjectTableLoadingFlag(true)
-
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-            }
-
-            if (databaseId > 0) {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-object-database.json`, params)
-                const json = response.data
-                setDatabaseQueryObjectDataArray(json.data)
-                setDatabaseQueryObjectDataTotalTable(json.recordsTotal)
-                setDatabaseQueryObjectOptionColumnTable(
-                    json.data.reduce(function (map, obj) {
-                        map[obj.id] = { "definitionViewedButtonFlag": false, "dataViewedButtonFlag": false }
-                        return map
-                    }, {})
-                )
-            }
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryObjectTableLoadingFlag(false)
-        }
-    }
-
-    const [databaseQueryExactDataArray, setDatabaseQueryExactDataArray] = useState([])
-    const [databaseQueryExactColumn, setDatabaseQueryExactColumn] = useState([])
-    const [databaseQueryExactDataTotalTable, setDatabaseQueryExactDataTotalTable] = useState(0)
-    const [databaseQueryExactTableLoadingFlag, setDatabaseQueryExactTableLoadingFlag] = useState(false)
-
-    const [databaseQueryExactButtonFlag, setDatabaseQueryExactButtonFlag] = useState(false)
-
-    const viewDataQueryObject = async (data) => {
-        setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [data]: { dataViewedButtonFlag: true } })
-        try {
-            setQueryObjectName(data)
-            setDatabaseExactTitleModal(`${databaseConnectionTitleModal} | ${data}`)
-
-
-            setDatabaseQueryExactButtonFlag(true)
-            const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/${data}/query-object-data-database.json`)
-            if (json.data.status === "success") {
-                setDatabaseQueryExactColumn(
-                    json.data.data.header.map(element => {
-                        return {
-                            data: element.name,
-                            name: `${element.name} (${element.type})`,
-                            class: "text-nowrap",
-                            defaultContent: () => { return <i>NULL</i> }
-                        }
-                    })
-                )
-
-                getDatabaseQueryObjectData({ id: data, page: 1, length: 10 })
-            }
-
-            ModalHelper.show("modal_database_exact")
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryExactButtonFlag(false)
-            setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [data]: { dataViewedButtonFlag: false } })
-        }
-    }
-
-    const runDatabaseQueryObjectData = async (e) => {
-
-    }
-
-    const getDatabaseQueryObjectData = async (options) => {
-        setDatabaseQueryExactTableLoadingFlag(true)
-
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-            }
-
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${options.id}/query-object-data-database.json`, params)
-            const json = response.data
-            setDatabaseQueryExactDataArray(json.data)
-            setDatabaseQueryExactDataTotalTable(json.recordsTotal)
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryExactTableLoadingFlag(false)
         }
     }
 
@@ -857,7 +903,7 @@ export default function Database() {
                                                                                 />
                                                                                 <Button
                                                                                     label={t("common.button.data")}
-                                                                                    onClick={() => viewDataQueryObject(data)}
+                                                                                    onClick={() => viewDataQueryExact(data)}
                                                                                     className="btn-primary"
                                                                                     icon="bi-file-earmark-text"
                                                                                     loadingFlag={databaseQueryObjectOptionColumnTable[data]?.dataViewedButtonFlag}
@@ -872,6 +918,65 @@ export default function Database() {
                                                             dataTotal={databaseQueryObjectDataTotalTable}
                                                             onRender={(page, length, search, order) => { getDatabaseQueryObject(databaseId, { page: page, length: length, search: search, order: order }) }}
                                                             loadingFlag={databaseQueryObjectTableLoadingFlag}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                },
+                                {
+                                    "label": t("common.text.whitelist"),
+                                    "component": () => {
+                                        return (
+                                            <div className="row">
+                                                <div className="col-md-12 col-sm-12 col-xs-12">
+                                                    <div className="row">
+                                                        <Table
+                                                            dataArray={databaseQueryWhitelistDataArray}
+                                                            columns={[
+                                                                {
+                                                                    data: "description",
+                                                                    name: t("common.text.description"),
+                                                                    class: "text-nowrap",
+                                                                    minDevice: CommonConstants.DEVICE.MOBILE,
+                                                                },
+                                                                {
+                                                                    data: "query",
+                                                                    name: t("common.text.query"),
+                                                                    class: "text-nowrap",
+                                                                    minDevice: CommonConstants.DEVICE.TABLET,
+                                                                },
+                                                                {
+                                                                    data: "createdDate",
+                                                                    name: t("common.text.createdDate"),
+                                                                    class: "text-nowrap",
+                                                                    minDevice: CommonConstants.DEVICE.TABLET,
+                                                                },
+                                                                {
+                                                                    data: "id",
+                                                                    name: t("common.text.option"),
+                                                                    class: "text-center",
+                                                                    render: function (data, row) {
+                                                                        return (
+                                                                            <>
+                                                                                <Button
+                                                                                    label={t("common.button.data")}
+                                                                                    onClick={() => viewDataQueryExact(data, row.description)}
+                                                                                    className="btn-primary"
+                                                                                    icon="bi-file-earmark-text"
+                                                                                    loadingFlag={databaseQueryWhitelistOptionColumnTable[data]?.dataViewedButtonFlag}
+                                                                                />
+                                                                            </>
+                                                                        )
+                                                                    }
+                                                                },
+                                                            ]}
+                                                            order={[[2, "desc"]]}
+
+                                                            dataTotal={databaseQueryWhitelistDataTotalTable}
+                                                            onRender={(page, length, search, order) => { getDatabaseQueryWhitelist(databaseId, { page: page, length: length, search: search, order: order }) }}
+                                                            loadingFlag={databaseQueryWhitelistTableLoadingFlag}
                                                         />
                                                     </div>
                                                 </div>
@@ -909,14 +1014,12 @@ export default function Database() {
                                         ]
                                         : []
                                 }
-                                lengthFlag={false}
-                                searchFlag={false}
                                 dataArray={databaseQueryExactDataArray ?? []}
                                 columns={databaseQueryExactColumn}
 
                                 dataTotal={databaseQueryExactDataTotalTable}
                                 onRender={(page, length) => {
-                                    getDatabaseQueryObjectData({ id: queryObjectName, page: page, length: length })
+                                    getDatabaseQueryExactData({ id: queryObjectName, page: page, length: length })
                                 }}
                                 loadingFlag={databaseQueryExactTableLoadingFlag}
                             />

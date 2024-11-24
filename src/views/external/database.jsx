@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import { apiRequest } from "../../api"
+import { Chart } from "react-chartjs-2"
+import 'chart.js/auto'
 import * as CommonConstants from "../../constants/commonConstants"
 import * as DateHelper from "../../function/dateHelper"
 import * as ToastHelper from "../../function/toastHelper"
@@ -308,7 +310,7 @@ export default function Database() {
 
     const [databaseId, setDatabaseId] = useState(0)
     const [queryManualId, setQueryManualId] = useState(0)
-    const [queryObjectName, setQueryObjectName] = useState("-")
+    const [queryExactIdentity, setQueryExactIdentity] = useState("-")
 
     const databaseQueryExportInitial = {
         formatId: 1,
@@ -358,15 +360,7 @@ export default function Database() {
                     }
                 )
 
-                getDatabaseQueryWhitelist(
-                    row.id,
-                    {
-                        "page": 1,
-                        "length": 10,
-                        "search": "",
-                        "order": ["createdDate", "desc"],
-                    }
-                )
+                getDatabaseQueryWhitelist(row.id, databaseQueryWhitelistAttributeTable)
                 ModalHelper.show("modal_database_connection")
             } else {
                 setToast({ type: json.data.status, message: json.data.message })
@@ -387,6 +381,7 @@ export default function Database() {
     }])
     const [databaseQueryManualDataTotalTable, setDatabaseQueryManualDataTotalTable] = useState(0)
     const [databaseQueryManualTableLoadingFlag, setDatabaseQueryManualTableLoadingFlag] = useState(false)
+    const [databaseQueryManualChartLoadingFlag, setDatabaseQueryManualChartLoadingFlag] = useState(false)
 
     const [databaseQueryManualValue, setDatabaseQueryManualValue] = useState()
     const [databaseQueryManualValueError, setDatabaseQueryManualValueError] = useState([])
@@ -444,7 +439,6 @@ export default function Database() {
 
                 if (json.data.data.queryManualId !== undefined) {
                     setQueryManualId(json.data.data.queryManualId)
-                    console.log("run-query-manual")
                     getDatabaseQueryManual({ id: json.data.data.queryManualId, page: 1, length: 10 })
                 } else {
                     setDatabaseQueryManualDataArray(json.data.data.result)
@@ -513,8 +507,29 @@ export default function Database() {
         }
     }
 
+    const databaseQueryWhitelistInitial = {
+        description: undefined,
+    }
+    const [databaseQueryWhitelistForm, setDatabaseQueryWhitelistForm] = useState(databaseQueryWhitelistInitial)
+    const [databaseQueryWhitelistFormError, setDatabaseQueryWhitelistFormError] = useState([])
+
+    const onDatabaseQueryWhitelistFormChange = (e) => {
+        const { name, value } = e.target
+        setDatabaseQueryWhitelistForm({ ...databaseQueryWhitelistForm, [name]: value })
+        setDatabaseQueryWhitelistFormError({ ...databaseQueryWhitelistFormError, [name]: undefined })
+    }
+
+    const databaseQueryWhitelistValidate = (data) => {
+        const error = {}
+        if (!data.description?.trim()) error.description = t("validate.text.required", { name: t("common.text.description") })
+        setDatabaseQueryWhitelistFormError(error)
+        return Object.keys(error).length === 0
+    }
+
+    const [databaseQueryWhitelistSubmitLoadingFlag, setDatabaseQueryWhitelistSubmitLoadingFlag] = useState(false)
     const [databaseQueryWhitelistDataArray, setDatabaseQueryWhitelistDataArray] = useState([])
     const [databaseQueryWhitelistOptionColumnTable, setDatabaseQueryWhitelistOptionColumnTable] = useState([])
+    const [databaseQueryWhitelistAttributeTable, setDatabaseQueryWhitelistAttributeTable] = useState()
     const [databaseQueryWhitelistDataTotalTable, setDatabaseQueryWhitelistDataTotalTable] = useState(0)
     const [databaseQueryWhitelistTableLoadingFlag, setDatabaseQueryWhitelistTableLoadingFlag] = useState(false)
 
@@ -529,6 +544,7 @@ export default function Database() {
                 "orderColumn": options.order.length > 1 ? options.order[0] : null,
                 "orderDir": options.order.length > 1 ? options.order[1] : null,
             }
+            setDatabaseQueryWhitelistAttributeTable(options)
 
             if (databaseId > 0) {
                 const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-whitelist-database.json`, params)
@@ -549,11 +565,103 @@ export default function Database() {
         }
     }
 
+    const entryDatabaseQueryWhitelist = () => {
+        setDatabaseQueryWhitelistFormError([])
+        setDatabaseQueryWhitelistForm(databaseQueryWhitelistInitial)
+        ModalHelper.show("modal_database_query_whitelist")
+    }
+
+    const confirmStoreDatabaseQueryWhitelist = () => {
+        if (databaseQueryWhitelistValidate(databaseQueryWhitelistForm)) {
+            setDialog({
+                message: t("common.confirmation.create", { name: databaseQueryWhitelistForm.description }),
+                type: "confirmation",
+                onConfirm: (e) => storeDatabaseQueryWhitelist(e),
+            })
+        }
+    }
+
+    const storeDatabaseQueryWhitelist = async () => {
+        if (databaseQueryWhitelistValidate(databaseQueryWhitelistForm)) {
+            ModalHelper.hide("dialog_database")
+            setDatabaseQueryWhitelistSubmitLoadingFlag(true)
+
+            try {
+                const data = databaseQueryWhitelistForm
+                data.queryManualId = queryManualId
+                const json = await apiRequest(CommonConstants.METHOD.POST, '/external/query-whitelist-database.json', JSON.stringify(data))
+
+                if (json.data.status === "success") {
+                    getDatabaseQueryWhitelist(databaseId, databaseQueryWhitelistAttributeTable)
+                    ModalHelper.hide("modal_database_query_whitelist")
+                }
+                setToast({ type: json.data.status, message: json.data.message })
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+                setDatabaseQueryWhitelistFormError(error.response.data)
+            } finally {
+                setDatabaseQueryWhitelistSubmitLoadingFlag(false)
+            }
+        }
+    }
+
+    const confirmDeleteDatabaseQueryWhitelist = (id, name) => {
+        if (id !== undefined) {
+            setDialog({
+                message: t("common.confirmation.delete", { name: name }),
+                type: "warning",
+                onConfirm: () => deleteDatabaseQueryWhitelist(id),
+            })
+        } else {
+            if (databaseQueryWhitelistCheckBoxTableArray.length > 0) {
+                setDialog({
+                    message: t("common.confirmation.delete", { name: t("common.text.amountItem", { amount: databaseQueryWhitelistCheckBoxTableArray.length }) }),
+                    type: "warning",
+                    onConfirm: () => deleteDatabaseQueryWhitelist(),
+                })
+            } else {
+                setDialog({
+                    message: t("validate.text.pleaseTickAtLeastAnItem"),
+                    type: "alert"
+                })
+            }
+        }
+    }
+
+    const deleteDatabaseQueryWhitelist = async (id) => {
+        ModalHelper.hide("dialog_database")
+        if (id !== undefined) {
+            setDatabaseQueryWhitelistOptionColumnTable({ ...databaseQueryWhitelistOptionColumnTable, [id]: { deletedButtonFlag: true } })
+        } else {
+            setDatabaseQueryWhitelistBulkOptionLoadingFlag(true)
+        }
+
+        try {
+            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id !== undefined ? id : databaseQueryWhitelistCheckBoxTableArray.join("")}/${databaseId}/query-whitelist-database.json`)
+            if (json.data.status === "success") {
+                getDatabaseQueryWhitelist(databaseId, databaseQueryWhitelistAttributeTable)
+                if (id === undefined) {
+                    setDatabaseQueryWhitelistCheckBoxTableArray([])
+                }
+            }
+            setToast({ type: json.data.status, message: json.data.message })
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            if (id !== undefined) {
+                setDatabaseQueryWhitelistOptionColumnTable({ ...databaseQueryWhitelistOptionColumnTable, [id]: { deletedButtonFlag: false } })
+            } else {
+                setDatabaseQueryWhitelistBulkOptionLoadingFlag(false)
+            }
+        }
+    }
+
     const [databaseExactTitleModal, setDatabaseExactTitleModal] = useState(undefined)
     const [databaseQueryExactDataArray, setDatabaseQueryExactDataArray] = useState([])
     const [databaseQueryExactColumn, setDatabaseQueryExactColumn] = useState([])
     const [databaseQueryExactDataTotalTable, setDatabaseQueryExactDataTotalTable] = useState(0)
     const [databaseQueryExactTableLoadingFlag, setDatabaseQueryExactTableLoadingFlag] = useState(false)
+    const [databaseQueryExactChartLoadingFlag, setDatabaseQueryExactChartLoadingFlag] = useState(false)
 
     const viewDataQueryExact = async (id, name) => {
         if (typeof id === "string") {
@@ -563,7 +671,7 @@ export default function Database() {
         }
 
         try {
-            setQueryObjectName(id)
+            setQueryExactIdentity(id)
             setDatabaseExactTitleModal(`${databaseConnectionTitleModal} | ${name ?? id}`)
             const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/${id}/query-exact-data-database.json`)
             if (json.data.status === "success") {
@@ -722,6 +830,53 @@ export default function Database() {
         }
     }
 
+    const [canvasLabelArray, setCanvasLabelArray] = useState([])
+    const [canvasDatasetArray, setCanvasDatasetArray] = useState([])
+
+    const getDatabaseQueryManualChart = async () => {
+        setDatabaseQueryManualChartLoadingFlag(true)
+
+        try {
+            const params = {
+                "start": 0,
+                "length": -1,
+            }
+
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${queryManualId}/query-manual-database.json`, params)
+            const json = response.data
+
+            setCanvasLabelArray(json.data.map(item => { return item["generation"] }));
+            setCanvasDatasetArray(json.data.map(item => { return item["generationAmount"] }));
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setDatabaseQueryManualChartLoadingFlag(false)
+        }
+    }
+
+    const getDatabaseQueryExactChart = async (options) => {
+        if (databaseId > 0) {
+            setDatabaseQueryExactChartLoadingFlag(true)
+
+            try {
+                const params = {
+                    "start": 0,
+                    "length": -1,
+                }
+
+                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`, params)
+                const json = response.data
+
+                setCanvasLabelArray(json.data.map(item => { return item["generation"] }));
+                setCanvasDatasetArray(json.data.map(item => { return item["generationAmount"] }));
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+            } finally {
+                setDatabaseQueryExactChartLoadingFlag(false)
+            }
+        }
+    }
+
     return (
         <div className="container mt-4 mb-4">
             <Modal
@@ -751,7 +906,6 @@ export default function Database() {
                             />
                         }
                     </>
-
                 }
             >
                 {
@@ -828,13 +982,14 @@ export default function Database() {
                                                                         },
                                                                         {
                                                                             label: t("common.button.whitelist"),
-                                                                            onClick: () => implementLanguage(),
+                                                                            onClick: () => entryDatabaseQueryWhitelist(),
                                                                             icon: "bi-plus-circle-fill",
                                                                         },
                                                                         {
                                                                             label: t("common.button.chart"),
-                                                                            onClick: () => implementLanguage(),
+                                                                            onClick: () => getDatabaseQueryManualChart(),
                                                                             icon: "bi-bar-chart-line-fill",
+                                                                            loadingFlag: databaseQueryManualChartLoadingFlag
                                                                         }
                                                                     ]
                                                                     : []
@@ -847,7 +1002,6 @@ export default function Database() {
                                                             dataTotal={databaseQueryManualColumn.length > 1 ? databaseQueryManualDataTotalTable : 0}
                                                             onRender={(page, length) => {
                                                                 if (queryManualId > 0) {
-                                                                    console.log({ id: queryManualId, page: page, length: length })
                                                                     getDatabaseQueryManual({ id: queryManualId, page: page, length: length })
                                                                 }
                                                             }}
@@ -952,6 +1106,9 @@ export default function Database() {
                                                                     name: t("common.text.createdDate"),
                                                                     class: "text-nowrap",
                                                                     minDevice: CommonConstants.DEVICE.TABLET,
+                                                                    render: function (data) {
+                                                                        return DateHelper.formatDate(new Date(data), "dd MMM yyyy HH:mm:ss")
+                                                                    }
                                                                 },
                                                                 {
                                                                     data: "id",
@@ -966,6 +1123,13 @@ export default function Database() {
                                                                                     className="btn-primary"
                                                                                     icon="bi-file-earmark-text"
                                                                                     loadingFlag={databaseQueryWhitelistOptionColumnTable[data]?.dataViewedButtonFlag}
+                                                                                />
+                                                                                <Button
+                                                                                    label={t("common.button.delete")}
+                                                                                    onClick={() => confirmDeleteDatabaseQueryWhitelist(data, row.description)}
+                                                                                    className="btn-danger"
+                                                                                    icon="bi-trash"
+                                                                                    loadingFlag={databaseQueryWhitelistOptionColumnTable[data]?.deletedButtonFlag}
                                                                                 />
                                                                             </>
                                                                         )
@@ -990,6 +1154,23 @@ export default function Database() {
                 </div>
             </Modal>
             <Modal
+                id="modal_database_query_whitelist"
+                size="xl"
+                title={t("common.button.createNew")}
+                buttonArray={
+                    <Button
+                        label={t("common.button.save")}
+                        onClick={() => confirmStoreDatabaseQueryWhitelist()}
+                        className="btn-primary"
+                        icon="bi-bookmark"
+                        loadingFlag={databaseQueryWhitelistSubmitLoadingFlag}
+                    />
+                }
+            >
+                <Textarea label={t("common.text.description")} name="description" rows="3" value={databaseQueryWhitelistForm.description} onChange={onDatabaseQueryWhitelistFormChange} className="col-md-12 col-sm-12 col-xs-12" error={databaseQueryWhitelistFormError.description} />
+                <Textarea label={t("common.text.query")} rows="3" value={databaseQueryManualValue} disabled={true} className="col-md-12 col-sm-12 col-xs-12" />
+            </Modal>
+            <Modal
                 id="modal_database_exact"
                 size="xl"
                 title={databaseExactTitleModal}
@@ -1008,8 +1189,9 @@ export default function Database() {
                                             },
                                             {
                                                 label: t("common.button.chart"),
-                                                onClick: () => implementLanguage(),
+                                                onClick: () => getDatabaseQueryExactChart(),
                                                 icon: "bi-bar-chart-line-fill",
+                                                loadingFlag: databaseQueryExactChartLoadingFlag
                                             }
                                         ]
                                         : []
@@ -1019,7 +1201,7 @@ export default function Database() {
 
                                 dataTotal={databaseQueryExactDataTotalTable}
                                 onRender={(page, length) => {
-                                    getDatabaseQueryExactData({ id: queryObjectName, page: page, length: length })
+                                    getDatabaseQueryExactData({ id: queryExactIdentity, page: page, length: length })
                                 }}
                                 loadingFlag={databaseQueryExactTableLoadingFlag}
                             />
@@ -1080,6 +1262,29 @@ export default function Database() {
                     databaseQueryExportConditionForm.saveAs()
                     && <Radio label={t("common.text.saveAs")} name="saveAs" value={databaseQueryExportForm.saveAs} map={saveAsMap} onChange={onDatabaseQueryExportFormChange} className="col-12" error={databaseQueryExportFormError.multipleLineFlag} />
                 }
+            </Modal>
+            <Modal
+                id="modal_database_query_chart"
+                size="xl"
+                title={t("common.text.chart")}
+            >
+                <div className="row">
+                    <div className="col-md-12 col-sm-12 col-xs-12">
+                        <div className="row">
+                            <Chart
+                                type="line"
+                                data={{
+                                    labels: canvasLabelArray,
+                                    datasets: [{
+                                        label: 'Generation',
+                                        data: canvasDatasetArray,
+                                    }]
+                                    // , options: optionArray
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
             </Modal>
             <Dialog id="dialog_database" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_database" type={toast.type} message={toast.message} />

@@ -19,6 +19,7 @@ import Label from "../../components/form/label"
 import InputText from "../../components/form/inputText"
 import InputDecimal from "../../components/form/inputDecimal"
 import Radio from "../../components/form/radio"
+import Select from "../../components/form/select"
 
 export default function Database() {
     const { t } = useTranslation()
@@ -413,6 +414,7 @@ export default function Database() {
                             return {
                                 data: element.name,
                                 name: `${element.name} (${element.type})`,
+                                type: element.type,
                                 class: "text-nowrap",
                                 defaultContent: () => { return <i>NULL</i> }
                             }
@@ -680,6 +682,7 @@ export default function Database() {
                         return {
                             data: element.name,
                             name: `${element.name} (${element.type})`,
+                            type: element.type,
                             class: "text-nowrap",
                             defaultContent: () => { return <i>NULL</i> }
                         }
@@ -830,8 +833,21 @@ export default function Database() {
         }
     }
 
+    const [chartTypeValue, setChartTypeValue] = useState("line")
+    const chartTypeMap = [
+        { "key": "line", "value": "Line" },
+        { "key": "bar", "value": "Bar" },
+        { "key": "bubble", "value": "Bubble" },
+        { "key": "doughnut", "value": "Doughnut" },
+        { "key": "pie", "value": "Pie" },
+        { "key": "polarArea", "value": "Polar" },
+        { "key": "radar", "value": "Radar" },
+        { "key": "scatter", "value": "Scatter" },
+    ]
+
     const [canvasLabelArray, setCanvasLabelArray] = useState([])
     const [canvasDatasetArray, setCanvasDatasetArray] = useState([])
+    const [canvasOptionArray, setCanvasOptionArray] = useState([])
 
     const getDatabaseQueryManualChart = async () => {
         setDatabaseQueryManualChartLoadingFlag(true)
@@ -844,6 +860,9 @@ export default function Database() {
 
             const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${queryManualId}/query-manual-database.json`, params)
             const json = response.data
+
+            console.log(databaseQueryManualColumn)
+            const labelArray = []
 
             setCanvasLabelArray(json.data.map(item => { return item["generation"] }));
             setCanvasDatasetArray(json.data.map(item => { return item["generationAmount"] }));
@@ -867,8 +886,116 @@ export default function Database() {
                 const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`, params)
                 const json = response.data
 
-                setCanvasLabelArray(json.data.map(item => { return item["generation"] }));
-                setCanvasDatasetArray(json.data.map(item => { return item["generationAmount"] }));
+                let optionArray = null
+
+                optionArray = {
+                    scales: {
+                        y: {
+                            ticks: { beginAtZero: true }
+                        },
+                        x: {
+                            stacked: false,
+                            title: {
+                                display: true,
+                                text: databaseQueryExactColumn[0].data,
+                                font: {
+                                    size: 20,
+                                },
+                            }
+                        },
+                        // r: {
+                        //     pointLabels: {
+                        //         display: true,
+                        //         centerPointLabels: true,
+                        //         font: {
+                        //             size: 18
+                        //         }
+                        //     }
+                        // }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                }
+
+                const labelArray = [...new Set(json.data.map(item => item[databaseQueryExactColumn[0].data] ?? "NULL"))]
+                let datasetArray = new Array()
+
+                let dataArray
+                let object
+                for (let i = 1; i < databaseQueryExactColumn.length; i++) {
+                    if (/.*(int|number|numeric).*$/.test(databaseQueryExactColumn[i].type.toLowerCase())) {
+                        object = new Object()
+                        object.label = databaseQueryExactColumn[i].data
+                        dataArray = new Array()
+                        for (let j = 0; j < labelArray.length; j++) {
+                            dataArray.push(
+                                json.data.reduce(function (sum, item) {
+                                    if ((item[databaseQueryExactColumn[0].data] ?? "NULL") === labelArray[j]) {
+                                        return sum + item[databaseQueryExactColumn[i].data]
+                                    } else {
+                                        return sum
+                                    }
+                                }, 0)
+                            )
+                        }
+                        object.data = dataArray
+                        datasetArray.push(object)
+                    }
+                }
+
+                if (datasetArray.length === 0) {
+                    if (
+                        databaseQueryExactColumn.length > 1
+                        && /.*(int|number|numeric).*$/.test(databaseQueryExactColumn[1].data.toLowerCase() === false)
+                    ) {
+                        const secondLabelArray = [...new Set(json.data.map(item => item[databaseQueryExactColumn[1].data] ?? "NULL"))]
+                        for (let i = 0; i < secondLabelArray.length; i++) {
+                            object = new Object()
+                            object.label = secondLabelArray[i]
+
+                            dataArray = new Array()
+                            for (let j = 0; j < labelArray.length; j++) {
+                                dataArray.push(
+                                    json.data.reduce(function (sum, item) {
+                                        if (
+                                            (item[databaseQueryExactColumn[0].data] ?? "NULL") === labelArray[j]
+                                            && (item[databaseQueryExactColumn[1].data] ?? "NULL") === secondLabelArray[i]
+                                        ) {
+                                            return sum + 1
+                                        } else {
+                                            return sum
+                                        }
+                                    }, 0)
+                                )
+                            }
+
+                            object.data = dataArray
+                            datasetArray.push(object)
+                        }
+                    } else {
+                        object = new Object()
+                        object.label = t("common.text.amount")
+                        dataArray = new Array()
+                        for (let j = 0; j < labelArray.length; j++) {
+                            dataArray.push(
+                                json.data.reduce(function (sum, item) {
+                                    if ((item[databaseQueryExactColumn[0].data] ?? "NULL") === labelArray[j]) {
+                                        return sum + 2
+                                    } else {
+                                        return sum
+                                    }
+                                }, 0)
+                            )
+                        }
+                        object.data = dataArray
+                        datasetArray.push(object)
+                    }
+                }
+
+                setCanvasLabelArray(labelArray)
+                setCanvasDatasetArray(datasetArray)
+                setCanvasOptionArray(optionArray)
+                ModalHelper.show("modal_database_query_chart")
             } catch (error) {
                 setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
             } finally {
@@ -1272,18 +1399,16 @@ export default function Database() {
                     <div className="col-md-12 col-sm-12 col-xs-12">
                         <div className="row">
                             <Chart
-                                type="line"
+                                type={chartTypeValue}
                                 data={{
                                     labels: canvasLabelArray,
-                                    datasets: [{
-                                        label: 'Generation',
-                                        data: canvasDatasetArray,
-                                    }]
-                                    // , options: optionArray
+                                    datasets: canvasDatasetArray
                                 }}
+                                options={canvasOptionArray}
                             />
                         </div>
                     </div>
+                    <Select name="chartType" map={chartTypeMap} value={chartTypeValue} onChange={(e) => { setChartTypeValue(e.target.value) }} className="col-md-3 col-sm-6 col-xs-12" />
                 </div>
             </Modal>
             <Dialog id="dialog_database" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />

@@ -3,7 +3,7 @@ export function getNestedValue(obj, path) {
 }
 
 export function formatMoney(value) {
-    return value.toString().replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return value?.toString().replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".") ?? 0;
 }
 
 export function roundNumber(num, dec) {

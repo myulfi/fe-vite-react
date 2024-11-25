@@ -848,34 +848,18 @@ export default function Database() {
     const [canvasLabelArray, setCanvasLabelArray] = useState([])
     const [canvasDatasetArray, setCanvasDatasetArray] = useState([])
     const [canvasOptionArray, setCanvasOptionArray] = useState([])
+    const [databaseQueryType, setDatabaseQueryType] = useState()
 
-    const getDatabaseQueryManualChart = async () => {
-        setDatabaseQueryManualChartLoadingFlag(true)
-
-        try {
-            const params = {
-                "start": 0,
-                "length": -1,
-            }
-
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${queryManualId}/query-manual-database.json`, params)
-            const json = response.data
-
-            console.log(databaseQueryManualColumn)
-            const labelArray = []
-
-            setCanvasLabelArray(json.data.map(item => { return item["generation"] }));
-            setCanvasDatasetArray(json.data.map(item => { return item["generationAmount"] }));
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryManualChartLoadingFlag(false)
-        }
-    }
-
-    const getDatabaseQueryExactChart = async (options) => {
+    const getDatabaseQueryChart = async (databaseQueryType) => {
         if (databaseId > 0) {
-            setDatabaseQueryExactChartLoadingFlag(true)
+            setDatabaseQueryType(databaseQueryType)
+            setChartTypeValue("line")
+
+            if ("manual" === databaseQueryType) {
+                setDatabaseQueryManualChartLoadingFlag(true)
+            } else {
+                setDatabaseQueryExactChartLoadingFlag(true)
+            }
 
             try {
                 const params = {
@@ -883,55 +867,34 @@ export default function Database() {
                     "length": -1,
                 }
 
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`, params)
-                const json = response.data
-
-                let optionArray = null
-
-                optionArray = {
-                    scales: {
-                        y: {
-                            ticks: { beginAtZero: true }
-                        },
-                        x: {
-                            stacked: false,
-                            title: {
-                                display: true,
-                                text: databaseQueryExactColumn[0].data,
-                                font: {
-                                    size: 20,
-                                },
-                            }
-                        },
-                        // r: {
-                        //     pointLabels: {
-                        //         display: true,
-                        //         centerPointLabels: true,
-                        //         font: {
-                        //             size: 18
-                        //         }
-                        //     }
-                        // }
-                    },
-                    responsive: true,
-                    maintainAspectRatio: false,
+                let response = null
+                if ("manual" === databaseQueryType) {
+                    response = await apiRequest(CommonConstants.METHOD.GET, `/external/${queryManualId}/query-manual-database.json`, params)
+                } else {
+                    response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`, params)
                 }
 
-                const labelArray = [...new Set(json.data.map(item => item[databaseQueryExactColumn[0].data] ?? "NULL"))]
+                const json = response.data
+
+                const column = "manual" === databaseQueryType ? databaseQueryManualColumn : databaseQueryExactColumn
+
+                const labelArray = [...new Set(json.data.map(item => item[column[0].data] ?? "NULL"))]
                 let datasetArray = new Array()
 
                 let dataArray
                 let object
-                for (let i = 1; i < databaseQueryExactColumn.length; i++) {
-                    if (/.*(int|number|numeric).*$/.test(databaseQueryExactColumn[i].type.toLowerCase())) {
+                for (let i = 1; i < column.length; i++) {
+                    if (/.*(int|number|numeric).*$/.test(column[i].type.toLowerCase())) {
                         object = new Object()
-                        object.label = databaseQueryExactColumn[i].data
+                        object.label = column[i].data
+                        // object.tension = 0.4
+
                         dataArray = new Array()
                         for (let j = 0; j < labelArray.length; j++) {
                             dataArray.push(
                                 json.data.reduce(function (sum, item) {
-                                    if ((item[databaseQueryExactColumn[0].data] ?? "NULL") === labelArray[j]) {
-                                        return sum + item[databaseQueryExactColumn[i].data]
+                                    if ((item[column[0].data] ?? "NULL") === labelArray[j]) {
+                                        return sum + item[column[i].data]
                                     } else {
                                         return sum
                                     }
@@ -945,21 +908,22 @@ export default function Database() {
 
                 if (datasetArray.length === 0) {
                     if (
-                        databaseQueryExactColumn.length > 1
-                        && /.*(int|number|numeric).*$/.test(databaseQueryExactColumn[1].data.toLowerCase() === false)
+                        column.length > 1
+                        && /.*(int|number|numeric).*$/.test(column[1].data.toLowerCase() === false)
                     ) {
-                        const secondLabelArray = [...new Set(json.data.map(item => item[databaseQueryExactColumn[1].data] ?? "NULL"))]
+                        const secondLabelArray = [...new Set(json.data.map(item => item[column[1].data] ?? "NULL"))]
                         for (let i = 0; i < secondLabelArray.length; i++) {
                             object = new Object()
                             object.label = secondLabelArray[i]
+                            // object.tension = 0.4
 
                             dataArray = new Array()
                             for (let j = 0; j < labelArray.length; j++) {
                                 dataArray.push(
                                     json.data.reduce(function (sum, item) {
                                         if (
-                                            (item[databaseQueryExactColumn[0].data] ?? "NULL") === labelArray[j]
-                                            && (item[databaseQueryExactColumn[1].data] ?? "NULL") === secondLabelArray[i]
+                                            (item[column[0].data] ?? "NULL") === labelArray[j]
+                                            && (item[column[1].data] ?? "NULL") === secondLabelArray[i]
                                         ) {
                                             return sum + 1
                                         } else {
@@ -975,11 +939,12 @@ export default function Database() {
                     } else {
                         object = new Object()
                         object.label = t("common.text.amount")
+                        // object.tension = 0.4
                         dataArray = new Array()
                         for (let j = 0; j < labelArray.length; j++) {
                             dataArray.push(
                                 json.data.reduce(function (sum, item) {
-                                    if ((item[databaseQueryExactColumn[0].data] ?? "NULL") === labelArray[j]) {
+                                    if ((item[column[0].data] ?? "NULL") === labelArray[j]) {
                                         return sum + 2
                                     } else {
                                         return sum
@@ -994,14 +959,80 @@ export default function Database() {
 
                 setCanvasLabelArray(labelArray)
                 setCanvasDatasetArray(datasetArray)
-                setCanvasOptionArray(optionArray)
                 ModalHelper.show("modal_database_query_chart")
             } catch (error) {
                 setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
             } finally {
-                setDatabaseQueryExactChartLoadingFlag(false)
+                if ("manual" === databaseQueryType) {
+                    setDatabaseQueryManualChartLoadingFlag(false)
+                } else {
+                    setDatabaseQueryExactChartLoadingFlag(false)
+                }
             }
         }
+    }
+
+    const onChartTypeChange = (e) => {
+        setChartTypeValue(e.target.value)
+        let optionArray = {}
+
+        if (/(bar|line)$/.test(e.target.value)) {
+            optionArray = {
+                scales: {
+                    y: {
+                        ticks: { beginAtZero: true }
+                    },
+                    x: {
+                        stacked: false,
+                        title: {
+                            display: true,
+                            text: "manual" === databaseQueryType ? databaseQueryManualColumn[0].data : databaseQueryExactColumn[0].data,
+                            font: {
+                                size: 20,
+                            },
+                        }
+                    },
+                    // r: {
+                    //     pointLabels: {
+                    //         display: true,
+                    //         centerPointLabels: true,
+                    //         font: {
+                    //             size: 18
+                    //         }
+                    //     }
+                    // }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        } else if (/(polarArea|pie)$/.test(e.target.value)) {
+            optionArray = {
+                maintainAspectRatio: false,
+                //     responsive: true,
+                //     scales: {
+                //         r: {
+                //             pointLabels: {
+                //                 // display: true,
+                //                 centerPointLabels: true,
+                //                 font: {
+                //                     size: 18
+                //                 }
+                //             }
+                //         }
+                //     },
+                //     plugins: {
+                //         legend: {
+                //             position: 'top',
+                //         },
+                //     }
+            }
+        } else {
+            optionArray = {
+                maintainAspectRatio: false,
+            }
+        }
+
+        setCanvasOptionArray(optionArray)
     }
 
     return (
@@ -1114,7 +1145,7 @@ export default function Database() {
                                                                         },
                                                                         {
                                                                             label: t("common.button.chart"),
-                                                                            onClick: () => getDatabaseQueryManualChart(),
+                                                                            onClick: () => getDatabaseQueryChart("manual"),
                                                                             icon: "bi-bar-chart-line-fill",
                                                                             loadingFlag: databaseQueryManualChartLoadingFlag
                                                                         }
@@ -1316,7 +1347,7 @@ export default function Database() {
                                             },
                                             {
                                                 label: t("common.button.chart"),
-                                                onClick: () => getDatabaseQueryExactChart(),
+                                                onClick: () => getDatabaseQueryChart("exact"),
                                                 icon: "bi-bar-chart-line-fill",
                                                 loadingFlag: databaseQueryExactChartLoadingFlag
                                             }
@@ -1408,7 +1439,7 @@ export default function Database() {
                             />
                         </div>
                     </div>
-                    <Select name="chartType" map={chartTypeMap} value={chartTypeValue} onChange={(e) => { setChartTypeValue(e.target.value) }} className="col-md-3 col-sm-6 col-xs-12" />
+                    <Select name="chartType" map={chartTypeMap} value={chartTypeValue} onChange={onChartTypeChange} className="col-md-3 col-sm-6 col-xs-12" />
                 </div>
             </Modal>
             <Dialog id="dialog_database" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />

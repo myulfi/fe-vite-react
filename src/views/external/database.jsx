@@ -847,6 +847,7 @@ export default function Database() {
 
     const [canvasLabelArray, setCanvasLabelArray] = useState([])
     const [canvasDatasetArray, setCanvasDatasetArray] = useState([])
+    const [canvasDatasetBubbleArray, setCanvasDatasetBubbleArray] = useState([])
     const [canvasOptionArray, setCanvasOptionArray] = useState([])
     const [databaseQueryType, setDatabaseQueryType] = useState()
 
@@ -883,6 +884,8 @@ export default function Database() {
 
                 let dataArray
                 let object
+
+                //for integer content
                 for (let i = 1; i < column.length; i++) {
                     if (/.*(int|number|numeric).*$/.test(column[i].type.toLowerCase())) {
                         object = new Object()
@@ -906,11 +909,54 @@ export default function Database() {
                     }
                 }
 
+                console.log(datasetArray)
+                console.log(labelArray)
+
+                let bubbleArray = []
+                if (datasetArray.length > 0) {
+                    if (/.*(int|number|numeric).*$/.test(column[0].type.toLowerCase())) {
+                        if (column.length === 2) {
+                            // Untuk satu Category, x memakai int
+                            console.log("Line, Bar, Donat, Pie, Polar, Radar, scatter")
+                        } else {
+                            // Untuk banyak Category, x memakai int
+                            console.log("Line, Bar, bubble, Radar,")
+                            console.log(labelArray[0])
+                            let bubble = []
+                            for (let i = 0; i < labelArray.length; i++) {
+                                bubble.push({
+                                    x: labelArray[i],
+                                    y: datasetArray[0].data[i],
+                                    r: datasetArray[1].data[i],
+                                })
+                            }
+
+                            bubbleArray.push({
+                                label: datasetArray[0].label,
+                                data: bubble
+                            })
+
+                            console.log(bubbleArray)
+                            console.log(datasetArray)
+                        }
+                    } else {
+                        if (column.length === 2) {
+                            // Untuk satu Category, x memakai string
+                            console.log("Line, Bar, Donat, Pie, Polar, Radar")
+                        } else {
+                            // Untuk banyak Category, x memakai string
+                            console.log("Line, Bar, Radar,")
+                        }
+                    }
+                }
+
                 if (datasetArray.length === 0) {
                     if (
                         column.length > 1
-                        && /.*(int|number|numeric).*$/.test(column[1].data.toLowerCase() === false)
+                        && /.*(int|number|numeric).*$/.test(column[1].type.toLowerCase()) === false
                     ) {
+                        // Untuk satu Category, y memakai string
+                        console.log("Line, Bar")
                         const secondLabelArray = [...new Set(json.data.map(item => item[column[1].data] ?? "NULL"))]
                         for (let i = 0; i < secondLabelArray.length; i++) {
                             object = new Object()
@@ -936,7 +982,11 @@ export default function Database() {
                             object.data = dataArray
                             datasetArray.push(object)
                         }
+
+                        //for 2 column without integer
                     } else {
+                        // Untuk satu Category, tanpa y
+                        console.log("Line, Bar, donot, pie, polar")
                         object = new Object()
                         object.label = t("common.text.amount")
                         // object.tension = 0.4
@@ -945,7 +995,7 @@ export default function Database() {
                             dataArray.push(
                                 json.data.reduce(function (sum, item) {
                                     if ((item[column[0].data] ?? "NULL") === labelArray[j]) {
-                                        return sum + 2
+                                        return sum + 1
                                     } else {
                                         return sum
                                     }
@@ -959,6 +1009,7 @@ export default function Database() {
 
                 setCanvasLabelArray(labelArray)
                 setCanvasDatasetArray(datasetArray)
+                setCanvasDatasetBubbleArray(bubbleArray)
                 ModalHelper.show("modal_database_query_chart")
             } catch (error) {
                 setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
@@ -1005,21 +1056,25 @@ export default function Database() {
                 responsive: true,
                 maintainAspectRatio: false,
             }
-        } else if (/(polarArea|pie)$/.test(e.target.value)) {
+        } else if (/(bubble)$/.test(e.target.value)) {
             optionArray = {
                 maintainAspectRatio: false,
-                //     responsive: true,
-                //     scales: {
-                //         r: {
-                //             pointLabels: {
-                //                 // display: true,
-                //                 centerPointLabels: true,
-                //                 font: {
-                //                     size: 18
-                //                 }
-                //             }
-                //         }
-                //     },
+            }
+        } else if (/(polarArea)$/.test(e.target.value)) {
+            optionArray = {
+                scales: {
+                    r: {
+                        pointLabels: {
+                            display: true,
+                            centerPointLabels: true,
+                            font: {
+                                size: 18
+                            }
+                        }
+                    }
+                },
+                maintainAspectRatio: false,
+                responsive: true
                 //     plugins: {
                 //         legend: {
                 //             position: 'top',
@@ -1131,7 +1186,7 @@ export default function Database() {
                                                         <Table
                                                             showFlag={databaseQueryManualTableFlag}
                                                             additionalButtonArray={
-                                                                databaseQueryManualColumn.length > 1
+                                                                databaseQueryManualColumn.length > 0 && databaseQueryManualColumn[0].name !== "Result Information"
                                                                     ? [
                                                                         {
                                                                             label: t("common.button.export"),
@@ -1433,7 +1488,7 @@ export default function Database() {
                                 type={chartTypeValue}
                                 data={{
                                     labels: canvasLabelArray,
-                                    datasets: canvasDatasetArray
+                                    datasets: "bubble" === chartTypeValue ? canvasDatasetBubbleArray : canvasDatasetArray
                                 }}
                                 options={canvasOptionArray}
                             />

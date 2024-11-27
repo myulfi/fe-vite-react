@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { apiRequest } from "../../api"
 import { Chart } from "react-chartjs-2"
 import 'chart.js/auto'
@@ -834,22 +834,47 @@ export default function Database() {
     }
 
     const [chartTypeValue, setChartTypeValue] = useState("line")
-    const chartTypeMap = [
-        { "key": "line", "value": "Line" },
-        { "key": "bar", "value": "Bar" },
-        { "key": "bubble", "value": "Bubble" },
-        { "key": "doughnut", "value": "Doughnut" },
-        { "key": "pie", "value": "Pie" },
-        { "key": "polarArea", "value": "Polar" },
-        { "key": "radar", "value": "Radar" },
-        { "key": "scatter", "value": "Scatter" },
-    ]
+    const [chartTypeMap, setChartTypeMap] = useState([])
+    // const chartTypeMap = [
+    //     { "key": "line", "value": "Line" },
+    //     { "key": "bar", "value": "Bar" },
+    //     { "key": "bubble", "value": "Bubble" },
+    //     { "key": "doughnut", "value": "Doughnut" },
+    //     { "key": "pie", "value": "Pie" },
+    //     { "key": "polarArea", "value": "Polar" },
+    //     { "key": "radar", "value": "Radar" },
+    //     { "key": "scatter", "value": "Scatter" },
+    // ]
 
+    const chartRef = useRef(null);
     const [canvasLabelArray, setCanvasLabelArray] = useState([])
-    const [canvasDatasetArray, setCanvasDatasetArray] = useState([])
+    const [canvasDatasetCommonArray, setCanvasDatasetCommonArray] = useState([])
     const [canvasDatasetBubbleArray, setCanvasDatasetBubbleArray] = useState([])
     const [canvasOptionArray, setCanvasOptionArray] = useState([])
     const [databaseQueryType, setDatabaseQueryType] = useState()
+
+    const selectAll = async () => {
+        const chart = chartRef.current;
+
+        if (chart) {
+            await chart.data.datasets.forEach((item) => {
+                // item._meta[externalDatabase.variable.index_chart_meta].hidden = true
+                item.hidden = false
+            })
+            chart.update();
+        }
+    }
+
+    const deselectAll = async () => {
+        const chart = chartRef.current;
+
+        if (chart) {
+            await chart.data.datasets.forEach((item) => {
+                item.hidden = true
+            })
+            chart.update();
+        }
+    }
 
     const getDatabaseQueryChart = async (databaseQueryType) => {
         if (databaseId > 0) {
@@ -885,10 +910,14 @@ export default function Database() {
                 let dataArray
                 let object
 
+                let chartTypeArray = new Array()
+                chartTypeArray.push({ "key": "line", "value": "Line" })
+                chartTypeArray.push({ "key": "bar", "value": "Bar" })
                 //for integer content
                 for (let i = 1; i < column.length; i++) {
                     if (/.*(int|number|numeric).*$/.test(column[i].type.toLowerCase())) {
                         object = new Object()
+                        object.hidden = false
                         object.label = column[i].data
                         // object.tension = 0.4
 
@@ -909,19 +938,18 @@ export default function Database() {
                     }
                 }
 
-                console.log(datasetArray)
-                console.log(labelArray)
-
                 let bubbleArray = []
                 if (datasetArray.length > 0) {
                     if (/.*(int|number|numeric).*$/.test(column[0].type.toLowerCase())) {
                         if (column.length === 2) {
                             // Untuk satu Category, x memakai int
-                            console.log("Line, Bar, Donat, Pie, Polar, Radar, scatter")
+                            console.log("Line, Bar, scatter")
+                            chartTypeArray.push({ "key": "scatter", "value": "Scatter" })
                         } else {
                             // Untuk banyak Category, x memakai int
                             console.log("Line, Bar, bubble, Radar,")
-                            console.log(labelArray[0])
+                            chartTypeArray.push({ "key": "bubble", "value": "Bubble" })
+                            chartTypeArray.push({ "key": "radar", "value": "Radar" })
                             let bubble = []
                             for (let i = 0; i < labelArray.length; i++) {
                                 bubble.push({
@@ -935,18 +963,19 @@ export default function Database() {
                                 label: datasetArray[0].label,
                                 data: bubble
                             })
-
-                            console.log(bubbleArray)
-                            console.log(datasetArray)
                         }
                     } else {
                         if (column.length === 2) {
                             // Untuk satu Category, x memakai string
                             console.log("Line, Bar, Donat, Pie, Polar, Radar")
+                            chartTypeArray.push({ "key": "doughnut", "value": "Doughnut" })
+                            chartTypeArray.push({ "key": "pie", "value": "Pie" })
+                            chartTypeArray.push({ "key": "polarArea", "value": "Polar" })
                         } else {
                             // Untuk banyak Category, x memakai string
                             console.log("Line, Bar, Radar,")
                         }
+                        chartTypeArray.push({ "key": "radar", "value": "Radar" })
                     }
                 }
 
@@ -960,6 +989,7 @@ export default function Database() {
                         const secondLabelArray = [...new Set(json.data.map(item => item[column[1].data] ?? "NULL"))]
                         for (let i = 0; i < secondLabelArray.length; i++) {
                             object = new Object()
+                            object.hidden = false
                             object.label = secondLabelArray[i]
                             // object.tension = 0.4
 
@@ -986,8 +1016,10 @@ export default function Database() {
                         //for 2 column without integer
                     } else {
                         // Untuk satu Category, tanpa y
-                        console.log("Line, Bar, donot, pie, polar")
+                        console.log("Line, Bar")
+
                         object = new Object()
+                        object.hidden = false
                         object.label = t("common.text.amount")
                         // object.tension = 0.4
                         dataArray = new Array()
@@ -1007,9 +1039,70 @@ export default function Database() {
                     }
                 }
 
+                setChartTypeMap(chartTypeArray)
                 setCanvasLabelArray(labelArray)
-                setCanvasDatasetArray(datasetArray)
+                setCanvasDatasetCommonArray(datasetArray)
                 setCanvasDatasetBubbleArray(bubbleArray)
+
+                let optionArray = {
+                    maintainAspectRatio: false,
+                    responsive: true
+                }
+
+                if (datasetArray.length === 1) {
+                    optionArray = {
+                        ...optionArray,
+                        plugins: {
+                            legend: {
+                                display: false // Hides the legend
+                            }
+                        },
+                        scales: {
+                            x: {
+                                // type: 'linear',
+                                // beginAtZero: true,
+                                stacked: false,
+                                title: {
+                                    display: true,
+                                    text: column[0].data,
+                                    font: {
+                                        size: 20,
+                                    },
+                                }
+                            },
+                            y: {
+                                // beginAtZero: true,
+                                stacked: false,
+                                title: {
+                                    display: true,
+                                    text: datasetArray[0].label,
+                                    font: {
+                                        size: 20,
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    optionArray = {
+                        ...optionArray,
+                        scales: {
+                            x: {
+                                stacked: false,
+                                title: {
+                                    display: true,
+                                    text: column[0].data,
+                                    font: {
+                                        size: 20,
+                                    },
+                                }
+                            }
+                        }
+                    }
+                }
+
+                setCanvasOptionArray(optionArray)
+
                 ModalHelper.show("modal_database_query_chart")
             } catch (error) {
                 setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
@@ -1025,43 +1118,66 @@ export default function Database() {
 
     const onChartTypeChange = (e) => {
         setChartTypeValue(e.target.value)
-        let optionArray = {}
+        let optionArray = {
+            maintainAspectRatio: false,
+            responsive: true
+        }
 
-        if (/(bar|line)$/.test(e.target.value)) {
-            optionArray = {
-                scales: {
-                    y: {
-                        ticks: { beginAtZero: true }
-                    },
-                    x: {
-                        stacked: false,
-                        title: {
-                            display: true,
-                            text: "manual" === databaseQueryType ? databaseQueryManualColumn[0].data : databaseQueryExactColumn[0].data,
-                            font: {
-                                size: 20,
-                            },
+        if (/(bar|line|scatter)$/.test(e.target.value)) {
+            if (canvasDatasetCommonArray.length === 1) {
+                optionArray = {
+                    ...optionArray,
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     },
-                    // r: {
-                    //     pointLabels: {
-                    //         display: true,
-                    //         centerPointLabels: true,
-                    //         font: {
-                    //             size: 18
-                    //         }
-                    //     }
-                    // }
-                },
-                responsive: true,
-                maintainAspectRatio: false,
-            }
-        } else if (/(bubble)$/.test(e.target.value)) {
-            optionArray = {
-                maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            // type: 'linear',
+                            // beginAtZero: true,
+                            stacked: false,
+                            title: {
+                                display: true,
+                                text: "manual" === databaseQueryType ? databaseQueryManualColumn[0].data : databaseQueryExactColumn[0].data,
+                                font: {
+                                    size: 20,
+                                },
+                            }
+                        },
+                        y: {
+                            // beginAtZero: true,
+                            stacked: false,
+                            title: {
+                                display: true,
+                                text: canvasDatasetCommonArray[0].label,
+                                font: {
+                                    size: 20,
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                optionArray = {
+                    ...optionArray,
+                    scales: {
+                        x: {
+                            stacked: false,
+                            title: {
+                                display: true,
+                                text: "manual" === databaseQueryType ? databaseQueryManualColumn[0].data : databaseQueryExactColumn[0].data,
+                                font: {
+                                    size: 20,
+                                },
+                            }
+                        }
+                    }
+                }
             }
         } else if (/(polarArea)$/.test(e.target.value)) {
             optionArray = {
+                ...optionArray,
                 scales: {
                     r: {
                         pointLabels: {
@@ -1072,18 +1188,75 @@ export default function Database() {
                             }
                         }
                     }
-                },
-                maintainAspectRatio: false,
-                responsive: true
-                //     plugins: {
-                //         legend: {
-                //             position: 'top',
-                //         },
-                //     }
+                }
             }
-        } else {
+        } else if (/(bubble)$/.test(e.target.value)) {
             optionArray = {
-                maintainAspectRatio: false,
+                ...optionArray,
+                plugins: {
+                    legend: {
+                        display: false // Hides the legend
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
+                        title: {
+                            display: true,
+                            text: "manual" === databaseQueryType ? databaseQueryManualColumn[0].data : databaseQueryExactColumn[0].data,
+                            font: {
+                                size: 20,
+                            },
+                        }
+                    },
+                    y: {
+                        ticks: { beginAtZero: true },
+                        stacked: false,
+                        title: {
+                            display: true,
+                            text: canvasDatasetCommonArray[0].label,
+                            font: {
+                                size: 20,
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (/(pie)$/.test(e.target.value)) {
+            // optionArray = {
+            //     ...optionArray,
+            //     plugins: {
+            //         tooltip: {
+            //             callbacks: {
+            //                 label: function (tooltipItem) {
+            //                     console.log(tooltipItem)
+            //                     const label = tooltipItem.label || '';
+            //                     const value = tooltipItem.raw;
+            //                     return `${label}: ${value}%`; // Custom label for tooltip
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+        } else if (/(radar)$/.test(e.target.value)) {
+            if (canvasDatasetCommonArray.length === 1) {
+                optionArray = {
+                    ...optionArray,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                    },
+                }
+            }
+
+            optionArray = {
+                ...optionArray,
+                scales: {
+                    r: {
+                        beginAtZero: true
+                    }
+                }
             }
         }
 
@@ -1212,7 +1385,7 @@ export default function Database() {
                                                             dataArray={databaseQueryManualDataArray ?? []}
                                                             columns={databaseQueryManualColumn}
 
-                                                            dataTotal={databaseQueryManualColumn.length > 1 ? databaseQueryManualDataTotalTable : 0}
+                                                            dataTotal={databaseQueryManualColumn.length > 0 && databaseQueryManualColumn[0].name !== "Result Information" ? databaseQueryManualDataTotalTable : 0}
                                                             onRender={(page, length) => {
                                                                 if (queryManualId > 0) {
                                                                     getDatabaseQueryManual({ id: queryManualId, page: page, length: length })
@@ -1483,18 +1656,35 @@ export default function Database() {
             >
                 <div className="row">
                     <div className="col-md-12 col-sm-12 col-xs-12">
-                        <div className="row">
+                        <Select name="chartType" map={chartTypeMap} value={chartTypeValue} onChange={onChartTypeChange} className="col-md-3 col-sm-6 col-xs-12" />
+                    </div>
+                    <div className="col-md-12 col-sm-12 col-xs-12" style={{ height: `${window.innerHeight * 0.60}px` }}>
+                        <div className="row" style={{ height: "100%" }}>
                             <Chart
+                                ref={chartRef}
                                 type={chartTypeValue}
                                 data={{
                                     labels: canvasLabelArray,
-                                    datasets: "bubble" === chartTypeValue ? canvasDatasetBubbleArray : canvasDatasetArray
+                                    datasets: "bubble" === chartTypeValue ? canvasDatasetBubbleArray : canvasDatasetCommonArray
                                 }}
                                 options={canvasOptionArray}
                             />
                         </div>
                     </div>
-                    <Select name="chartType" map={chartTypeMap} value={chartTypeValue} onChange={onChartTypeChange} className="col-md-3 col-sm-6 col-xs-12" />
+                    {/* <Button
+                        label={t("common.button.selectAll")}
+                        className="btn-primary"
+                        size="sm"
+                        icon="bi-square"
+                        onClick={() => { selectAll() }}
+                    />
+                    <Button
+                        label={t("common.button.deselectAll")}
+                        className="btn-primary"
+                        size="sm"
+                        icon="bi-square"
+                        onClick={() => { deselectAll() }}
+                    /> */}
                 </div>
             </Modal>
             <Dialog id="dialog_database" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />

@@ -888,173 +888,132 @@ export default function Database() {
             }
 
             try {
-                const params = {
-                    "start": 0,
-                    "length": -1,
-                }
-
-                let response = null
-                if ("manual" === databaseQueryType) {
-                    response = await apiRequest(CommonConstants.METHOD.GET, `/external/${queryManualId}/query-manual-database.json`, params)
-                } else {
-                    response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`, params)
-                }
+                const params = { "start": 0, "length": -1, }
+                const response = await apiRequest(
+                    CommonConstants.METHOD.GET,
+                    "manual" === databaseQueryType
+                        ? `/external/${queryManualId}/query-manual-database.json`
+                        : `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`,
+                    params
+                )
 
                 const json = response.data
+                const databaseQueryColumn = "manual" === databaseQueryType ? databaseQueryManualColumn : databaseQueryExactColumn
 
-                const column = "manual" === databaseQueryType ? databaseQueryManualColumn : databaseQueryExactColumn
-
-                const labelArray = [...new Set(json.data.map(item => item[column[0].data] ?? "NULL"))]
-                let datasetArray = new Array()
-
-                let dataArray
-                let object
+                const labelArray = [...new Set(json.data.map(item => item[databaseQueryColumn[0].data] ?? "NULL"))]
+                let datasetCommonArray = new Array()
+                let datasetBubbleArray = new Array()
 
                 let chartTypeArray = new Array()
                 chartTypeArray.push({ "key": "line", "value": "Line" })
                 chartTypeArray.push({ "key": "bar", "value": "Bar" })
-                //for integer content
-                for (let i = 1; i < column.length; i++) {
-                    if (/.*(int|number|numeric).*$/.test(column[i].type.toLowerCase())) {
-                        object = new Object()
-                        object.hidden = false
-                        object.label = column[i].data
-                        // object.tension = 0.4
 
-                        dataArray = new Array()
-                        for (let j = 0; j < labelArray.length; j++) {
-                            dataArray.push(
-                                json.data.reduce(function (sum, item) {
-                                    if ((item[column[0].data] ?? "NULL") === labelArray[j]) {
-                                        return sum + item[column[i].data]
+                for (let i = 1; i < databaseQueryColumn.length; i++) {
+                    if (/.*(int|number|numeric).*$/.test(databaseQueryColumn[i].type.toLowerCase())) {
+                        datasetCommonArray.push({
+                            "hidden": false,
+                            "label": databaseQueryColumn[i].data,
+                            // "tension" : 0.4,
+                            "data": labelArray.map(label => {
+                                return json.data.reduce(function (sum, item) {
+                                    if ((item[databaseQueryColumn[0].data] ?? "NULL") === label) {
+                                        return sum + item[databaseQueryColumn[i].data]
                                     } else {
                                         return sum
                                     }
                                 }, 0)
-                            )
-                        }
-                        object.data = dataArray
-                        datasetArray.push(object)
+                            })
+                        })
                     }
                 }
 
-                let bubbleArray = []
-                if (datasetArray.length > 0) {
-                    if (/.*(int|number|numeric).*$/.test(column[0].type.toLowerCase())) {
-                        if (column.length === 2) {
-                            // Untuk satu Category, x memakai int
-                            console.log("Line, Bar, scatter")
+                if (datasetCommonArray.length > 0) {
+                    if (/.*(int|number|numeric).*$/.test(databaseQueryColumn[0].type.toLowerCase())) {
+                        if (databaseQueryColumn.length === 2) {
                             chartTypeArray.push({ "key": "scatter", "value": "Scatter" })
                         } else {
-                            // Untuk banyak Category, x memakai int
-                            console.log("Line, Bar, bubble, Radar,")
                             chartTypeArray.push({ "key": "bubble", "value": "Bubble" })
                             chartTypeArray.push({ "key": "radar", "value": "Radar" })
-                            let bubble = []
-                            for (let i = 0; i < labelArray.length; i++) {
-                                bubble.push({
-                                    x: labelArray[i],
-                                    y: datasetArray[0].data[i],
-                                    r: datasetArray[1].data[i],
-                                })
-                            }
 
-                            bubbleArray.push({
-                                label: datasetArray[0].label,
-                                data: bubble
+                            datasetBubbleArray.push({
+                                label: datasetCommonArray[0].label,
+                                data: labelArray.map((label, index) => {
+                                    return {
+                                        x: label,
+                                        y: datasetCommonArray[0].data[index],
+                                        r: datasetCommonArray[1].data[index],
+                                    }
+                                })
                             })
                         }
                     } else {
-                        if (column.length === 2) {
-                            // Untuk satu Category, x memakai string
-                            console.log("Line, Bar, Donat, Pie, Polar, Radar")
+                        if (databaseQueryColumn.length === 2) {
                             chartTypeArray.push({ "key": "doughnut", "value": "Doughnut" })
                             chartTypeArray.push({ "key": "pie", "value": "Pie" })
                             chartTypeArray.push({ "key": "polarArea", "value": "Polar" })
-                        } else {
-                            // Untuk banyak Category, x memakai string
-                            console.log("Line, Bar, Radar,")
                         }
                         chartTypeArray.push({ "key": "radar", "value": "Radar" })
                     }
                 }
 
-                if (datasetArray.length === 0) {
+                if (datasetCommonArray.length === 0) {
                     if (
-                        column.length > 1
-                        && /.*(int|number|numeric).*$/.test(column[1].type.toLowerCase()) === false
+                        databaseQueryColumn.length > 1
+                        && /.*(int|number|numeric).*$/.test(databaseQueryColumn[1].type.toLowerCase()) === false
                     ) {
-                        // Untuk satu Category, y memakai string
-                        console.log("Line, Bar")
-                        const secondLabelArray = [...new Set(json.data.map(item => item[column[1].data] ?? "NULL"))]
-                        for (let i = 0; i < secondLabelArray.length; i++) {
-                            object = new Object()
-                            object.hidden = false
-                            object.label = secondLabelArray[i]
-                            // object.tension = 0.4
-
-                            dataArray = new Array()
-                            for (let j = 0; j < labelArray.length; j++) {
-                                dataArray.push(
-                                    json.data.reduce(function (sum, item) {
+                        const secondLabelArray = [...new Set(json.data.map(item => item[databaseQueryColumn[1].data] ?? "NULL"))]
+                        secondLabelArray.forEach(secondLabel => {
+                            datasetCommonArray.push({
+                                hidden: false,
+                                label: secondLabel,
+                                data: labelArray.map(label => {
+                                    return json.data.reduce(function (sum, item) {
                                         if (
-                                            (item[column[0].data] ?? "NULL") === labelArray[j]
-                                            && (item[column[1].data] ?? "NULL") === secondLabelArray[i]
+                                            (item[databaseQueryColumn[0].data] ?? "NULL") === label
+                                            && (item[databaseQueryColumn[1].data] ?? "NULL") === secondLabel
                                         ) {
                                             return sum + 1
                                         } else {
                                             return sum
                                         }
                                     }, 0)
-                                )
-                            }
-
-                            object.data = dataArray
-                            datasetArray.push(object)
-                        }
-
-                        //for 2 column without integer
+                                })
+                            })
+                        })
                     } else {
-                        // Untuk satu Category, tanpa y
-                        console.log("Line, Bar")
-
-                        object = new Object()
-                        object.hidden = false
-                        object.label = t("common.text.amount")
-                        // object.tension = 0.4
-                        dataArray = new Array()
-                        for (let j = 0; j < labelArray.length; j++) {
-                            dataArray.push(
-                                json.data.reduce(function (sum, item) {
-                                    if ((item[column[0].data] ?? "NULL") === labelArray[j]) {
+                        datasetCommonArray.push({
+                            hidden: false,
+                            label: t("common.text.amount"),
+                            // tension : 0.4,
+                            data: labelArray.map(label => {
+                                return json.data.reduce(function (sum, item) {
+                                    if ((item[databaseQueryColumn[0].data] ?? "NULL") === label) {
                                         return sum + 1
                                     } else {
                                         return sum
                                     }
                                 }, 0)
-                            )
-                        }
-                        object.data = dataArray
-                        datasetArray.push(object)
+                            })
+                        })
                     }
                 }
 
                 setChartTypeMap(chartTypeArray)
                 setCanvasLabelArray(labelArray)
-                setCanvasDatasetCommonArray(datasetArray)
-                setCanvasDatasetBubbleArray(bubbleArray)
+                setCanvasDatasetCommonArray(datasetCommonArray)
+                setCanvasDatasetBubbleArray(datasetBubbleArray)
 
                 let optionArray = {
                     maintainAspectRatio: false,
                     responsive: true
                 }
 
-                if (datasetArray.length === 1) {
+                if (datasetCommonArray.length === 1) {
                     optionArray = {
                         ...optionArray,
                         plugins: {
                             legend: {
-                                display: false // Hides the legend
+                                display: false
                             }
                         },
                         scales: {
@@ -1064,7 +1023,7 @@ export default function Database() {
                                 stacked: false,
                                 title: {
                                     display: true,
-                                    text: column[0].data,
+                                    text: databaseQueryColumn[0].data,
                                     font: {
                                         size: 20,
                                     },
@@ -1075,7 +1034,7 @@ export default function Database() {
                                 stacked: false,
                                 title: {
                                     display: true,
-                                    text: datasetArray[0].label,
+                                    text: datasetCommonArray[0].label,
                                     font: {
                                         size: 20,
                                     }
@@ -1091,7 +1050,7 @@ export default function Database() {
                                 stacked: false,
                                 title: {
                                     display: true,
-                                    text: column[0].data,
+                                    text: databaseQueryColumn[0].data,
                                     font: {
                                         size: 20,
                                     },
@@ -1195,7 +1154,7 @@ export default function Database() {
                 ...optionArray,
                 plugins: {
                     legend: {
-                        display: false // Hides the legend
+                        display: false
                     }
                 },
                 scales: {
@@ -1254,6 +1213,11 @@ export default function Database() {
                 ...optionArray,
                 scales: {
                     r: {
+                        pointLabels: {
+                            callback: function (value, index) {
+                                return value
+                            }
+                        },
                         beginAtZero: true
                     }
                 }

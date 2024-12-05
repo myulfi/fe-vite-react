@@ -1656,7 +1656,7 @@ export default function Database() {
             </Modal>
             <Dialog id="dialog_database" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_database" type={toast.type} message={toast.message} />
-            <div className="row"><h3><span className="bi-puzzle">&nbsp;{t("common.menu.database")}</span></h3></div>
+            <div className="row"><h3><span className="bi-database">&nbsp;{t("common.menu.database")}</span></h3></div>
             <div className="row">
                 <div className="col-md-12">
                     <div className="card border-0 rounded shadow">

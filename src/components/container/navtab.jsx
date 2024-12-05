@@ -1,4 +1,5 @@
 export default function Navtab({
+    name = "",
     tabArray,
     initialActiveTab = 0
 }) {
@@ -8,7 +9,7 @@ export default function Navtab({
                 {
                     tabArray.map((tab, index) => (
                         <li key={index} className="nav-item">
-                            <a className={`nav-link ${index === initialActiveTab ? 'active' : null}`} data-bs-toggle="tab" href={`#tab_menu${index}`}>{tab.label}</a>
+                            <a className={`nav-link ${index === initialActiveTab ? 'active' : null}`} data-bs-toggle="tab" href={`#tab_${name}_menu${index}`}>{tab.label}</a>
                         </li>
                     ))
                 }
@@ -16,7 +17,7 @@ export default function Navtab({
             <div className="tab-content mt-4">
                 {
                     tabArray.map((tab, index) => (
-                        <div key={index} className={`tab-pane container ${index === initialActiveTab ? 'active' : 'fade'}`} id={`tab_menu${index}`} >{tab.component()}</div>
+                        <div key={index} className={`tab-pane container ${index === initialActiveTab ? 'active' : 'fade'}`} id={`tab_${name}_menu${index}`} >{tab.component()}</div>
                     ))
                 }
             </div >

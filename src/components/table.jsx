@@ -25,6 +25,7 @@ export default function Table({
     initialSizePage = 10,
     limitPaginationButton = 7,
     filter,
+    resetPagination,
     onRender,
     loadingFlag = false,
 }) {
@@ -89,6 +90,10 @@ export default function Table({
             onPageChange(1, sizePage, search)
         }
     }, [filter])
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [resetPagination])
 
     const onPageChange = (page, length, search) => {
         if (CommonConstants.TABLE.LOAD_MORE === type && page === 1) {

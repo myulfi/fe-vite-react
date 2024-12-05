@@ -662,6 +662,7 @@ export default function Database() {
     const [databaseQueryExactDataArray, setDatabaseQueryExactDataArray] = useState([])
     const [databaseQueryExactColumn, setDatabaseQueryExactColumn] = useState([])
     const [databaseQueryExactDataTotalTable, setDatabaseQueryExactDataTotalTable] = useState(0)
+    const [databaseQueryExactResetPaginationTable, setDatabaseQueryExactResetPaginationTable] = useState(true)
     const [databaseQueryExactTableLoadingFlag, setDatabaseQueryExactTableLoadingFlag] = useState(false)
     const [databaseQueryExactChartLoadingFlag, setDatabaseQueryExactChartLoadingFlag] = useState(false)
 
@@ -692,6 +693,7 @@ export default function Database() {
                 getDatabaseQueryExactData({ id: id, page: 1, length: 10 })
             }
 
+            setDatabaseQueryExactResetPaginationTable(resetPagination => !resetPagination)
             ModalHelper.show("modal_database_exact")
         } catch (error) {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
@@ -1550,6 +1552,7 @@ export default function Database() {
                                 columns={databaseQueryExactColumn}
 
                                 dataTotal={databaseQueryExactDataTotalTable}
+                                resetPagination={databaseQueryExactResetPaginationTable}
                                 onRender={(page, length) => {
                                     getDatabaseQueryExactData({ id: queryExactIdentity, page: page, length: length })
                                 }}

@@ -93,7 +93,10 @@ export default function Table({
 
     useEffect(() => {
         setCurrentPage(1)
+        setDetailRow(itemArray.map(() => false))
     }, [resetPagination])
+
+    const onCopy = value => navigator.clipboard.writeText(value)
 
     const onPageChange = (page, length, search) => {
         if (CommonConstants.TABLE.LOAD_MORE === type && page === 1) {
@@ -340,6 +343,20 @@ export default function Table({
                                                                     ? column.render(getNestedValue(data, column.data), data)
                                                                     : getNestedValue(data, column.data) ?? (column.defaultContent ? column.defaultContent() : "")
                                                             }
+                                                            {
+                                                                column.copy
+                                                                && <>
+                                                                    &nbsp;<i
+                                                                        className="pl-1 bi-copy"
+                                                                        role="button"
+                                                                        onClick={() => onCopy(
+                                                                            column.render != undefined
+                                                                                ? column.render(getNestedValue(data, column.data), data)
+                                                                                : getNestedValue(data, column.data) ?? (column.defaultContent ? column.defaultContent() : "")
+                                                                        )}
+                                                                    />
+                                                                </>
+                                                            }
                                                         </td>
                                                     ))
                                             }
@@ -356,7 +373,21 @@ export default function Table({
                                                                     {
                                                                         column.render != undefined
                                                                             ? column.render(getNestedValue(data, column.data), data)
-                                                                            : getNestedValue(data, column.data)
+                                                                            : getNestedValue(data, column.data) ?? (column.defaultContent ? column.defaultContent() : "")
+                                                                    }
+                                                                    {
+                                                                        column.copy
+                                                                        && <>
+                                                                            &nbsp;<i
+                                                                                className="pl-1 bi-copy"
+                                                                                role="button"
+                                                                                onClick={() => onCopy(
+                                                                                    column.render != undefined
+                                                                                        ? column.render(getNestedValue(data, column.data), data)
+                                                                                        : getNestedValue(data, column.data) ?? (column.defaultContent ? column.defaultContent() : "")
+                                                                                )}
+                                                                            />
+                                                                        </>
                                                                     }
                                                                 </div>
                                                             ))

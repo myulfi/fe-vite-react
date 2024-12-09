@@ -18,19 +18,20 @@ import RangeFilter from "../../components/filter/rangeFilter"
 import Label from "../../components/form/label"
 import Select from "../../components/form/select"
 import InputText from "../../components/form/inputText"
+import InputPassword from "../../components/form/inputPassword"
 import InputDecimal from "../../components/form/inputDecimal"
 import InputDate from "../../components/form/inputDate"
 
 export default function Server() {
     const { t } = useTranslation()
     const serverInitial = {
-        name: undefined,
+        code: undefined,
         description: undefined,
-        value: 0,
-        // valueMultiple: [],
-        amount: 0,
-        date: undefined,
-        activeFlag: null,
+        username: undefined,
+        password: undefined,
+        privateKey: undefined,
+        ip: undefined,
+        port: 22,
         version: 0,
     }
 
@@ -43,11 +44,6 @@ export default function Server() {
     }
 
     const [serverFilterTable, setServerFilterTable] = useState(serverFilterTableTableInitial)
-
-    const onServerFilterTableChange = (e) => {
-        const { name, value } = e.target
-        setServerFilterTable({ ...serverFilterTable, [name]: value })
-    }
 
     const [serverBulkOptionLoadingFlag, setServerBulkOptionLoadingFlag] = useState(false)
     const [serverCheckBoxTableArray, setServerCheckBoxTableArray] = useState([])
@@ -91,12 +87,17 @@ export default function Server() {
 
     const serverValidate = (data) => {
         const error = {}
-        if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
+        if (!data.code.trim()) error.name = t("validate.text.required", { name: t("common.text.code") })
         if (!data.description.trim()) error.description = t("validate.text.required", { name: t("common.text.description") })
-        if (data.value <= 0) error.value = t("validate.text.required", { name: t("common.text.value") })
+        if (!data.username.trim()) error.username = t("validate.text.required", { name: t("common.text.username") })
+        if (!data.password.trim()) error.password = t("validate.text.required", { name: t("common.text.password") })
+        if (!data.privateKey.trim()) error.privateKey = t("validate.text.required", { name: t("common.text.privateKey") })
 
-        // if (!data.email.trim()) error.email = t("validate.text.required", { name: t("common.text.email") })
-        // else if (!/\S+@\S+\.\S+/.test(data.email)) error.email = t("validate.text.invalid", { name: t("common.text.email") })
+        if (!data.ip.trim()) error.ip = t("validate.text.required", { name: "IP" })
+        else if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(data.ip)) error.ip = t("validate.text.invalid", { name: "IP" })
+
+        if (data.port <= 0) error.port = t("validate.text.required", { name: t("common.text.port") })
+
         setServerFormError(error)
         return Object.keys(error).length === 0
     }
@@ -140,7 +141,7 @@ export default function Server() {
             setServerOptionColumnTable(
                 json.data.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
-                    map[obj.id] = { "viewedButtonFlag": false, "deletedButtonFlag": false }
+                    map[obj.id] = { "connectedButtonFlag": false, "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
                 }, {})
             )
@@ -162,12 +163,13 @@ export default function Server() {
                 const server = response.data.data
                 setServerForm({
                     id: server.id,
-                    name: server.name,
+                    code: server.code,
                     description: server.description,
-                    value: server.value,
-                    amount: server.amount,
-                    date: server.date,
-                    activeFlag: server.activeFlag,
+                    username: server.username,
+                    password: server.password,
+                    privateKey: server.privateKey,
+                    ip: server.ip,
+                    port: server.port,
                     version: server.version,
                 })
 
@@ -299,6 +301,79 @@ export default function Server() {
         }
     }
 
+    const [serverId, setServerId] = useState(-1)
+    const [connectServerLoadingFlag, setConnectServerLoadingFlag] = useState(false)
+    const [serverDirectoryTitleModal, setServerDirectoryTitleModal] = useState(false)
+    const [serverDirectoryColumn, setServerDirectoryColumn] = useState([])
+    const [serverDirectoryOptionColumnTable, setServerDirectoryOptionColumnTable] = useState([])
+    const [serverDirectoryAttributeTable, setServerDirectoryAttributeTable] = useState()
+    const [serverDirectoryDataTotalTable, setServerDirectoryDataTotalTable] = useState(0)
+    const [serverDirectoryResetPaginationTable, setServerDirectoryResetPaginationTable] = useState(true)
+    const [serverDirectoryTableLoadingFlag, setServerDirectoryTableLoadingFlag] = useState(false)
+
+    const [serverDirectoryDataArray, setServerDirectoryDataArray] = useState([])
+
+    const connectServer = async (id) => {
+        if (id === 0) {
+            setConnectServerLoadingFlag(true)
+        } else {
+            setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { connectedButtonFlag: true } })
+        }
+
+        try {
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${id}/server-default-directory.json`)
+            const json = response.data
+
+            if (json.status === "success") {
+                setServerId(id)
+                getServerDirectory(id, { page: 1, length: 10, search: "", order: [], directory: json.data.defaultDirectory })
+            }
+
+            setServerDirectoryTitleModal(id)
+            ModalHelper.show("modal_server_directory")
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            if (id === 0) {
+                setConnectServerLoadingFlag(false)
+            } else {
+                setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { connectedButtonFlag: false } })
+            }
+        }
+    }
+
+    const getServerDirectory = async (serverId, options) => {
+        setServerDirectoryTableLoadingFlag(true)
+
+        try {
+            const params = {
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
+                "search": encodeURIComponent(options.search),
+                "orderColumn": options.order.length > 1 ? options.order[0] : null,
+                "orderDir": options.order.length > 1 ? options.order[1] : null,
+                "directory": options.directory
+            }
+            setServerDirectoryAttributeTable(options)
+
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-directory.json`, params)
+            const json = response.data
+            setServerDirectoryDataArray(json.data)
+            setServerDirectoryDataTotalTable(json.recordsTotal)
+            setServerDirectoryOptionColumnTable(
+                json.data.reduce(function (map, obj) {
+                    //map[obj.id] = obj.name
+                    map[obj.id] = { "connectedButtonFlag": false, "viewedButtonFlag": false, "deletedButtonFlag": false }
+                    return map
+                }, {})
+            )
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setServerDirectoryTableLoadingFlag(false)
+        }
+    }
+
     return (
         <div className="container mt-4 mb-4">
             <Modal
@@ -334,40 +409,104 @@ export default function Server() {
                 {
                     CommonConstants.MODAL.ENTRY === serverStateModal
                     && <>
-                        <InputText label={t("common.text.name")} name="name" value={serverForm.name} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.name} />
+                        <InputText label={t("common.text.code")} name="code" value={serverForm.code} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.name} />
                         <Textarea label={t("common.text.description")} name="description" rows="3" value={serverForm.description} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.description} />
-                        <Select label={t("common.text.value")} name="value" map={selectValueMap} value={serverForm.value} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.value} />
-                        {/* <Select label={t("common.text.value")} name="multipleValue" map={selectValueMap} value={serverForm.valueMultiple} multiple={true}
-                            liveSearch={true}
-                            actionBox={true}
-                            dataSize={5}
-                            onChange={onServerFormChange}
-                            className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.value} /> */}
-                        <InputDecimal label={t("common.text.amount")} name="amount" value={serverForm.amount} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.amount} />
-                        <InputDate label={t("common.text.date")} type="date" name="date" value={DateHelper.formatDate(new Date(serverForm.date), "yyyy-MM-dd")} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.date} />
-                        <Radio label={t("common.text.activeFlag")} name="activeFlag" value={serverForm.activeFlag} map={yesNoMap} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.activeFlag} />
+                        <InputText label={t("common.text.username")} name="username" value={serverForm.username} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.username} />
+                        <InputPassword label={t("common.text.password")} name="password" value={serverForm.password} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.password} />
+                        <Textarea label={t("common.text.privateKey")} name="privateKey" rows="3" value={serverForm.privateKey} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.privateKey} />
+                        <InputText label="IP" name="ip" value={serverForm.ip} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.ip} />
+                        <InputText label={t("common.text.port")} name="port" value={serverForm.port} onChange={onServerFormChange} className="col-md-6 col-sm-6 col-xs-12" error={serverFormError.port} />
                     </>
                 }
                 {
                     CommonConstants.MODAL.VIEW === serverStateModal
                     && <>
-                        <Label text={t("common.text.name")} value={serverForm.name} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.code")} value={serverForm.code} className="col-md-6 col-sm-6 col-xs-12" />
                         <Label text={t("common.text.description")} value={serverForm.description} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.value")} value={serverForm.value} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.amount")} value={serverForm.amount} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.date")} value={DateHelper.formatDate(new Date(serverForm.date), "yyyy-MM-dd")} className="col-md-6 col-sm-6 col-xs-12" />
-                        <Label text={t("common.text.activeFlag")} value={serverForm.activeFlag} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.username")} value={serverForm.username} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.password")} value={serverForm.password} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.privateKey")} value={serverForm.privateKey} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text="IP" value={serverForm.ip} className="col-md-6 col-sm-6 col-xs-12" />
+                        <Label text={t("common.text.port")} value={serverForm.port} className="col-md-6 col-sm-6 col-xs-12" />
                     </>
                 }
             </Modal>
+            <Modal
+                id="modal_server_directory"
+                size="xl"
+                title={serverDirectoryTitleModal}
+            >
+                <div className="row">
+                    <div className="col-md-12 col-sm-12 col-xs-12">
+                        <div className="row">
+                            <Table
+                                additionalButtonArray={
+                                    [
+                                        {
+                                            label: t("common.button.addToShortcut"),
+                                            // onClick: () => viewDatabaseQueryExport(),
+                                            icon: "bi-download",
+                                        },
+                                        {
+                                            label: t("common.button.createDirectory"),
+                                            // onClick: () => getDatabaseQueryChart("exact"),
+                                            icon: "bi-bar-chart-line-fill",
+                                            // loadingFlag: databaseQueryExactChartLoadingFlag
+                                        },
+                                        {
+                                            label: t("common.button.addFile"),
+                                            // onClick: () => getDatabaseQueryChart("exact"),
+                                            icon: "bi-bar-chart-line-fill",
+                                            // loadingFlag: databaseQueryExactChartLoadingFlag
+                                        },
+                                        {
+                                            label: t("common.button.upload"),
+                                            // onClick: () => getDatabaseQueryChart("exact"),
+                                            icon: "bi-bar-chart-line-fill",
+                                            // loadingFlag: databaseQueryExactChartLoadingFlag
+                                        },
+                                        {
+                                            label: t("common.button.clone"),
+                                            // onClick: () => getDatabaseQueryChart("exact"),
+                                            icon: "bi-bar-chart-line-fill",
+                                            // loadingFlag: databaseQueryExactChartLoadingFlag
+                                        },
+                                        {
+                                            label: t("common.button.delete"),
+                                            // onClick: () => getDatabaseQueryChart("exact"),
+                                            icon: "bi-bar-chart-line-fill",
+                                            // loadingFlag: databaseQueryExactChartLoadingFlag
+                                        }
+                                    ]
+                                }
+                                dataArray={serverDirectoryDataArray ?? []}
+                                columns={[
+                                    {
+                                        data: "id",
+                                        name: t("common.text.id"),
+                                        class: "text-nowrap",
+                                        orderable: true,
+                                        minDevice: CommonConstants.DEVICE.MOBILE,
+                                    }
+                                ]}
+
+                                dataTotal={serverDirectoryDataTotalTable}
+                                resetPagination={serverDirectoryResetPaginationTable}
+                                onRender={(page, length, search, order) => {
+                                    if (serverId >= 0) {
+                                        getServerDirectory(serverId, { page: page, length: length, search: search, order: order })
+                                    }
+                                }}
+
+                                loadingFlag={serverDirectoryTableLoadingFlag}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </Modal>
             <Dialog id="dialog_server" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_server" type={toast.type} message={toast.message} />
-            <div className="row"><h3><span className="bi-puzzle">&nbsp;{t("common.menu.server")}</span></h3></div>
-            <div className="row">
-                <SelectFilter label={t("common.text.value")} name="value" map={selectValueMap} value={serverFilterTable.value} onChange={onServerFilterTableChange} placeholder={t("common.text.all")} delay="1" className="col-md-4 col-sm-6 col-xs-12" />
-                <DateFilter label={t("common.text.date")} name="date" value={serverFilterTable.date} onChange={onServerFilterTableChange} delay="2" className="col-md-4 col-sm-6 col-xs-12" />
-                <RangeFilter label={t("common.text.range")} name="range" value={serverFilterTable.range} onChange={onServerFilterTableChange} delay="3" className="col-md-4 col-sm-6 col-xs-12" />
-            </div>
+            <div className="row"><h3><span className="bi-hdd-rack">&nbsp;{t("common.menu.server")}</span></h3></div>
             <div className="row">
                 <div className="col-md-12">
                     <div className="card border-0 rounded shadow">
@@ -375,6 +514,15 @@ export default function Server() {
                             <Table
                                 labelNewButton={t("common.button.createNew")}
                                 onNewButtonClick={() => entryServer(false)}
+
+                                additionalButtonArray={[
+                                    {
+                                        label: t("common.button.local"),
+                                        onClick: () => connectServer(0),
+                                        icon: "bi-house-door",
+                                        loadingFlag: connectServerLoadingFlag
+                                    }
+                                ]}
 
                                 bulkOptionLoadingFlag={serverBulkOptionLoadingFlag}
                                 bulkOptionArray={[
@@ -388,8 +536,15 @@ export default function Server() {
                                 dataArray={serverArray}
                                 columns={[
                                     {
-                                        data: "name",
-                                        name: t("common.text.name"),
+                                        data: "id",
+                                        name: t("common.text.id"),
+                                        class: "text-nowrap",
+                                        orderable: true,
+                                        minDevice: CommonConstants.DEVICE.MOBILE,
+                                    },
+                                    {
+                                        data: "code",
+                                        name: t("common.text.code"),
                                         class: "text-nowrap",
                                         orderable: true,
                                         minDevice: CommonConstants.DEVICE.MOBILE,
@@ -401,36 +556,10 @@ export default function Server() {
                                         minDevice: CommonConstants.DEVICE.TABLET,
                                     },
                                     {
-                                        data: "value",
-                                        name: t("common.text.value"),
+                                        data: "ip",
+                                        name: "IP",
                                         class: "text-nowrap",
-                                        width: 10,
                                         minDevice: CommonConstants.DEVICE.TABLET,
-                                    },
-                                    {
-                                        data: "date",
-                                        name: t("common.text.date"),
-                                        class: "text-nowrap",
-                                        width: 10,
-                                        minDevice: CommonConstants.DEVICE.DESKTOP
-                                    },
-                                    {
-                                        data: "createdBy",
-                                        name: t("common.text.createdBy"),
-                                        class: "text-nowrap",
-                                        width: 10,
-                                        minDevice: CommonConstants.DEVICE.DESKTOP
-                                    },
-                                    {
-                                        data: "createdDate",
-                                        name: t("common.text.createdDate"),
-                                        class: "text-nowrap",
-                                        width: 15,
-                                        orderable: true,
-                                        minDevice: CommonConstants.DEVICE.DESKTOP,
-                                        render: function (data) {
-                                            return DateHelper.formatDate(new Date(data), "dd MMM yyyy HH:mm:ss")
-                                        }
                                     },
                                     {
                                         data: "id",
@@ -439,6 +568,13 @@ export default function Server() {
                                         render: function (data, row) {
                                             return (
                                                 <>
+                                                    <Button
+                                                        label={t("common.button.connect")}
+                                                        onClick={() => connectServer(data)}
+                                                        className="btn-primary"
+                                                        icon="bi-plugin"
+                                                        loadingFlag={serverOptionColumnTable[data]?.connectedButtonFlag}
+                                                    />
                                                     <Button
                                                         label={t("common.button.view")}
                                                         onClick={() => viewServer(data)}
@@ -458,7 +594,7 @@ export default function Server() {
                                         }
                                     }
                                 ]}
-                                order={[[5, "desc"]]}
+                                order={[[0, "desc"]]}
 
                                 checkBoxArray={serverCheckBoxTableArray}
                                 onCheckBox={serverCheckBoxTableArray => { setServerCheckBoxTableArray([...serverCheckBoxTableArray]) }}

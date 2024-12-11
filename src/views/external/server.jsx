@@ -302,6 +302,7 @@ export default function Server() {
     }
 
     const [serverId, setServerId] = useState(-1)
+    const [serverCurrentDirectory, setServerCurrentDirectory] = useState([])
     const [connectServerLoadingFlag, setConnectServerLoadingFlag] = useState(false)
     const [serverDirectoryTitleModal, setServerDirectoryTitleModal] = useState(false)
     const [serverDirectoryColumn, setServerDirectoryColumn] = useState([])
@@ -312,6 +313,7 @@ export default function Server() {
     const [serverDirectoryTableLoadingFlag, setServerDirectoryTableLoadingFlag] = useState(false)
 
     const [serverDirectoryDataArray, setServerDirectoryDataArray] = useState([])
+    const [serverDirectoryFullDataArray, setServerDirectoryFullDataArray] = useState([])
 
     const connectServer = async (id) => {
         if (id === 0) {
@@ -326,6 +328,7 @@ export default function Server() {
 
             if (json.status === "success") {
                 setServerId(id)
+                setServerCurrentDirectory(json.data.defaultDirectory.split("/"))
                 getServerDirectory(id, { page: 1, length: 10, search: "", order: [], directory: json.data.defaultDirectory })
             }
 
@@ -358,10 +361,30 @@ export default function Server() {
 
             const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-directory.json`, params)
             const json = response.data
-            setServerDirectoryDataArray(json.data)
-            setServerDirectoryDataTotalTable(json.recordsTotal)
+            setServerDirectoryFullDataArray(json.data.fileArray)
+            setServerDirectoryDataArray(
+                json.data.fileArray
+                    .sort(
+                        (left, right) => {
+                            if (options.order.length > 1) {
+                                if (typeof left[options.order[0]] === 'string' || typeof right[options.order[0]] === 'string') {
+                                    return ("asc" === options.order[1] ? 1 : -1) * (left[options.order[0]].localeCompare(right[options.order[0]]))
+                                } if (typeof left[options.order[0]] === 'number' || typeof right[options.order[0]] === 'number') {
+                                    return ("asc" === options.order[1] ? 1 : -1) * (left[options.order[0]] - right[options.order[0]])
+                                } else {
+                                    return 0
+                                }
+                            } else {
+                                return 0
+                            }
+                        }
+                    )
+                    .slice((options.page - 1) * options.length, ((options.page - 1) * options.length) + options.length)
+            )
+            console.log(options.page + "::" + options.length)
+            setServerDirectoryDataTotalTable(json.data.fileArray.length)
             setServerDirectoryOptionColumnTable(
-                json.data.reduce(function (map, obj) {
+                json.data.fileArray.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
                     map[obj.id] = { "connectedButtonFlag": false, "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
@@ -372,6 +395,62 @@ export default function Server() {
         } finally {
             setServerDirectoryTableLoadingFlag(false)
         }
+    }
+
+    const getServerDirectoryRender = async (options) => {
+        setServerDirectoryTableLoadingFlag(true)
+
+        try {
+            const params = {
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
+                "search": encodeURIComponent(options.search),
+                "orderColumn": options.order.length > 1 ? options.order[0] : null,
+                "orderDir": options.order.length > 1 ? options.order[1] : null,
+                "directory": options.directory
+            }
+            setServerDirectoryAttributeTable(options)
+            setServerDirectoryDataArray(
+                serverDirectoryFullDataArray
+                    .sort(
+                        (left, right) => {
+                            if (options.order.length > 1) {
+                                if (typeof left[options.order[0]] === 'string' || typeof right[options.order[0]] === 'string') {
+                                    return ("asc" === options.order[1] ? 1 : -1) * (left[options.order[0]].localeCompare(right[options.order[0]]))
+                                } if (typeof left[options.order[0]] === 'number' || typeof right[options.order[0]] === 'number') {
+                                    return ("asc" === options.order[1] ? 1 : -1) * (left[options.order[0]] - right[options.order[0]])
+                                } else {
+                                    return 0
+                                }
+                            } else {
+                                return 0
+                            }
+                        }
+                    )
+                    .slice((options.page - 1) * options.length, ((options.page - 1) * options.length) + options.length)
+            )
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setServerDirectoryTableLoadingFlag(false)
+        }
+    }
+
+    const goToParent = () => {
+        const options = serverDirectoryAttributeTable
+        serverCurrentDirectory.pop()
+        const nextDirectory = serverCurrentDirectory
+        setServerCurrentDirectory(nextDirectory)
+        options.directory = nextDirectory.join("/")
+        getServerDirectory(serverId, options)
+    }
+
+    const enterFolder = (name) => {
+        const options = serverDirectoryAttributeTable
+        const nextDirectory = [...serverCurrentDirectory, [name]]
+        setServerCurrentDirectory(nextDirectory)
+        options.directory = nextDirectory.join("/")
+        getServerDirectory(serverId, options)
     }
 
     return (
@@ -438,6 +517,7 @@ export default function Server() {
             >
                 <div className="row">
                     <div className="col-md-12 col-sm-12 col-xs-12">
+                        {serverCurrentDirectory.join("/")}
                         <div className="row">
                             <Table
                                 additionalButtonArray={
@@ -445,48 +525,97 @@ export default function Server() {
                                         {
                                             label: t("common.button.addToShortcut"),
                                             // onClick: () => viewDatabaseQueryExport(),
-                                            icon: "bi-download",
+                                            icon: "bi-plus-circle",
                                         },
                                         {
                                             label: t("common.button.createDirectory"),
                                             // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-bar-chart-line-fill",
+                                            icon: "bi-plus-circle",
                                             // loadingFlag: databaseQueryExactChartLoadingFlag
                                         },
                                         {
                                             label: t("common.button.addFile"),
                                             // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-bar-chart-line-fill",
+                                            icon: "bi-plus-square",
                                             // loadingFlag: databaseQueryExactChartLoadingFlag
                                         },
                                         {
                                             label: t("common.button.upload"),
                                             // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-bar-chart-line-fill",
+                                            icon: "bi-upload",
                                             // loadingFlag: databaseQueryExactChartLoadingFlag
                                         },
                                         {
                                             label: t("common.button.clone"),
                                             // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-bar-chart-line-fill",
+                                            icon: "bi-copy",
                                             // loadingFlag: databaseQueryExactChartLoadingFlag
                                         },
                                         {
                                             label: t("common.button.delete"),
                                             // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-bar-chart-line-fill",
+                                            icon: "bi-trash",
                                             // loadingFlag: databaseQueryExactChartLoadingFlag
                                         }
                                     ]
                                 }
-                                dataArray={serverDirectoryDataArray ?? []}
+                                dataArray={[{ name: ".:Up:.", goToParentFlag: true }, ...serverDirectoryDataArray]}
                                 columns={[
                                     {
-                                        data: "id",
-                                        name: t("common.text.id"),
+                                        data: "name",
+                                        name: t("common.text.name"),
                                         class: "text-nowrap",
                                         orderable: true,
                                         minDevice: CommonConstants.DEVICE.MOBILE,
+                                        render: (data, row) => {
+                                            return (
+                                                <label role="button" onClick={() => row.goToParentFlag ? goToParent() : enterFolder(data)}>
+                                                    <i className={`${row.goToParentFlag ? "bi-arrow-90deg-up" : row.directoryFlag ? "bi-folder-fill" : "bi-file"}`} />&nbsp;&nbsp;{data}
+                                                </label>
+                                            )
+                                        }
+                                    },
+                                    {
+                                        data: "size",
+                                        name: t("common.text.size"),
+                                        class: "text-nowrap",
+                                        orderable: true,
+                                        minDevice: CommonConstants.DEVICE.MOBILE,
+                                        render: (data, row) => {
+                                            if (row.goToParentFlag) {
+                                                return ""
+                                            } else {
+                                                return data
+                                            }
+                                        }
+                                    },
+                                    {
+                                        data: "createdDate",
+                                        name: t("common.text.modifiedDate"),
+                                        class: "text-nowrap",
+                                        orderable: true,
+                                        minDevice: CommonConstants.DEVICE.TABLET,
+                                        render: (data, row) => {
+                                            if (row.goToParentFlag) {
+                                                return ""
+                                            } else {
+                                                return DateHelper.formatDate(new Date(data), "dd MMM yyyy HH:mm:ss")
+                                            }
+                                        }
+                                    },
+                                    {
+                                        data: "mode",
+                                        name: t("common.text.permission"),
+                                        class: "text-nowrap",
+                                        orderable: true,
+                                        minDevice: CommonConstants.DEVICE.TABLET,
+                                        render: (data, row) => {
+                                            if (row.goToParentFlag) {
+                                                return ""
+                                            } else {
+                                                return data
+                                            }
+                                        }
                                     }
                                 ]}
 
@@ -494,13 +623,13 @@ export default function Server() {
                                 resetPagination={serverDirectoryResetPaginationTable}
                                 onRender={(page, length, search, order) => {
                                     if (serverId >= 0) {
-                                        getServerDirectory(serverId, { page: page, length: length, search: search, order: order })
+                                        getServerDirectoryRender({ page: page, length: length, search: search, order: order })
                                     }
                                 }}
 
                                 loadingFlag={serverDirectoryTableLoadingFlag}
                             />
-                        </div>
+                        </div >
                     </div>
                 </div>
             </Modal>

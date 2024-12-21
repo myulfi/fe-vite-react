@@ -16,6 +16,8 @@ export default function InputImage({
             ...imageStyle,
             backgroundImage: value !== null ? `url(${value})` : null
         })
+
+        if (value === null) fileInputRef.current.value = ""
     }, [value])
 
     const [imageStyle, setImageStyle] = useState({
@@ -53,7 +55,8 @@ export default function InputImage({
                         callback(blob) // Call the callback with the compressed image Blob
                     },
                     'image/jpeg',
-                    0.5 // Set compression quality from 0 (worst) to 1 (best)
+                    //0.5 // Set compression quality from 0 (worst) to 1 (best)
+                    2000000 / file.size
                 )
             }
 
@@ -115,10 +118,10 @@ export default function InputImage({
             }
         })
 
-        imageStyle.current = {
+        setImageStyle({
             ...imageStyle,
             backgroundImage: ""
-        }
+        })
 
         fileInputRef.current.value = ""
     }

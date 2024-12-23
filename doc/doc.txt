@@ -10,7 +10,7 @@ Installation in Local
 | Cookie		    	| D:\user\development\fe-vite-react npm install js-cookie
 | Multiple Language		| D:\user\development\fe-vite-react npm install i18next react-i18next
 | Multiple Language		| D:\user\development\fe-vite-react npm install i18next-http-backend
-| Run					| D:\user\development\fe-vite-react npm run dev
+| Run					| D:\user\development\fe-vite-react npm run dev -- --port 5179
 --------------------------------------------------------------------------------------
 
 Installation in Production

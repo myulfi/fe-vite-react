@@ -71,20 +71,6 @@ export default function Server() {
         setServerFormError({ ...serverFormError, [name]: undefined })
     }
 
-    const selectValueMap = [
-        { "key": 1, "value": "Satu" },
-        { "key": 2, "value": "Dua" },
-        { "key": 3, "value": "Tiga" },
-        { "key": 4, "value": "Empat" },
-        { "key": 5, "value": "Lima" },
-        { "key": 6, "value": "Enam" },
-        { "key": 7, "value": "Tujuh" },
-        { "key": 8, "value": "Delapan" },
-        { "key": 9, "value": "Sembilan" },
-        { "key": 10, "value": "Sepuluh" },
-    ]
-    const yesNoMap = [{ "key": 1, "value": "Yes" }, { "key": 0, "value": "No" }]
-
     const serverValidate = (data) => {
         const error = {}
         if (!data.code.trim()) error.name = t("validate.text.required", { name: t("common.text.code") })
@@ -453,6 +439,99 @@ export default function Server() {
         getServerDirectory(serverId, options)
     }
 
+    const serverDirectoryInitial = {
+        name: undefined,
+        oldName: undefined,
+        directory: undefined
+    }
+
+    const [serverDirectoryStateModal, setServerDirectoryStateModal] = useState(CommonConstants.MODAL.ENTRY)
+
+    const [serverDirectoryEntryModal, setServerDirectoryEntryModal] = useState({
+        title: "",
+        submitLabel: "",
+        submitClass: "",
+        submitIcon: "",
+        submitLoadingFlag: false,
+    })
+
+    const [serverDirectoryForm, setServerDirectoryForm] = useState(serverDirectoryInitial)
+    const [serverDirectoryFormError, setServerDirectoryFormError] = useState([])
+
+    const onServerDirectoryFormChange = (e) => {
+        const { name, value } = e.target
+        setServerDirectoryForm({ ...serverDirectoryForm, [name]: value })
+        setServerDirectoryFormError({ ...serverDirectoryFormError, [name]: undefined })
+    }
+
+    const serverDirectoryValidate = (data) => {
+        const error = {}
+        if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
+        setServerDirectoryFormError(error)
+        return Object.keys(error).length === 0
+    }
+
+    const entryServerDirectory = (haveContentFlag) => {
+        setServerDirectoryStateModal(CommonConstants.MODAL.ENTRY)
+        setServerDirectoryFormError([])
+        if (haveContentFlag) {
+            setServerDirectoryEntryModal({
+                ...serverDirectoryEntryModal,
+                title: serverForm.name,
+                submitLabel: t("common.button.rename"),
+                submitIcon: "bi-arrow-repeat",
+                submitLoadingFlag: false,
+            })
+        } else {
+            setServerDirectoryForm(serverDirectoryInitial)
+            setServerDirectoryForm({ ...serverDirectoryInitial, "directory": serverCurrentDirectory.join("/") })
+            setServerDirectoryEntryModal({
+                ...serverDirectoryEntryModal,
+                title: t("common.text.createDirectory"),
+                submitLabel: t("common.button.create"),
+                submitIcon: "bi-plus-circle",
+                submitLoadingFlag: false,
+            })
+            ModalHelper.show("modal_server_entry_directory")
+        }
+    }
+
+    const confirmStoreServerDirectory = () => {
+        if (serverDirectoryValidate(serverDirectoryForm)) {
+            setDialog({
+                message: serverDirectoryForm.oldName === undefined ? t("common.confirmation.create", { name: serverDirectoryForm.name }) : t("common.confirmation.update", { name: serverDirectoryForm.name }),
+                type: "confirmation",
+                onConfirm: (e) => storeServerDirectory(e),
+            })
+        }
+    }
+
+    const storeServerDirectory = async () => {
+        if (serverDirectoryValidate(serverDirectoryForm)) {
+            ModalHelper.hide("dialog_server")
+            setServerDirectoryEntryModal({ ...serverDirectoryEntryModal, submitLoadingFlag: true })
+
+            try {
+                const json = await apiRequest(
+                    serverDirectoryForm.oldName === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                    `/external/${serverId}/server-directory.json`,
+                    JSON.stringify(serverDirectoryForm),
+                )
+
+                if (json.data.status === "success") {
+                    getServerDirectory(serverId, serverDirectoryAttributeTable)
+                    ModalHelper.hide("modal_server_entry_directory")
+                }
+                setToast({ type: json.data.status, message: json.data.message })
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+                setServerDirectoryFormError(error.response.data)
+            } finally {
+                setServerDirectoryEntryModal({ ...serverEntryModal, submitLoadingFlag: false })
+            }
+        }
+    }
+
     return (
         <div className="container mt-4 mb-4">
             <Modal
@@ -529,7 +608,7 @@ export default function Server() {
                                         },
                                         {
                                             label: t("common.button.createDirectory"),
-                                            // onClick: () => getDatabaseQueryChart("exact"),
+                                            onClick: () => entryServerDirectory(),
                                             icon: "bi-plus-circle",
                                             // loadingFlag: databaseQueryExactChartLoadingFlag
                                         },
@@ -603,17 +682,28 @@ export default function Server() {
                                             }
                                         }
                                     },
+                                    // {
+                                    //     data: "ownerName",
+                                    //     name: t("common.text.owner"),
+                                    //     class: "text-nowrap",
+                                    //     minDevice: CommonConstants.DEVICE.DESKTOP,
+                                    // },
+                                    // {
+                                    //     data: "groupName",
+                                    //     name: t("common.text.group"),
+                                    //     class: "text-nowrap",
+                                    //     minDevice: CommonConstants.DEVICE.DESKTOP,
+                                    // },
                                     {
                                         data: "mode",
                                         name: t("common.text.permission"),
                                         class: "text-nowrap",
-                                        orderable: true,
                                         minDevice: CommonConstants.DEVICE.TABLET,
                                         render: (data, row) => {
                                             if (row.goToParentFlag) {
                                                 return ""
                                             } else {
-                                                return data
+                                                return data.toString(8)
                                             }
                                         }
                                     }
@@ -632,6 +722,38 @@ export default function Server() {
                         </div >
                     </div>
                 </div>
+            </Modal>
+            <Modal
+                id="modal_server_entry_directory"
+                size="md"
+                title={serverDirectoryEntryModal.title}
+                buttonArray={
+                    <>
+                        {
+                            CommonConstants.MODAL.ENTRY === serverDirectoryStateModal
+                            && <Button
+                                label={serverDirectoryEntryModal.submitLabel}
+                                onClick={() => confirmStoreServerDirectory()}
+                                className="btn-primary"
+                                icon={serverDirectoryEntryModal.submitIcon}
+                                loadingFlag={serverDirectoryEntryModal.submitLoadingFlag}
+                            />
+                        }
+                        {
+                            CommonConstants.MODAL.VIEW === serverStateModal
+                            && <Button
+                                label={serverDirectoryEntryModal.submitLabel}
+                                onClick={() => confirmStoreServerDirectory(true)}
+                                className="btn-primary"
+                                icon={serverDirectoryEntryModal.submitIcon}
+                                loadingFlag={serverDirectoryEntryModal.submitLoadingFlag} x
+                            />
+                        }
+                    </>
+
+                }
+            >
+                <InputText label={t("common.text.directoryName")} name="name" value={serverDirectoryForm.name} onChange={onServerDirectoryFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFormError.name} />
             </Modal>
             <Dialog id="dialog_server" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_server" type={toast.type} message={toast.message} />

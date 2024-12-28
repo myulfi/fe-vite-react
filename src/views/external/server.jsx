@@ -439,6 +439,31 @@ export default function Server() {
         getServerDirectory(serverId, options)
     }
 
+    const openFolder = async (name) => {
+        const params = {
+            "name": name,
+            "content": " ",
+            "directory": serverCurrentDirectory.join("/")
+        }
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-file.json`, params)
+        const json = response.data
+
+        setServerFileForm({
+            name: name,
+            content: json.data.content,
+            directory: serverCurrentDirectory.join("/")
+        })
+
+        setServerFileEntryModal({
+            ...serverFileEntryModal,
+            title: serverForm.name,
+            submitLabel: t("common.button.update"),
+            submitIcon: "bi-arrow-repeat",
+            submitLoadingFlag: false,
+        })
+        ModalHelper.show("modal_server_entry_file")
+    }
+
     const serverDirectoryInitial = {
         name: undefined,
         oldName: undefined,
@@ -532,6 +557,101 @@ export default function Server() {
         }
     }
 
+    const serverFileInitial = {
+        name: undefined,
+        oldName: undefined,
+        content: undefined,
+        file: undefined
+    }
+
+    const [serverFileStateModal, setServerFileStateModal] = useState(CommonConstants.MODAL.ENTRY)
+
+    const [serverFileEntryModal, setServerFileEntryModal] = useState({
+        title: "",
+        submitLabel: "",
+        submitClass: "",
+        submitIcon: "",
+        submitLoadingFlag: false,
+    })
+
+    const [serverFileForm, setServerFileForm] = useState(serverFileInitial)
+    const [serverFileFormError, setServerFileFormError] = useState([])
+
+    const onServerFileFormChange = (e) => {
+        const { name, value } = e.target
+        setServerFileForm({ ...serverFileForm, [name]: value })
+        setServerFileFormError({ ...serverFileFormError, [name]: undefined })
+    }
+
+    const serverFileValidate = (data) => {
+        const error = {}
+        if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
+        if (!data.content.trim()) error.content = t("validate.text.required", { name: t("common.text.content") })
+        setServerFileFormError(error)
+        return Object.keys(error).length === 0
+    }
+
+    const entryServerFile = (haveContentFlag) => {
+        setServerFileStateModal(CommonConstants.MODAL.ENTRY)
+        setServerFileFormError([])
+        if (haveContentFlag) {
+            setServerFileEntryModal({
+                ...serverFileEntryModal,
+                title: serverForm.name,
+                submitLabel: t("common.button.update"),
+                submitIcon: "bi-arrow-repeat",
+                submitLoadingFlag: false,
+            })
+        } else {
+            setServerFileForm(serverFileInitial)
+            setServerFileForm({ ...serverFileInitial, "directory": serverCurrentDirectory.join("/") })
+            setServerFileEntryModal({
+                ...serverFileEntryModal,
+                title: t("common.text.createFile"),
+                submitLabel: t("common.button.create"),
+                submitIcon: "bi-plus-circle",
+                submitLoadingFlag: false,
+            })
+            ModalHelper.show("modal_server_entry_file")
+        }
+    }
+
+    const confirmStoreServerFile = () => {
+        if (serverFileValidate(serverFileForm)) {
+            setDialog({
+                message: serverFileForm.oldName === undefined ? t("common.confirmation.create", { name: serverFileForm.name }) : t("common.confirmation.update", { name: serverFileForm.name }),
+                type: "confirmation",
+                onConfirm: (e) => storeServerFile(e),
+            })
+        }
+    }
+
+    const storeServerFile = async () => {
+        if (serverFileValidate(serverFileForm)) {
+            ModalHelper.hide("dialog_server")
+            setServerFileEntryModal({ ...serverFileEntryModal, submitLoadingFlag: true })
+
+            try {
+                const json = await apiRequest(
+                    serverFileForm.oldName === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                    `/external/${serverId}/server-file.json`,
+                    JSON.stringify(serverFileForm),
+                )
+
+                if (json.data.status === "success") {
+                    getServerDirectory(serverId, serverDirectoryAttributeTable)
+                    ModalHelper.hide("modal_server_entry_file")
+                }
+                setToast({ type: json.data.status, message: json.data.message })
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+                setServerFileFormError(error.response.data)
+            } finally {
+                setServerFileEntryModal({ ...serverEntryModal, submitLoadingFlag: false })
+            }
+        }
+    }
+
     return (
         <div className="container mt-4 mb-4">
             <Modal
@@ -614,7 +734,7 @@ export default function Server() {
                                         },
                                         {
                                             label: t("common.button.addFile"),
-                                            // onClick: () => getDatabaseQueryChart("exact"),
+                                            onClick: () => entryServerFile(),
                                             icon: "bi-plus-square",
                                             // loadingFlag: databaseQueryExactChartLoadingFlag
                                         },
@@ -648,7 +768,7 @@ export default function Server() {
                                         minDevice: CommonConstants.DEVICE.MOBILE,
                                         render: (data, row) => {
                                             return (
-                                                <label role="button" onClick={() => row.goToParentFlag ? goToParent() : enterFolder(data)}>
+                                                <label role="button" onClick={() => row.goToParentFlag ? goToParent() : row.directoryFlag ? enterFolder(data) : openFolder(data)}>
                                                     <i className={`${row.goToParentFlag ? "bi-arrow-90deg-up" : row.directoryFlag ? "bi-folder-fill" : "bi-file"}`} />&nbsp;&nbsp;{data}
                                                 </label>
                                             )
@@ -746,7 +866,7 @@ export default function Server() {
                                 onClick={() => confirmStoreServerDirectory(true)}
                                 className="btn-primary"
                                 icon={serverDirectoryEntryModal.submitIcon}
-                                loadingFlag={serverDirectoryEntryModal.submitLoadingFlag} x
+                                loadingFlag={serverDirectoryEntryModal.submitLoadingFlag}
                             />
                         }
                     </>
@@ -754,6 +874,38 @@ export default function Server() {
                 }
             >
                 <InputText label={t("common.text.directoryName")} name="name" value={serverDirectoryForm.name} onChange={onServerDirectoryFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFormError.name} />
+            </Modal>
+            <Modal
+                id="modal_server_entry_file"
+                size="xl"
+                title={serverFileEntryModal.title}
+                buttonArray={
+                    <>
+                        {
+                            CommonConstants.MODAL.ENTRY === serverFileStateModal
+                            && <Button
+                                label={serverFileEntryModal.submitLabel}
+                                onClick={() => confirmStoreServerFile()}
+                                className="btn-primary"
+                                icon={serverFileEntryModal.submitIcon}
+                                loadingFlag={serverFileEntryModal.submitLoadingFlag}
+                            />
+                        }
+                        {
+                            CommonConstants.MODAL.VIEW === serverStateModal
+                            && <Button
+                                label={serverFileEntryModal.submitLabel}
+                                onClick={() => confirmStoreServerFile(true)}
+                                className="btn-primary"
+                                icon={serverFileEntryModal.submitIcon}
+                                loadingFlag={serverFileEntryModal.submitLoadingFlag}
+                            />
+                        }
+                    </>
+                }
+            >
+                <InputText label={t("common.text.fileName")} name="name" value={serverFileForm.name} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.name} />
+                <Textarea label={t("common.text.content")} name="content" value={serverFileForm.content} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.content} />
             </Modal>
             <Dialog id="dialog_server" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_server" type={toast.type} message={toast.message} />

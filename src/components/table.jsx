@@ -224,7 +224,7 @@ export default function Table({
                         additionalButtonArray.length > 0
                         && additionalButtonArray.map((additionalButton, index) => (
                             <div key={index} className="float-sm-start d-grid d-sm-flex mb-2 me-sm-3">
-                                <button className="btn btn-md btn-primary rounded border-0 shadow-sm" disabled={additionalButton.loadingFlag} type="button" onClick={() => additionalButton.onClick()}>
+                                <button className={`btn btn-md ${additionalButton.className ?? "btn-primary"} rounded border-0 shadow-sm`} disabled={additionalButton.loadingFlag} type="button" onClick={() => additionalButton.onClick()}>
                                     <span className={additionalButton.loadingFlag ? "spinner-grow spinner-grow-sm mx-2" : null} role="status" aria-hidden="true" />
                                     <span className={additionalButton.icon}>&nbsp;{additionalButton.label}</span>
                                 </button>

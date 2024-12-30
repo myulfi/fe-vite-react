@@ -46,13 +46,10 @@ export default function Select({
         labelValueChange(value)
     }, [map])
 
-    // useEffect(() => {
-    //     console.log(name + " :: " + value + " :: " + valueRef.current)
-    //     // valueRef.current = value
-    //     // labelValueChange(value)
-    //     // labelValueChange(valueRef.current)
-    //     // valueRef.current = value
-    // }, [value])
+    useEffect(() => {
+        valueRef.current = value
+        labelValueChange(valueRef.current)
+    }, [value])
 
 
     const [labelValue, setLabelValue] = useState()

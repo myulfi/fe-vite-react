@@ -316,6 +316,8 @@ export default function Server() {
                 setServerId(id)
                 setServerCurrentDirectory(json.data.defaultDirectory.split("/"))
                 getServerDirectory(id, { page: 1, length: 10, search: "", order: [], directory: json.data.defaultDirectory })
+                getServerShortcut(id)
+                setServerShortcutValue(0)
             }
 
             setServerDirectoryTitleModal(id)
@@ -328,6 +330,22 @@ export default function Server() {
             } else {
                 setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { connectedButtonFlag: false } })
             }
+        }
+    }
+
+    const getServerShortcut = async (serverId) => {
+        try {
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-shortcut.json`)
+            const json = response.data
+            setServerShortcutMap(json.data.map((item) => {
+                return {
+                    key: item.id,
+                    value: `${item.name} | ${item.directory}`
+                }
+            }))
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+            setServerShortcutMap([])
         }
     }
 
@@ -428,6 +446,9 @@ export default function Server() {
         const nextDirectory = serverCurrentDirectory
         setServerCurrentDirectory(nextDirectory)
         options.directory = nextDirectory.join("/")
+
+        const index = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
+        setServerShortcutValue(index > -1 ? serverShortcutMap[index].key : 0)
         getServerDirectory(serverId, options)
     }
 
@@ -436,49 +457,117 @@ export default function Server() {
         const nextDirectory = [...serverCurrentDirectory, [name]]
         setServerCurrentDirectory(nextDirectory)
         options.directory = nextDirectory.join("/")
+
+        const index = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
+        setServerShortcutValue(index > -1 ? serverShortcutMap[index].key : 0)
         getServerDirectory(serverId, options)
     }
 
-    const openFolder = async (name) => {
-        const params = {
-            "name": name,
-            "content": " ",
-            "directory": serverCurrentDirectory.join("/")
+    const serverShortcutInitial = {
+        name: undefined,
+        directory: undefined
+    }
+
+    const [serverShortcutValue, setServerShortcutValue] = useState(0)
+    const [serverShortcutMap, setServerShortcutMap] = useState([])
+
+    const onServerShortcutValueChange = (e) => {
+        const { value } = e.target
+        setServerShortcutValue(value)
+
+        const options = serverDirectoryAttributeTable
+        const nextDirectory = serverShortcutMap.find((item) => item.key === value).value.split(" | ")[1]
+        setServerCurrentDirectory(nextDirectory.split("/"))
+        options.directory = nextDirectory
+        getServerDirectory(serverId, options)
+    }
+
+    const [serverShortcutCreateLoadingFlag, setServerShortcutCreateLoadingFlag] = useState(false)
+
+    const [serverShortcutForm, setServerShortcutForm] = useState(serverShortcutInitial)
+    const [serverShortcutFormError, setServerShortcutFormError] = useState([])
+
+    const onServerShortcutFormChange = (e) => {
+        const { name, value } = e.target
+        setServerShortcutForm({ ...serverShortcutForm, [name]: value })
+        setServerShortcutFormError({ ...serverShortcutFormError, [name]: undefined })
+    }
+
+    const serverShortcutValidate = (data) => {
+        const error = {}
+        if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
+        setServerDirectoryFormError(error)
+        return Object.keys(error).length === 0
+    }
+
+    const entryServerShortcut = () => {
+        setServerShortcutFormError([])
+        setServerShortcutForm({ ...serverShortcutInitial, "directory": serverCurrentDirectory.join("/") })
+        ModalHelper.show("modal_server_create_shortcut")
+    }
+
+    const confirmCreateServerShortcut = () => {
+        if (serverShortcutValidate(serverShortcutForm)) {
+            setDialog({
+                message: t("common.confirmation.create", { name: serverShortcutForm.name }),
+                type: "confirmation",
+                onConfirm: (e) => createServerShortcut(e),
+            })
         }
-        const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-file.json`, params)
-        const json = response.data
+    }
 
-        setServerFileForm({
-            name: name,
-            content: json.data.content,
-            directory: serverCurrentDirectory.join("/")
-        })
+    const createServerShortcut = async () => {
+        if (serverShortcutValidate(serverShortcutForm)) {
+            ModalHelper.hide("dialog_server")
+            setServerShortcutCreateLoadingFlag(true)
 
-        setServerFileEntryModal({
-            ...serverFileEntryModal,
-            title: serverForm.name,
-            submitLabel: t("common.button.update"),
-            submitIcon: "bi-arrow-repeat",
-            submitLoadingFlag: false,
+            try {
+                const json = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-shortcut.json`, JSON.stringify(serverShortcutForm))
+
+                if (json.data.status === "success") {
+                    getServerShortcut(serverId)
+                    setServerShortcutValue(json.data.data.id)
+                    ModalHelper.hide("modal_server_create_shortcut")
+                }
+                setToast({ type: json.data.status, message: "common.information.created" })
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+                setServerShortcutFormError(error.response.data)
+            } finally {
+                setServerShortcutCreateLoadingFlag(false)
+            }
+        }
+    }
+
+    const confirmDeleteServerShortcut = (id) => {
+        setDialog({
+            message: t("common.confirmation.delete", { name: serverShortcutMap.find((item) => item.key === id).value }),
+            type: "warning",
+            onConfirm: () => deleteServerShortcut(id),
         })
-        ModalHelper.show("modal_server_entry_file")
+    }
+
+    const deleteServerShortcut = async (id) => {
+        ModalHelper.hide("dialog_server")
+
+        try {
+            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id}/server-shortcut.json`)
+            if (json.data.status === "success") {
+                getServerShortcut(serverId)
+                setServerShortcutValue(0)
+            }
+            setToast({ type: json.data.status, message: json.data.message })
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        }
     }
 
     const serverDirectoryInitial = {
         name: undefined,
-        oldName: undefined,
         directory: undefined
     }
 
-    const [serverDirectoryStateModal, setServerDirectoryStateModal] = useState(CommonConstants.MODAL.ENTRY)
-
-    const [serverDirectoryEntryModal, setServerDirectoryEntryModal] = useState({
-        title: "",
-        submitLabel: "",
-        submitClass: "",
-        submitIcon: "",
-        submitLoadingFlag: false,
-    })
+    const [serverDirectoryCreateLoadingFlag, setServerDirectoryCreateLoadingFlag] = useState(false)
 
     const [serverDirectoryForm, setServerDirectoryForm] = useState(serverDirectoryInitial)
     const [serverDirectoryFormError, setServerDirectoryFormError] = useState([])
@@ -496,63 +585,109 @@ export default function Server() {
         return Object.keys(error).length === 0
     }
 
-    const entryServerDirectory = (haveContentFlag) => {
-        setServerDirectoryStateModal(CommonConstants.MODAL.ENTRY)
+    const entryServerDirectory = () => {
         setServerDirectoryFormError([])
-        if (haveContentFlag) {
-            setServerDirectoryEntryModal({
-                ...serverDirectoryEntryModal,
-                title: serverForm.name,
-                submitLabel: t("common.button.rename"),
-                submitIcon: "bi-arrow-repeat",
-                submitLoadingFlag: false,
-            })
-        } else {
-            setServerDirectoryForm(serverDirectoryInitial)
-            setServerDirectoryForm({ ...serverDirectoryInitial, "directory": serverCurrentDirectory.join("/") })
-            setServerDirectoryEntryModal({
-                ...serverDirectoryEntryModal,
-                title: t("common.text.createDirectory"),
-                submitLabel: t("common.button.create"),
-                submitIcon: "bi-plus-circle",
-                submitLoadingFlag: false,
-            })
-            ModalHelper.show("modal_server_entry_directory")
-        }
+        setServerDirectoryForm({ ...serverDirectoryInitial, "directory": serverCurrentDirectory.join("/") })
+        ModalHelper.show("modal_server_create_directory")
     }
 
-    const confirmStoreServerDirectory = () => {
+    const confirmCreateServerDirectory = () => {
         if (serverDirectoryValidate(serverDirectoryForm)) {
             setDialog({
-                message: serverDirectoryForm.oldName === undefined ? t("common.confirmation.create", { name: serverDirectoryForm.name }) : t("common.confirmation.update", { name: serverDirectoryForm.name }),
+                message: t("common.confirmation.create", { name: serverDirectoryForm.name }),
                 type: "confirmation",
-                onConfirm: (e) => storeServerDirectory(e),
+                onConfirm: (e) => createServerDirectory(e),
             })
         }
     }
 
-    const storeServerDirectory = async () => {
+    const createServerDirectory = async () => {
         if (serverDirectoryValidate(serverDirectoryForm)) {
             ModalHelper.hide("dialog_server")
-            setServerDirectoryEntryModal({ ...serverDirectoryEntryModal, submitLoadingFlag: true })
+            setServerDirectoryCreateLoadingFlag(true)
 
             try {
-                const json = await apiRequest(
-                    serverDirectoryForm.oldName === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
-                    `/external/${serverId}/server-directory.json`,
-                    JSON.stringify(serverDirectoryForm),
-                )
+                const json = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-directory.json`, JSON.stringify(serverDirectoryForm))
 
                 if (json.data.status === "success") {
                     getServerDirectory(serverId, serverDirectoryAttributeTable)
-                    ModalHelper.hide("modal_server_entry_directory")
+                    ModalHelper.hide("modal_server_create_directory")
                 }
                 setToast({ type: json.data.status, message: json.data.message })
             } catch (error) {
                 setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
                 setServerDirectoryFormError(error.response.data)
             } finally {
-                setServerDirectoryEntryModal({ ...serverEntryModal, submitLoadingFlag: false })
+                setServerDirectoryCreateLoadingFlag(false)
+            }
+        }
+    }
+
+    const serverDirectoryFileInitial = {
+        oldName: undefined,
+        name: undefined,
+        directory: undefined
+    }
+
+    const [serverDirectoryFileRenameLoadingFlag, setServerDirectoryFileRenameLoadingFlag] = useState(false)
+
+    const [serverDirectoryFileForm, setServerDirectoryFileForm] = useState(serverDirectoryFileInitial)
+    const [serverDirectoryFileFormError, setServerDirectoryFileFormError] = useState([])
+
+    const onServerDirectoryFileFormChange = (e) => {
+        const { name, value } = e.target
+        setServerDirectoryFileForm({ ...serverDirectoryFileForm, [name]: value })
+        setServerDirectoryFileFormError({ ...serverDirectoryFileFormError, [name]: undefined })
+    }
+
+    const serverDirectoryFileValidate = (data) => {
+        const error = {}
+        if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
+        else if (data.name.trim() === data.oldName.trim()) error.name = t("validate.text.useAnother", { name: data.name.trim() })
+
+        setServerDirectoryFileFormError(error)
+        return Object.keys(error).length === 0
+    }
+
+    const entryServerDirectoryFile = (name) => {
+        setServerDirectoryFileFormError([])
+        setServerDirectoryFileForm({
+            ...serverDirectoryFileInitial,
+            "oldName": name,
+            "name": name,
+            "directory": serverCurrentDirectory.join("/")
+        })
+        ModalHelper.show("modal_server_rename_directory_file")
+    }
+
+    const confirmRenameServerDirectoryFile = () => {
+        if (serverDirectoryFileValidate(serverDirectoryFileForm)) {
+            setDialog({
+                message: t("common.confirmation.rename", { name: serverDirectoryForm.oldName }),
+                type: "confirmation",
+                onConfirm: (e) => renameServerDirectoryFile(e),
+            })
+        }
+    }
+
+    const renameServerDirectoryFile = async () => {
+        if (serverDirectoryFileValidate(serverDirectoryFileForm)) {
+            ModalHelper.hide("dialog_server")
+            setServerDirectoryFileRenameLoadingFlag(true)
+
+            try {
+                const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${serverId}/server-directory-file.json`, JSON.stringify(serverDirectoryFileForm))
+
+                if (json.data.status === "success") {
+                    getServerDirectory(serverId, serverDirectoryAttributeTable)
+                    ModalHelper.hide("modal_server_rename_directory_file")
+                }
+                setToast({ type: json.data.status, message: json.data.message })
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+                setServerDirectoryFileFormError(error.response.data)
+            } finally {
+                setServerDirectoryFileRenameLoadingFlag(false)
             }
         }
     }
@@ -591,10 +726,24 @@ export default function Server() {
         return Object.keys(error).length === 0
     }
 
-    const entryServerFile = (haveContentFlag) => {
-        setServerFileStateModal(CommonConstants.MODAL.ENTRY)
+    const entryServerFile = async (name) => {
         setServerFileFormError([])
-        if (haveContentFlag) {
+        if (name) {
+            setServerFileStateModal(CommonConstants.MODAL.VIEW)
+            const params = {
+                "name": name,
+                "content": " ",
+                "directory": serverCurrentDirectory.join("/")
+            }
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-file.json`, params)
+            const json = response.data
+
+            setServerFileForm({
+                name: name,
+                content: json.data.content,
+                directory: serverCurrentDirectory.join("/")
+            })
+
             setServerFileEntryModal({
                 ...serverFileEntryModal,
                 title: serverForm.name,
@@ -603,6 +752,7 @@ export default function Server() {
                 submitLoadingFlag: false,
             })
         } else {
+            setServerFileStateModal(CommonConstants.MODAL.ENTRY)
             setServerFileForm(serverFileInitial)
             setServerFileForm({ ...serverFileInitial, "directory": serverCurrentDirectory.join("/") })
             setServerFileEntryModal({
@@ -612,8 +762,9 @@ export default function Server() {
                 submitIcon: "bi-plus-circle",
                 submitLoadingFlag: false,
             })
-            ModalHelper.show("modal_server_entry_file")
         }
+
+        ModalHelper.show("modal_server_entry_file")
     }
 
     const confirmStoreServerFile = () => {
@@ -714,198 +865,246 @@ export default function Server() {
                 size="xl"
                 title={serverDirectoryTitleModal}
             >
-                <div className="row">
-                    <div className="col-md-12 col-sm-12 col-xs-12">
-                        {serverCurrentDirectory.join("/")}
+                <div className="col-md-12 col-sm-12 col-xs-12">
+                    {
+                        serverShortcutMap.length > 0 &&
                         <div className="row">
-                            <Table
-                                additionalButtonArray={
-                                    [
-                                        {
-                                            label: t("common.button.addToShortcut"),
-                                            // onClick: () => viewDatabaseQueryExport(),
-                                            icon: "bi-plus-circle",
-                                        },
-                                        {
-                                            label: t("common.button.createDirectory"),
-                                            onClick: () => entryServerDirectory(),
-                                            icon: "bi-plus-circle",
-                                            // loadingFlag: databaseQueryExactChartLoadingFlag
-                                        },
-                                        {
-                                            label: t("common.button.addFile"),
-                                            onClick: () => entryServerFile(),
-                                            icon: "bi-plus-square",
-                                            // loadingFlag: databaseQueryExactChartLoadingFlag
-                                        },
-                                        {
-                                            label: t("common.button.upload"),
-                                            // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-upload",
-                                            // loadingFlag: databaseQueryExactChartLoadingFlag
-                                        },
-                                        {
-                                            label: t("common.button.clone"),
-                                            // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-copy",
-                                            // loadingFlag: databaseQueryExactChartLoadingFlag
-                                        },
-                                        {
-                                            label: t("common.button.delete"),
-                                            // onClick: () => getDatabaseQueryChart("exact"),
-                                            icon: "bi-trash",
-                                            // loadingFlag: databaseQueryExactChartLoadingFlag
-                                        }
-                                    ]
-                                }
-                                dataArray={[{ name: ".:Up:.", goToParentFlag: true }, ...serverDirectoryDataArray]}
-                                columns={[
+                            <Select value={serverShortcutValue} map={serverShortcutMap} onChange={onServerShortcutValueChange} className="col-md-12 col-sm-12 col-xs-12"></Select>
+                        </div>
+                    }
+                    <div className="row">
+                        <div className="col-md-12 col-sm-12 col-xs-12">
+                            {serverCurrentDirectory.join("/")}
+                        </div>
+                    </div>
+                    <div className="row">
+                        <Table
+                            additionalButtonArray={
+                                [
                                     {
-                                        data: "name",
-                                        name: t("common.text.name"),
-                                        class: "text-nowrap",
-                                        orderable: true,
-                                        minDevice: CommonConstants.DEVICE.MOBILE,
-                                        render: (data, row) => {
+                                        label: t(serverShortcutValue === 0 ? "common.button.addToShortcut" : "common.button.removeShortcut"),
+                                        onClick: () => serverShortcutValue === 0 ? entryServerShortcut() : confirmDeleteServerShortcut(serverShortcutValue),
+                                        icon: `${serverShortcutValue === 0 ? "bi-plus-circle" : "bi-trash"}`,
+                                        className: `${serverShortcutValue === 0 ? "btn-primary" : "btn-danger"}`
+                                    },
+                                    {
+                                        label: t("common.button.createDirectory"),
+                                        onClick: () => entryServerDirectory(),
+                                        icon: "bi-plus-circle",
+                                    },
+                                    {
+                                        label: t("common.button.addFile"),
+                                        onClick: () => entryServerFile(),
+                                        icon: "bi-plus-square",
+                                    },
+                                    {
+                                        label: t("common.button.upload"),
+                                        // onClick: () => getDatabaseQueryChart("exact"),
+                                        icon: "bi-upload",
+                                        // loadingFlag: databaseQueryExactChartLoadingFlag
+                                    },
+                                    {
+                                        label: t("common.button.clone"),
+                                        // onClick: () => getDatabaseQueryChart("exact"),
+                                        icon: "bi-copy",
+                                        // loadingFlag: databaseQueryExactChartLoadingFlag
+                                    },
+                                    {
+                                        label: t("common.button.delete"),
+                                        // onClick: () => getDatabaseQueryChart("exact"),
+                                        icon: "bi-trash",
+                                        // loadingFlag: databaseQueryExactChartLoadingFlag
+                                    }
+                                ]
+                            }
+                            dataArray={[{ name: ".:Up:.", goToParentFlag: true }, ...serverDirectoryDataArray]}
+                            columns={[
+                                {
+                                    data: "name",
+                                    name: t("common.text.name"),
+                                    class: "text-nowrap",
+                                    orderable: true,
+                                    minDevice: CommonConstants.DEVICE.MOBILE,
+                                    render: (data, row) => {
+                                        if (row.goToParentFlag) {
                                             return (
-                                                <label role="button" onClick={() => row.goToParentFlag ? goToParent() : row.directoryFlag ? enterFolder(data) : openFolder(data)}>
-                                                    <i className={`${row.goToParentFlag ? "bi-arrow-90deg-up" : row.directoryFlag ? "bi-folder-fill" : "bi-file"}`} />&nbsp;&nbsp;{data}
+                                                <label role="button" onClick={goToParent}>
+                                                    <i className="bi-arrow-90deg-up" />&nbsp;&nbsp;{data}
                                                 </label>
                                             )
-                                        }
-                                    },
-                                    {
-                                        data: "size",
-                                        name: t("common.text.size"),
-                                        class: "text-nowrap",
-                                        orderable: true,
-                                        minDevice: CommonConstants.DEVICE.MOBILE,
-                                        render: (data, row) => {
-                                            if (row.goToParentFlag) {
-                                                return ""
-                                            } else {
-                                                return data
-                                            }
-                                        }
-                                    },
-                                    {
-                                        data: "createdDate",
-                                        name: t("common.text.modifiedDate"),
-                                        class: "text-nowrap",
-                                        orderable: true,
-                                        minDevice: CommonConstants.DEVICE.TABLET,
-                                        render: (data, row) => {
-                                            if (row.goToParentFlag) {
-                                                return ""
-                                            } else {
-                                                return DateHelper.formatDate(new Date(data), "dd MMM yyyy HH:mm:ss")
-                                            }
-                                        }
-                                    },
-                                    // {
-                                    //     data: "ownerName",
-                                    //     name: t("common.text.owner"),
-                                    //     class: "text-nowrap",
-                                    //     minDevice: CommonConstants.DEVICE.DESKTOP,
-                                    // },
-                                    // {
-                                    //     data: "groupName",
-                                    //     name: t("common.text.group"),
-                                    //     class: "text-nowrap",
-                                    //     minDevice: CommonConstants.DEVICE.DESKTOP,
-                                    // },
-                                    {
-                                        data: "mode",
-                                        name: t("common.text.permission"),
-                                        class: "text-nowrap",
-                                        minDevice: CommonConstants.DEVICE.TABLET,
-                                        render: (data, row) => {
-                                            if (row.goToParentFlag) {
-                                                return ""
-                                            } else {
-                                                return data.toString(8)
-                                            }
+                                        } else {
+                                            return (
+                                                <>
+                                                    <label role="button" onClick={() => row.directoryFlag ? enterFolder(data) : entryServerFile(data)}>
+                                                        <i className={`${row.directoryFlag ? "bi-folder-fill" : "bi-file"}`} />&nbsp;&nbsp;{data}
+                                                    </label>
+                                                    &nbsp;|&nbsp;<label className="sm-1" role="button" onClick={() => entryServerDirectoryFile(data)}>
+                                                        <i className="bi-arrow-repeat" />
+                                                    </label>
+                                                </>
+                                            )
                                         }
                                     }
-                                ]}
-
-                                dataTotal={serverDirectoryDataTotalTable}
-                                resetPagination={serverDirectoryResetPaginationTable}
-                                onRender={(page, length, search, order) => {
-                                    if (serverId >= 0) {
-                                        getServerDirectoryRender({ page: page, length: length, search: search, order: order })
+                                },
+                                {
+                                    data: "size",
+                                    name: t("common.text.size"),
+                                    class: "text-nowrap",
+                                    orderable: true,
+                                    minDevice: CommonConstants.DEVICE.MOBILE,
+                                    render: (data, row) => {
+                                        if (row.goToParentFlag) {
+                                            return ""
+                                        } else {
+                                            return data
+                                        }
                                     }
-                                }}
+                                },
+                                {
+                                    data: "createdDate",
+                                    name: t("common.text.modifiedDate"),
+                                    class: "text-nowrap",
+                                    orderable: true,
+                                    minDevice: CommonConstants.DEVICE.TABLET,
+                                    render: (data, row) => {
+                                        if (row.goToParentFlag) {
+                                            return ""
+                                        } else {
+                                            return DateHelper.formatDate(new Date(data), "dd MMM yyyy HH:mm:ss")
+                                        }
+                                    }
+                                },
+                                // {
+                                //     data: "ownerName",
+                                //     name: t("common.text.owner"),
+                                //     class: "text-nowrap",
+                                //     minDevice: CommonConstants.DEVICE.DESKTOP,
+                                // },
+                                // {
+                                //     data: "groupName",
+                                //     name: t("common.text.group"),
+                                //     class: "text-nowrap",
+                                //     minDevice: CommonConstants.DEVICE.DESKTOP,
+                                // },
+                                {
+                                    data: "mode",
+                                    name: t("common.text.permission"),
+                                    class: "text-nowrap",
+                                    minDevice: CommonConstants.DEVICE.TABLET,
+                                    render: (data, row) => {
+                                        if (row.goToParentFlag) {
+                                            return ""
+                                        } else {
+                                            return data.toString(8)
+                                        }
+                                    }
+                                }
+                            ]}
 
-                                loadingFlag={serverDirectoryTableLoadingFlag}
-                            />
-                        </div >
-                    </div>
+                            dataTotal={serverDirectoryDataTotalTable}
+                            resetPagination={serverDirectoryResetPaginationTable}
+                            onRender={(page, length, search, order) => {
+                                if (serverId >= 0) {
+                                    getServerDirectoryRender({ page: page, length: length, search: search, order: order })
+                                }
+                            }}
+
+                            loadingFlag={serverDirectoryTableLoadingFlag}
+                        />
+                    </div >
                 </div>
             </Modal>
             <Modal
-                id="modal_server_entry_directory"
+                id="modal_server_create_shortcut"
                 size="md"
-                title={serverDirectoryEntryModal.title}
+                title={t("common.text.createShortcut")}
                 buttonArray={
                     <>
-                        {
-                            CommonConstants.MODAL.ENTRY === serverDirectoryStateModal
-                            && <Button
-                                label={serverDirectoryEntryModal.submitLabel}
-                                onClick={() => confirmStoreServerDirectory()}
-                                className="btn-primary"
-                                icon={serverDirectoryEntryModal.submitIcon}
-                                loadingFlag={serverDirectoryEntryModal.submitLoadingFlag}
-                            />
-                        }
-                        {
-                            CommonConstants.MODAL.VIEW === serverStateModal
-                            && <Button
-                                label={serverDirectoryEntryModal.submitLabel}
-                                onClick={() => confirmStoreServerDirectory(true)}
-                                className="btn-primary"
-                                icon={serverDirectoryEntryModal.submitIcon}
-                                loadingFlag={serverDirectoryEntryModal.submitLoadingFlag}
-                            />
-                        }
+                        <Button
+                            label={t("common.button.create")}
+                            onClick={() => confirmCreateServerShortcut()}
+                            className="btn-primary"
+                            icon="bi-plus-circle"
+                            loadingFlag={serverShortcutCreateLoadingFlag}
+                        />
                     </>
-
+                }
+            >
+                <InputText label={t("common.text.shortcutName")} name="name" value={serverShortcutForm.name} onChange={onServerShortcutFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverShortcutFormError.name} />
+            </Modal>
+            <Modal
+                id="modal_server_create_directory"
+                size="md"
+                title={t("common.text.createDirectory")}
+                buttonArray={
+                    <>
+                        <Button
+                            label={t("common.button.create")}
+                            onClick={() => confirmCreateServerDirectory()}
+                            className="btn-primary"
+                            icon="bi-plus-circle"
+                            loadingFlag={serverDirectoryCreateLoadingFlag}
+                        />
+                    </>
                 }
             >
                 <InputText label={t("common.text.directoryName")} name="name" value={serverDirectoryForm.name} onChange={onServerDirectoryFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFormError.name} />
+            </Modal>
+            <Modal
+                id="modal_server_rename_directory_file"
+                size="md"
+                title={t("common.text.rename")}
+                buttonArray={
+                    <>
+                        <Button
+                            label={t("common.button.rename")}
+                            onClick={() => confirmRenameServerDirectoryFile()}
+                            className="btn-primary"
+                            icon="bi-refresh"
+                            loadingFlag={serverDirectoryCreateLoadingFlag}
+                        />
+                    </>
+                }
+            >
+                <InputText label={t("common.text.name")} name="name" value={serverDirectoryFileForm.name} onChange={onServerDirectoryFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFileFormError.name} />
+            </Modal>
+            <Modal
+                id="modal_server_rename_directory_file"
+                size="md"
+                title={t("common.text.rename")}
+                buttonArray={
+                    <>
+                        <Button
+                            label={t("common.button.rename")}
+                            onClick={() => confirmRenameServerDirectoryFile()}
+                            className="btn-primary"
+                            icon="bi-refresh"
+                            loadingFlag={serverDirectoryCreateLoadingFlag}
+                        />
+                    </>
+                }
+            >
+                <InputText label={t("common.text.name")} name="name" value={serverDirectoryFileForm.name} onChange={onServerDirectoryFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFileFormError.name} />
             </Modal>
             <Modal
                 id="modal_server_entry_file"
                 size="xl"
                 title={serverFileEntryModal.title}
                 buttonArray={
-                    <>
-                        {
-                            CommonConstants.MODAL.ENTRY === serverFileStateModal
-                            && <Button
-                                label={serverFileEntryModal.submitLabel}
-                                onClick={() => confirmStoreServerFile()}
-                                className="btn-primary"
-                                icon={serverFileEntryModal.submitIcon}
-                                loadingFlag={serverFileEntryModal.submitLoadingFlag}
-                            />
-                        }
-                        {
-                            CommonConstants.MODAL.VIEW === serverStateModal
-                            && <Button
-                                label={serverFileEntryModal.submitLabel}
-                                onClick={() => confirmStoreServerFile(true)}
-                                className="btn-primary"
-                                icon={serverFileEntryModal.submitIcon}
-                                loadingFlag={serverFileEntryModal.submitLoadingFlag}
-                            />
-                        }
-                    </>
+                    <Button
+                        label={serverFileEntryModal.submitLabel}
+                        onClick={() => confirmStoreServerFile()}
+                        className="btn-primary"
+                        icon={serverFileEntryModal.submitIcon}
+                        loadingFlag={serverFileEntryModal.submitLoadingFlag}
+                    />
                 }
             >
-                <InputText label={t("common.text.fileName")} name="name" value={serverFileForm.name} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.name} />
-                <Textarea label={t("common.text.content")} name="content" value={serverFileForm.content} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.content} />
+                {
+                    CommonConstants.MODAL.ENTRY === serverFileStateModal &&
+                    <InputText label={t("common.text.fileName")} name="name" value={serverFileForm.name} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.name} />
+                }
+                <Textarea label={t("common.text.content")} name="content" rows={10} value={serverFileForm.content} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.content} />
             </Modal>
             <Dialog id="dialog_server" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_server" type={toast.type} message={toast.message} />

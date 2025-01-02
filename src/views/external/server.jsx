@@ -21,6 +21,7 @@ import InputText from "../../components/form/inputText"
 import InputPassword from "../../components/form/inputPassword"
 import InputDecimal from "../../components/form/inputDecimal"
 import InputDate from "../../components/form/inputDate"
+import InputFile from "../../components/form/inputFile"
 
 export default function Server() {
     const { t } = useTranslation()
@@ -803,6 +804,81 @@ export default function Server() {
         }
     }
 
+    const serverUploadFileInitial = {
+        files: []
+    }
+
+    const [serverUploadFileLoadingFlag, setServerUploadFileLoadingFlag] = useState(false)
+
+    const [serverUploadFileForm, setServerUploadFileForm] = useState(serverUploadFileInitial)
+    const [serverUploadFileFormError, setServerUploadFileFormError] = useState([])
+
+    const onServerUploadFileFormChange = (e) => {
+        const { name, value } = e.target
+        setServerUploadFileForm({ ...serverUploadFileForm, [name]: value })
+        setServerUploadFileFormError({ ...serverUploadFileFormError, [name]: undefined })
+    }
+
+    const serverUploadFileValidate = (data) => {
+        const error = {}
+        // if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
+        // if (!data.content.trim()) error.content = t("validate.text.required", { name: t("common.text.content") })
+        setServerUploadFileFormError(error)
+        return Object.keys(error).length === 0
+    }
+
+    const entryServerUploadFile = async () => {
+        setServerUploadFileFormError([])
+        setServerUploadFileForm({ ...serverUploadFileInitial, "directory": serverCurrentDirectory.join("/") })
+        ModalHelper.show("modal_server_upload_file")
+    }
+
+    const confirmStoreServerUploadFile = () => {
+        if (serverUploadFileValidate(serverUploadFileForm)) {
+            setDialog({
+                message: t("common.confirmation.upload", { name: serverUploadFileForm.length }),
+                type: "confirmation",
+                onConfirm: (e) => storeServerUploadFile(e),
+            })
+        }
+    }
+
+    const storeServerUploadFile = async () => {
+        if (serverUploadFileValidate(serverUploadFileForm)) {
+            ModalHelper.hide("dialog_server")
+            setServerUploadFileLoadingFlag(true)
+
+            try {
+                const formData = new FormData()
+                Object.keys(serverUploadFileForm).forEach(key => {
+                    if (key === "files" && typeof serverUploadFileForm[key] === 'string') {
+
+                    } else if (serverUploadFileForm[key] instanceof Array && serverUploadFileForm[key].length > 0) {
+                        for (let i = 0; i < serverUploadFileForm[key].length; i++) {
+                            formData.append(`${key}`, serverUploadFileForm[key][i])
+                        }
+                        // formData.append(key, serverUploadFileForm[key])
+                    } else {
+                        formData.append(key, serverUploadFileForm[key])
+                    }
+                })
+
+                const json = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-upload-file.json`, formData,)
+
+                if (json.data.status === "success") {
+                    getServerDirectory(serverId, serverDirectoryAttributeTable)
+                    ModalHelper.hide("modal_server_upload_file")
+                }
+                setToast({ type: json.data.status, message: json.data.message })
+            } catch (error) {
+                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+                setServerUploadFileFormError(error.response.data)
+            } finally {
+                setServerUploadFileLoadingFlag(false)
+            }
+        }
+    }
+
     return (
         <div className="container mt-4 mb-4">
             <Modal
@@ -899,7 +975,7 @@ export default function Server() {
                                     },
                                     {
                                         label: t("common.button.upload"),
-                                        // onClick: () => getDatabaseQueryChart("exact"),
+                                        onClick: () => entryServerUploadFile(),
                                         icon: "bi-upload",
                                         // loadingFlag: databaseQueryExactChartLoadingFlag
                                     },
@@ -1061,25 +1137,7 @@ export default function Server() {
                             onClick={() => confirmRenameServerDirectoryFile()}
                             className="btn-primary"
                             icon="bi-refresh"
-                            loadingFlag={serverDirectoryCreateLoadingFlag}
-                        />
-                    </>
-                }
-            >
-                <InputText label={t("common.text.name")} name="name" value={serverDirectoryFileForm.name} onChange={onServerDirectoryFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFileFormError.name} />
-            </Modal>
-            <Modal
-                id="modal_server_rename_directory_file"
-                size="md"
-                title={t("common.text.rename")}
-                buttonArray={
-                    <>
-                        <Button
-                            label={t("common.button.rename")}
-                            onClick={() => confirmRenameServerDirectoryFile()}
-                            className="btn-primary"
-                            icon="bi-refresh"
-                            loadingFlag={serverDirectoryCreateLoadingFlag}
+                            loadingFlag={serverDirectoryFileRenameLoadingFlag}
                         />
                     </>
                 }
@@ -1105,6 +1163,22 @@ export default function Server() {
                     <InputText label={t("common.text.fileName")} name="name" value={serverFileForm.name} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.name} />
                 }
                 <Textarea label={t("common.text.content")} name="content" rows={10} value={serverFileForm.content} onChange={onServerFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverFileFormError.content} />
+            </Modal>
+            <Modal
+                id="modal_server_upload_file"
+                size="md"
+                title={t("common.button.upload")}
+                buttonArray={
+                    <Button
+                        label={t("common.button.upload")}
+                        onClick={() => confirmStoreServerUploadFile()}
+                        className="btn-primary"
+                        icon="bi-upload"
+                        loadingFlag={serverUploadFileLoadingFlag}
+                    />
+                }
+            >
+                <InputFile label={t("common.text.file")} name="files" value={serverUploadFileForm.files} onChange={onServerUploadFileFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverUploadFileFormError.files} />
             </Modal>
             <Dialog id="dialog_server" type={dialog.type} message={dialog.message} onConfirm={dialog.onConfirm} />
             <Toast id="toast_server" type={toast.type} message={toast.message} />

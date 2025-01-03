@@ -292,7 +292,8 @@ export default function Server() {
     const [serverCurrentDirectory, setServerCurrentDirectory] = useState([])
     const [connectServerLoadingFlag, setConnectServerLoadingFlag] = useState(false)
     const [serverDirectoryTitleModal, setServerDirectoryTitleModal] = useState(false)
-    const [serverDirectoryColumn, setServerDirectoryColumn] = useState([])
+    const [serverDirectoryBulkOptionLoadingFlag, setServerDirectoryBulkOptionLoadingFlag] = useState(false)
+    const [serverDirectoryCheckBoxTableArray, setServerDirectoryCheckBoxTableArray] = useState([])
     const [serverDirectoryOptionColumnTable, setServerDirectoryOptionColumnTable] = useState([])
     const [serverDirectoryAttributeTable, setServerDirectoryAttributeTable] = useState()
     const [serverDirectoryDataTotalTable, setServerDirectoryDataTotalTable] = useState(0)
@@ -448,6 +449,7 @@ export default function Server() {
         setServerCurrentDirectory(nextDirectory)
         options.directory = nextDirectory.join("/")
 
+        setServerDirectoryCheckBoxTableArray([])
         const index = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
         setServerShortcutValue(index > -1 ? serverShortcutMap[index].key : 0)
         getServerDirectory(serverId, options)
@@ -459,6 +461,7 @@ export default function Server() {
         setServerCurrentDirectory(nextDirectory)
         options.directory = nextDirectory.join("/")
 
+        setServerDirectoryCheckBoxTableArray([])
         const index = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
         setServerShortcutValue(index > -1 ? serverShortcutMap[index].key : 0)
         getServerDirectory(serverId, options)
@@ -661,6 +664,53 @@ export default function Server() {
         ModalHelper.show("modal_server_rename_directory_file")
     }
 
+    const confirmDeleteServerDirectoryFile = () => {
+        if (serverDirectoryCheckBoxTableArray.length > 0) {
+            setDialog({
+                message: t(
+                    "common.confirmation.delete",
+                    serverDirectoryCheckBoxTableArray.length > 1
+                        ? { name: t("common.text.amountItem", { amount: serverDirectoryCheckBoxTableArray.length }) }
+                        : serverDirectoryCheckBoxTableArray[0].id
+                ),
+                type: "warning",
+                onConfirm: () => deleteServerDirectoryFile(),
+            })
+        } else {
+            setDialog({
+                message: t("validate.text.pleaseTickAtLeastAnItem"),
+                type: "alert"
+            })
+        }
+    }
+
+    const deleteServerDirectoryFile = async () => {
+        ModalHelper.hide("dialog_server")
+        if (serverDirectoryCheckBoxTableArray.length > 0) {
+            setServerDirectoryBulkOptionLoadingFlag(true)
+        }
+
+        try {
+            const json = await apiRequest(
+                CommonConstants.METHOD.PATCH,
+                `/external/${serverId}/server-directory-file.json`,
+                {
+                    "directory": serverCurrentDirectory.join("/"),
+                    "name": serverDirectoryCheckBoxTableArray
+                }
+            )
+            if (json.data.status === "success") {
+                getServerDirectory(serverId, serverDirectoryAttributeTable)
+                setServerDirectoryCheckBoxTableArray([])
+            }
+            setToast({ type: json.data.status, message: json.data.message })
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            setServerDirectoryBulkOptionLoadingFlag(false)
+        }
+    }
+
     const confirmRenameServerDirectoryFile = () => {
         if (serverDirectoryFileValidate(serverDirectoryFileForm)) {
             setDialog({
@@ -821,8 +871,7 @@ export default function Server() {
 
     const serverUploadFileValidate = (data) => {
         const error = {}
-        // if (!data.name.trim()) error.name = t("validate.text.required", { name: t("common.text.name") })
-        // if (!data.content.trim()) error.content = t("validate.text.required", { name: t("common.text.content") })
+        if (data.files.length === 0) error.files = t("validate.text.required", { name: t("common.text.file") })
         setServerUploadFileFormError(error)
         return Object.keys(error).length === 0
     }
@@ -977,22 +1026,24 @@ export default function Server() {
                                         label: t("common.button.upload"),
                                         onClick: () => entryServerUploadFile(),
                                         icon: "bi-upload",
-                                        // loadingFlag: databaseQueryExactChartLoadingFlag
-                                    },
-                                    {
-                                        label: t("common.button.clone"),
-                                        // onClick: () => getDatabaseQueryChart("exact"),
-                                        icon: "bi-copy",
-                                        // loadingFlag: databaseQueryExactChartLoadingFlag
-                                    },
-                                    {
-                                        label: t("common.button.delete"),
-                                        // onClick: () => getDatabaseQueryChart("exact"),
-                                        icon: "bi-trash",
-                                        // loadingFlag: databaseQueryExactChartLoadingFlag
                                     }
                                 ]
                             }
+
+                            bulkOptionLoadingFlag={serverDirectoryBulkOptionLoadingFlag}
+                            bulkOptionArray={[
+                                {
+                                    label: t("common.button.clone"),
+                                    icon: "bi-copy",
+                                    onClick: () => confirmDuplicateServerDirectoryFile(),
+                                },
+                                {
+                                    label: t("common.button.delete"),
+                                    icon: "bi-trash",
+                                    onClick: () => confirmDeleteServerDirectoryFile(),
+                                }
+                            ]}
+
                             dataArray={[{ name: ".:Up:.", goToParentFlag: true }, ...serverDirectoryDataArray]}
                             columns={[
                                 {
@@ -1077,6 +1128,8 @@ export default function Server() {
                                 }
                             ]}
 
+                            checkBoxArray={serverDirectoryCheckBoxTableArray}
+                            onCheckBox={serverDirectoryCheckBoxTableArray => { setServerDirectoryCheckBoxTableArray([...serverDirectoryCheckBoxTableArray]) }}
                             dataTotal={serverDirectoryDataTotalTable}
                             resetPagination={serverDirectoryResetPaginationTable}
                             onRender={(page, length, search, order) => {

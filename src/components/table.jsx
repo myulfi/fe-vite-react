@@ -140,13 +140,15 @@ export default function Table({
         const currentCheckBoxStateArray = checkBoxStateArray.length
         const currentCheckBoxArray = itemArray.filter(datum => checkBoxArray.includes(datum.id)).length
         itemArray.forEach(function (itemArray) {
-            if (currentCheckBoxStateArray !== currentCheckBoxArray) {
-                if (checkBoxArray.includes(itemArray.id) === false) {
-                    checkBoxArray.push(itemArray.id)
-                }
-            } else {
-                if (checkBoxArray.includes(itemArray.id)) {
-                    checkBoxArray.splice(checkBoxArray.indexOf(itemArray.id), 1)
+            if (itemArray.id !== undefined) {
+                if (currentCheckBoxStateArray !== currentCheckBoxArray) {
+                    if (checkBoxArray.includes(itemArray.id) === false) {
+                        checkBoxArray.push(itemArray.id)
+                    }
+                } else {
+                    if (checkBoxArray.includes(itemArray.id)) {
+                        checkBoxArray.splice(checkBoxArray.indexOf(itemArray.id), 1)
+                    }
                 }
             }
         })
@@ -324,11 +326,17 @@ export default function Table({
                                     <Fragment key={indexRow}>
                                         <tr>
                                             {
-                                                checkBoxArray != undefined
+                                                checkBoxArray !== undefined
+                                                && data.id !== undefined
                                                 && <td className="text-center">
                                                     <span className={checkBoxArray.indexOf(data.id) >= 0 ? 'bi-check-square-fill' : 'bi-square'}
                                                         role="button" onClick={() => onCheckBoxSingle(data.id)}></span>
                                                 </td>
+                                            }
+                                            {
+                                                checkBoxArray !== undefined
+                                                && data.id === undefined
+                                                && <td className="text-center"></td>
                                             }
                                             {
                                                 columnShow

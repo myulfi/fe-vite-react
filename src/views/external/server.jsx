@@ -293,6 +293,7 @@ export default function Server() {
     const [connectServerLoadingFlag, setConnectServerLoadingFlag] = useState(false)
     const [serverDirectoryTitleModal, setServerDirectoryTitleModal] = useState(false)
     const [serverDirectoryBulkOptionLoadingFlag, setServerDirectoryBulkOptionLoadingFlag] = useState(false)
+    const [serverDirectoryClipboardArray, setServerDirectoryClipboardArray] = useState([])
     const [serverDirectoryCheckBoxTableArray, setServerDirectoryCheckBoxTableArray] = useState([])
     const [serverDirectoryOptionColumnTable, setServerDirectoryOptionColumnTable] = useState([])
     const [serverDirectoryAttributeTable, setServerDirectoryAttributeTable] = useState()
@@ -320,6 +321,7 @@ export default function Server() {
                 getServerDirectory(id, { page: 1, length: 10, search: "", order: [], directory: json.data.defaultDirectory })
                 getServerShortcut(id)
                 setServerShortcutValue(0)
+                setServerDirectoryClipboardArray([])
             }
 
             setServerDirectoryTitleModal(id)
@@ -664,14 +666,27 @@ export default function Server() {
         ModalHelper.show("modal_server_rename_directory_file")
     }
 
-    const confirmDeleteServerDirectoryFile = () => {
-        if (serverDirectoryCheckBoxTableArray.length > 0) {
+    const copyServerDirectoryFile = () => {
+        setServerDirectoryClipboardArray([...serverDirectoryCheckBoxTableArray])
+        setServerDirectoryCheckBoxTableArray([])
+    }
+
+    const confirmDeleteServerDirectoryFile = (name) => {
+        if (name !== undefined) {
+            setDialog({
+                message: t("common.confirmation.delete", { name: name }),
+                type: "warning",
+                onConfirm: () => deleteServerDirectoryFile(name),
+            })
+        } else if (serverDirectoryCheckBoxTableArray.length > 0) {
             setDialog({
                 message: t(
                     "common.confirmation.delete",
-                    serverDirectoryCheckBoxTableArray.length > 1
-                        ? { name: t("common.text.amountItem", { amount: serverDirectoryCheckBoxTableArray.length }) }
-                        : serverDirectoryCheckBoxTableArray[0].id
+                    {
+                        name: serverDirectoryCheckBoxTableArray.length > 1
+                            ? t("common.text.amountItem", { amount: serverDirectoryCheckBoxTableArray.length })
+                            : serverDirectoryCheckBoxTableArray[0]
+                    }
                 ),
                 type: "warning",
                 onConfirm: () => deleteServerDirectoryFile(),
@@ -684,9 +699,9 @@ export default function Server() {
         }
     }
 
-    const deleteServerDirectoryFile = async () => {
+    const deleteServerDirectoryFile = async (name) => {
         ModalHelper.hide("dialog_server")
-        if (serverDirectoryCheckBoxTableArray.length > 0) {
+        if (name !== undefined && serverDirectoryCheckBoxTableArray.length > 0) {
             setServerDirectoryBulkOptionLoadingFlag(true)
         }
 
@@ -696,12 +711,16 @@ export default function Server() {
                 `/external/${serverId}/server-directory-file.json`,
                 {
                     "directory": serverCurrentDirectory.join("/"),
-                    "name": serverDirectoryCheckBoxTableArray
+                    "name": name !== undefined ? [name] : serverDirectoryCheckBoxTableArray
                 }
             )
             if (json.data.status === "success") {
                 getServerDirectory(serverId, serverDirectoryAttributeTable)
-                setServerDirectoryCheckBoxTableArray([])
+                if (name !== undefined) {
+                    setServerDirectoryCheckBoxTableArray(serverDirectoryCheckBoxTableArray.filter(item => item !== name))
+                } else {
+                    setServerDirectoryCheckBoxTableArray([])
+                }
             }
             setToast({ type: json.data.status, message: json.data.message })
         } catch (error) {
@@ -1026,7 +1045,16 @@ export default function Server() {
                                         label: t("common.button.upload"),
                                         onClick: () => entryServerUploadFile(),
                                         icon: "bi-upload",
-                                    }
+                                    },
+                                    (
+                                        serverDirectoryClipboardArray.length > 0
+                                            ? {
+                                                label: `${t("common.button.paste")} (${serverDirectoryClipboardArray.length})`,
+                                                onClick: () => pasteServerUploadFile(),
+                                                icon: "bi-file-earmark",
+                                            }
+                                            : {}
+                                    )
                                 ]
                             }
 
@@ -1035,7 +1063,7 @@ export default function Server() {
                                 {
                                     label: t("common.button.clone"),
                                     icon: "bi-copy",
-                                    onClick: () => confirmDuplicateServerDirectoryFile(),
+                                    onClick: () => copyServerDirectoryFile(),
                                 },
                                 {
                                     label: t("common.button.delete"),
@@ -1067,6 +1095,9 @@ export default function Server() {
                                                     </label>
                                                     &nbsp;|&nbsp;<label className="sm-1" role="button" onClick={() => entryServerDirectoryFile(data)}>
                                                         <i className="bi-arrow-repeat" />
+                                                    </label>
+                                                    &nbsp;<label className="sm-1" role="button" onClick={() => confirmDeleteServerDirectoryFile(data)}>
+                                                        <i className="bi-trash" />
                                                     </label>
                                                 </>
                                             )

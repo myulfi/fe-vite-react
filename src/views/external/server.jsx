@@ -293,7 +293,7 @@ export default function Server() {
     const [connectServerLoadingFlag, setConnectServerLoadingFlag] = useState(false)
     const [serverDirectoryTitleModal, setServerDirectoryTitleModal] = useState(false)
     const [serverDirectoryBulkOptionLoadingFlag, setServerDirectoryBulkOptionLoadingFlag] = useState(false)
-    const [serverDirectoryClipboardArray, setServerDirectoryClipboardArray] = useState([])
+    const [serverDirectoryClipboard, setServerDirectoryClipboard] = useState({})
     const [serverDirectoryCheckBoxTableArray, setServerDirectoryCheckBoxTableArray] = useState([])
     const [serverDirectoryOptionColumnTable, setServerDirectoryOptionColumnTable] = useState([])
     const [serverDirectoryAttributeTable, setServerDirectoryAttributeTable] = useState()
@@ -321,7 +321,7 @@ export default function Server() {
                 getServerDirectory(id, { page: 1, length: 10, search: "", order: [], directory: json.data.defaultDirectory })
                 getServerShortcut(id)
                 setServerShortcutValue(0)
-                setServerDirectoryClipboardArray([])
+                setServerDirectoryClipboard({})
             }
 
             setServerDirectoryTitleModal(id)
@@ -667,8 +667,62 @@ export default function Server() {
     }
 
     const copyServerDirectoryFile = () => {
-        setServerDirectoryClipboardArray([...serverDirectoryCheckBoxTableArray])
+        setServerDirectoryClipboard(
+            {
+                source: serverCurrentDirectory.join("/"),
+                name: [...serverDirectoryCheckBoxTableArray]
+            }
+        )
         setServerDirectoryCheckBoxTableArray([])
+    }
+
+    const confirmPasteServerDirectoryFile = () => {
+        if (serverDirectoryClipboard.name?.length > 0) {
+            setDialog({
+                message: t(
+                    "common.confirmation.paste",
+                    {
+                        name: serverDirectoryClipboard.name?.length > 1
+                            ? t("common.text.amountItem", { amount: serverDirectoryClipboard.name?.length })
+                            : serverDirectoryClipboard.name[0]
+                    }
+                ),
+                type: "warning",
+                onConfirm: () => pasteServerDirectoryFile(),
+            })
+        } else {
+            setDialog({
+                message: t("validate.text.pleaseTickAtLeastAnItem"),
+                type: "alert"
+            })
+        }
+    }
+
+    const pasteServerDirectoryFile = async () => {
+        ModalHelper.hide("dialog_server")
+        // if (name !== undefined && serverDirectoryCheckBoxTableArray.length > 0) {
+        //     setServerDirectoryBulkOptionLoadingFlag(true)
+        // }
+
+        try {
+            const json = await apiRequest(
+                CommonConstants.METHOD.PATCH,
+                `/external/${serverId}/server-paste-directory-file.json`,
+                {
+                    ...serverDirectoryClipboard,
+                    destination: serverCurrentDirectory.join("/")
+                }
+            )
+            if (json.data.status === "success") {
+                getServerDirectory(serverId, serverDirectoryAttributeTable)
+                // setServerDirectoryClipboard({})
+            }
+            setToast({ type: json.data.status, message: json.data.message })
+        } catch (error) {
+            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } finally {
+            // setServerDirectoryBulkOptionLoadingFlag(false)
+        }
     }
 
     const confirmDeleteServerDirectoryFile = (name) => {
@@ -708,7 +762,7 @@ export default function Server() {
         try {
             const json = await apiRequest(
                 CommonConstants.METHOD.PATCH,
-                `/external/${serverId}/server-directory-file.json`,
+                `/external/${serverId}/server-delete-directory-file.json`,
                 {
                     "directory": serverCurrentDirectory.join("/"),
                     "name": name !== undefined ? [name] : serverDirectoryCheckBoxTableArray
@@ -746,7 +800,7 @@ export default function Server() {
             setServerDirectoryFileRenameLoadingFlag(true)
 
             try {
-                const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${serverId}/server-directory-file.json`, JSON.stringify(serverDirectoryFileForm))
+                const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${serverId}/server-rename-directory-file.json`, JSON.stringify(serverDirectoryFileForm))
 
                 if (json.data.status === "success") {
                     getServerDirectory(serverId, serverDirectoryAttributeTable)
@@ -1047,10 +1101,10 @@ export default function Server() {
                                         icon: "bi-upload",
                                     },
                                     (
-                                        serverDirectoryClipboardArray.length > 0
+                                        serverDirectoryClipboard.name?.length > 0
                                             ? {
-                                                label: `${t("common.button.paste")} (${serverDirectoryClipboardArray.length})`,
-                                                onClick: () => pasteServerUploadFile(),
+                                                label: `${t("common.button.paste")} (${serverDirectoryClipboard.name.length})`,
+                                                onClick: () => confirmPasteServerDirectoryFile(),
                                                 icon: "bi-file-earmark",
                                             }
                                             : {}
@@ -1061,7 +1115,7 @@ export default function Server() {
                             bulkOptionLoadingFlag={serverDirectoryBulkOptionLoadingFlag}
                             bulkOptionArray={[
                                 {
-                                    label: t("common.button.clone"),
+                                    label: t("common.button.copy"),
                                     icon: "bi-copy",
                                     onClick: () => copyServerDirectoryFile(),
                                 },

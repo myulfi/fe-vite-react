@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { apiRequest } from "../../api"
 import * as CommonConstants from "../../constants/commonConstants"
 import * as DateHelper from "../../function/dateHelper"
@@ -6,22 +6,18 @@ import * as ToastHelper from "../../function/toastHelper"
 import * as ModalHelper from "../../function/modalHelper"
 import { useTranslation } from "react-i18next"
 import Button from "../../components/form/button"
+import Href from "../../components/form/href"
 import Table from "../../components/table"
 import Toast from "../../components/toast"
 import Dialog from "../../components/dialog"
 import Modal from "../../components/modal"
 import Textarea from "../../components/form/textarea"
-import Radio from "../../components/form/radio"
-import SelectFilter from "../../components/filter/selectFilter"
-import DateFilter from "../../components/filter/dateFilter"
-import RangeFilter from "../../components/filter/rangeFilter"
 import Label from "../../components/form/label"
 import Select from "../../components/form/select"
 import InputText from "../../components/form/inputText"
 import InputPassword from "../../components/form/inputPassword"
-import InputDecimal from "../../components/form/inputDecimal"
-import InputDate from "../../components/form/inputDate"
 import InputFile from "../../components/form/inputFile"
+import BreadCrumb from "../../components/content/breadCrumb"
 
 export default function Server() {
     const { t } = useTranslation()
@@ -289,6 +285,8 @@ export default function Server() {
     }
 
     const [serverId, setServerId] = useState(-1)
+    const [serverCurrentDirectoryManual, setServerCurrentDirectoryManual] = useState(false)
+    const [serverCurrentDirectoryText, setServerCurrentDirectoryText] = useState([])
     const [serverCurrentDirectory, setServerCurrentDirectory] = useState([])
     const [connectServerLoadingFlag, setConnectServerLoadingFlag] = useState(false)
     const [serverDirectoryTitleModal, setServerDirectoryTitleModal] = useState(false)
@@ -389,7 +387,6 @@ export default function Server() {
                     )
                     .slice((options.page - 1) * options.length, ((options.page - 1) * options.length) + options.length)
             )
-            console.log(options.page + "::" + options.length)
             setServerDirectoryDataTotalTable(json.data.fileArray.length)
             setServerDirectoryOptionColumnTable(
                 json.data.fileArray.reduce(function (map, obj) {
@@ -398,6 +395,8 @@ export default function Server() {
                     return map
                 }, {})
             )
+            setServerCurrentDirectory(options.directory.split("/"))
+            setServerCurrentDirectoryManual(false)
         } catch (error) {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
@@ -445,29 +444,76 @@ export default function Server() {
     }
 
     const goToParent = () => {
+        setServerDirectoryResetPaginationTable(resetPagination => !resetPagination)
         const options = serverDirectoryAttributeTable
         serverCurrentDirectory.pop()
-        const nextDirectory = serverCurrentDirectory
-        setServerCurrentDirectory(nextDirectory)
-        options.directory = nextDirectory.join("/")
+        options.directory = serverCurrentDirectory.join("/")
 
         setServerDirectoryCheckBoxTableArray([])
         const index = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
         setServerShortcutValue(index > -1 ? serverShortcutMap[index].key : 0)
+        getServerDirectory(serverId, options)
+    }
+
+    const jumpFolder = (index) => {
+        setServerDirectoryResetPaginationTable(resetPagination => !resetPagination)
+        const options = serverDirectoryAttributeTable
+        options.directory = serverCurrentDirectory.splice(0, index + 1).join("/")
+
+        setServerDirectoryCheckBoxTableArray([])
+        const shortcutIndex = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
+        setServerShortcutValue(shortcutIndex > -1 ? serverShortcutMap[shortcutIndex].key : 0)
+        getServerDirectory(serverId, options)
+    }
+
+    const manualFolder = (path) => {
+        setServerDirectoryResetPaginationTable(resetPagination => !resetPagination)
+        const options = serverDirectoryAttributeTable
+        options.directory = path
+
+        setServerDirectoryCheckBoxTableArray([])
+        const shortcutIndex = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
+        setServerShortcutValue(shortcutIndex > -1 ? serverShortcutMap[shortcutIndex].key : 0)
         getServerDirectory(serverId, options)
     }
 
     const enterFolder = (name) => {
-        const options = serverDirectoryAttributeTable
-        const nextDirectory = [...serverCurrentDirectory, [name]]
-        setServerCurrentDirectory(nextDirectory)
-        options.directory = nextDirectory.join("/")
+        setServerDirectoryResetPaginationTable(resetPagination => !resetPagination)
+        const options = { ...serverDirectoryAttributeTable, page: 1 }
+        options.directory = [...serverCurrentDirectory, [name]].join("/")
 
         setServerDirectoryCheckBoxTableArray([])
         const index = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
         setServerShortcutValue(index > -1 ? serverShortcutMap[index].key : 0)
         getServerDirectory(serverId, options)
     }
+
+    const onServerCurrentDirectoryTextChange = (e) => {
+        const { value } = e.target
+        setServerCurrentDirectoryText(value)
+    }
+
+    const onServerCurrentDirectoryTextKeyDown = (e) => {
+        if (e.key === "Enter") {
+            manualFolder(serverCurrentDirectoryText)
+        }
+    }
+
+    const onServerCurrentDirectoryTextBlur = (e) => {
+        setServerCurrentDirectoryManual(false)
+    }
+
+    const serverCurrentDirectoryTextRef = useRef()
+    const onServerCurrentDirectoryManualChange = () => {
+        setServerCurrentDirectoryManual(!serverCurrentDirectoryManual)
+    }
+
+    useEffect(() => {
+        if (serverCurrentDirectoryManual) {
+            setServerCurrentDirectoryText(serverCurrentDirectory.join("/"))
+            serverCurrentDirectoryTextRef.current.focus()
+        }
+    }, [serverCurrentDirectoryManual]);
 
     const serverShortcutInitial = {
         name: undefined,
@@ -483,7 +529,6 @@ export default function Server() {
 
         const options = serverDirectoryAttributeTable
         const nextDirectory = serverShortcutMap.find((item) => item.key === value).value.split(" | ")[1]
-        setServerCurrentDirectory(nextDirectory.split("/"))
         options.directory = nextDirectory
         getServerDirectory(serverId, options)
     }
@@ -715,7 +760,7 @@ export default function Server() {
             )
             if (json.data.status === "success") {
                 getServerDirectory(serverId, serverDirectoryAttributeTable)
-                // setServerDirectoryClipboard({})
+                setServerDirectoryClipboard({})
             }
             setToast({ type: json.data.status, message: json.data.message })
         } catch (error) {
@@ -1072,7 +1117,19 @@ export default function Server() {
                     }
                     <div className="row">
                         <div className="col-md-12 col-sm-12 col-xs-12">
-                            {serverCurrentDirectory.join("/")}
+                            {
+                                serverCurrentDirectoryManual === false
+                                && <BreadCrumb
+                                    valueList={serverCurrentDirectory}
+                                    delimiter="/"
+                                    onClick={jumpFolder}
+                                    onEdit={onServerCurrentDirectoryManualChange}
+                                />
+                            }
+                            {
+                                serverCurrentDirectoryManual
+                                && <InputText refference={serverCurrentDirectoryTextRef} value={serverCurrentDirectoryText} onChange={onServerCurrentDirectoryTextChange} onKeyDown={onServerCurrentDirectoryTextKeyDown} onBlur={onServerCurrentDirectoryTextBlur}></InputText>
+                            }
                         </div>
                     </div>
                     <div className="row">
@@ -1225,7 +1282,7 @@ export default function Server() {
 
                             loadingFlag={serverDirectoryTableLoadingFlag}
                         />
-                    </div >
+                    </div>
                 </div>
             </Modal>
             <Modal

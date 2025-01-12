@@ -12,7 +12,7 @@ export default function Modal({
     const { t } = useTranslation()
     return (
         <div id={id} className="modal fade bg-dark bg-opacity-75" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1"
-            aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            aria-labelledby="staticBackdropLabel">
             <div className={`modal-dialog modal-${size}`}>
                 <div className="modal-content">
                     <div className="modal-header">
@@ -28,7 +28,7 @@ export default function Modal({
                         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div className="modal-body">
-                        <div className="row app-padding-row">
+                        <div className="row app-padding-row mx-1">
                             {children}
                         </div>
                     </div>

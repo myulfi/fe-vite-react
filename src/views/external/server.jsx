@@ -302,7 +302,7 @@ export default function Server() {
     const [serverDirectoryDataArray, setServerDirectoryDataArray] = useState([])
     const [serverDirectoryFullDataArray, setServerDirectoryFullDataArray] = useState([])
 
-    const connectServer = async (id) => {
+    const connectServer = async (id, name) => {
         if (id === 0) {
             setConnectServerLoadingFlag(true)
         } else {
@@ -322,7 +322,7 @@ export default function Server() {
                 setServerDirectoryClipboard({})
             }
 
-            setServerDirectoryTitleModal(id)
+            setServerDirectoryTitleModal(name)
             ModalHelper.show("modal_server_directory")
         } catch (error) {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
@@ -636,10 +636,12 @@ export default function Server() {
         return Object.keys(error).length === 0
     }
 
+    const serverDirectoryNameRef = useRef()
     const entryServerDirectory = () => {
         setServerDirectoryFormError([])
         setServerDirectoryForm({ ...serverDirectoryInitial, "directory": serverCurrentDirectory.join("/") })
         ModalHelper.show("modal_server_create_directory")
+        serverDirectoryNameRef.current.focus()
     }
 
     const confirmCreateServerDirectory = () => {
@@ -1319,7 +1321,7 @@ export default function Server() {
                     </>
                 }
             >
-                <InputText label={t("common.text.directoryName")} name="name" value={serverDirectoryForm.name} onChange={onServerDirectoryFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFormError.name} />
+                <InputText refference={serverDirectoryNameRef} label={t("common.text.directoryName")} name="name" value={serverDirectoryForm.name} onChange={onServerDirectoryFormChange} className="col-md-12 col-sm-12 col-xs-12" error={serverDirectoryFormError.name} />
             </Modal>
             <Modal
                 id="modal_server_rename_directory_file"
@@ -1389,7 +1391,7 @@ export default function Server() {
                                 additionalButtonArray={[
                                     {
                                         label: t("common.button.local"),
-                                        onClick: () => connectServer(0),
+                                        onClick: () => connectServer(0, t("common.button.local")),
                                         icon: "bi-house-door",
                                         loadingFlag: connectServerLoadingFlag
                                     }
@@ -1441,7 +1443,7 @@ export default function Server() {
                                                 <>
                                                     <Button
                                                         label={t("common.button.connect")}
-                                                        onClick={() => connectServer(data)}
+                                                        onClick={() => connectServer(data, row.code)}
                                                         className="btn-primary"
                                                         icon="bi-plugin"
                                                         loadingFlag={serverOptionColumnTable[data]?.connectedButtonFlag}

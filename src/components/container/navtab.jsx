@@ -9,7 +9,13 @@ export default function Navtab({
                 {
                     tabArray.map((tab, index) => (
                         <li key={index} className="nav-item">
-                            <a className={`nav-link nav_item_${name} ${index === initialActiveTab ? 'active' : null}`} data-bs-toggle="tab" id={`nav_item_${name}_menu${index}`} href={`#tab_pane_${name}_menu${index}`}>{tab.label}</a>
+                            <a className={`nav-link nav_item_${name} ${index === initialActiveTab ? 'active' : null}`} data-bs-toggle="tab" id={`nav_item_${name}_menu${index}`} href={`#tab_pane_${name}_menu${index}`}>
+                                {
+                                    tab.icon !== undefined
+                                    && <span className={`${tab.icon} me-2`} />
+                                }
+                                {tab.label}
+                            </a>
                         </li>
                     ))
                 }

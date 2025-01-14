@@ -1305,6 +1305,7 @@ export default function Database() {
                             tabArray={[
                                 {
                                     "label": t("common.text.query"),
+                                    "icon": "bi-filetype-sql",
                                     "component": function () {
                                         return (
                                             <div className="row">
@@ -1367,6 +1368,7 @@ export default function Database() {
                                 },
                                 {
                                     "label": t("common.text.object"),
+                                    "icon": "bi-table",
                                     "component": () => {
                                         return (
                                             <div className="row">
@@ -1433,6 +1435,7 @@ export default function Database() {
                                 },
                                 {
                                     "label": t("common.text.whitelist"),
+                                    "icon": "bi-list-check",
                                     "component": () => {
                                         return (
                                             <div className="row">

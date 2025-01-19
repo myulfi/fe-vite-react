@@ -723,8 +723,14 @@ export default function Server() {
         setServerDirectoryCheckBoxTableArray([])
     }
 
-    const confirmPasteServerDirectoryFile = () => {
-        if (serverDirectoryClipboard.name?.length > 0) {
+    const confirmPasteServerDirectoryFile = (name) => {
+        if (name !== undefined) {
+            setDialog({
+                message: t("common.confirmation.paste", { name: name }),
+                type: "warning",
+                onConfirm: () => pasteServerDirectoryFile(name),
+            })
+        } else if (serverDirectoryClipboard.name?.length > 0) {
             setDialog({
                 message: t(
                     "common.confirmation.paste",
@@ -745,7 +751,7 @@ export default function Server() {
         }
     }
 
-    const pasteServerDirectoryFile = async () => {
+    const pasteServerDirectoryFile = async (name) => {
         ModalHelper.hide("dialog_server")
         // if (name !== undefined && serverDirectoryCheckBoxTableArray.length > 0) {
         //     setServerDirectoryBulkOptionLoadingFlag(true)
@@ -755,14 +761,22 @@ export default function Server() {
             const json = await apiRequest(
                 CommonConstants.METHOD.PATCH,
                 `/external/${serverId}/server-paste-directory-file.json`,
-                {
-                    ...serverDirectoryClipboard,
-                    destination: serverCurrentDirectory.join("/")
-                }
+                name !== undefined
+                    ? {
+                        name: [name],
+                        source: serverCurrentDirectory.join("/"),
+                        destination: serverCurrentDirectory.join("/")
+                    }
+                    : {
+                        ...serverDirectoryClipboard,
+                        destination: serverCurrentDirectory.join("/")
+                    }
             )
             if (json.data.status === "success") {
                 getServerDirectory(serverId, serverDirectoryAttributeTable)
-                setServerDirectoryClipboard({})
+                if (name === undefined) {
+                    setServerDirectoryClipboard({})
+                }
             }
             setToast({ type: json.data.status, message: json.data.message })
         } catch (error) {
@@ -1209,7 +1223,9 @@ export default function Server() {
                                                     &nbsp;|&nbsp;<label className="sm-1" role="button" onClick={() => entryServerDirectoryFile(data)}>
                                                         <i className="bi-arrow-repeat" />
                                                     </label>
-                                                    &nbsp;<label className="sm-1" role="button" onClick={() => confirmDeleteServerDirectoryFile(data)}>
+                                                    &nbsp;<label className="sm-1" role="button" onClick={() => confirmPasteServerDirectoryFile(data)}>
+                                                        <i className="bi-copy" />
+                                                    </label>&nbsp;<label className="sm-1" role="button" onClick={() => confirmDeleteServerDirectoryFile(data)}>
                                                         <i className="bi-trash" />
                                                     </label>
                                                 </>

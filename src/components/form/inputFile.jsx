@@ -70,6 +70,7 @@ export default function InputFile({
                 value: value.filter((_, i) => i !== index)
             }
         })
+        fileInputRef.current.value = ""
     };
 
     const fileInputRef = useRef(null)

@@ -450,8 +450,8 @@ export default function Server() {
         options.directory = serverCurrentDirectory.join("/")
 
         setServerDirectoryCheckBoxTableArray([])
-        const index = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
-        setServerShortcutValue(index > -1 ? serverShortcutMap[index].key : 0)
+        const shortcutIndex = serverShortcutMap.findIndex((item) => options.directory.length > 0 && item.value.endsWith(options.directory))
+        setServerShortcutValue(shortcutIndex > -1 ? serverShortcutMap[shortcutIndex].key : 0)
         getServerDirectory(serverId, options)
     }
 
@@ -461,7 +461,7 @@ export default function Server() {
         options.directory = serverCurrentDirectory.splice(0, index + 1).join("/")
 
         setServerDirectoryCheckBoxTableArray([])
-        const shortcutIndex = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
+        const shortcutIndex = serverShortcutMap.findIndex((item) => options.directory.length > 0 && item.value.endsWith(options.directory))
         setServerShortcutValue(shortcutIndex > -1 ? serverShortcutMap[shortcutIndex].key : 0)
         getServerDirectory(serverId, options)
     }
@@ -472,7 +472,7 @@ export default function Server() {
         options.directory = path
 
         setServerDirectoryCheckBoxTableArray([])
-        const shortcutIndex = serverShortcutMap.findIndex((item) => item.value.endsWith(options.directory))
+        const shortcutIndex = serverShortcutMap.findIndex((item) => options.directory.length > 0 && item.value.endsWith(options.directory))
         setServerShortcutValue(shortcutIndex > -1 ? serverShortcutMap[shortcutIndex].key : 0)
         getServerDirectory(serverId, options)
     }
@@ -1158,12 +1158,16 @@ export default function Server() {
                         <Table
                             additionalButtonArray={
                                 [
-                                    {
-                                        label: t(serverShortcutValue === 0 ? "common.button.addToShortcut" : "common.button.removeShortcut"),
-                                        onClick: () => serverShortcutValue === 0 ? entryServerShortcut() : confirmDeleteServerShortcut(serverShortcutValue),
-                                        icon: `${serverShortcutValue === 0 ? "bi-plus-circle" : "bi-trash"}`,
-                                        className: `${serverShortcutValue === 0 ? "btn-primary" : "btn-danger"}`
-                                    },
+                                    (
+                                        serverCurrentDirectory[0].length > 0 || serverCurrentDirectory.length > 1
+                                            ? {
+                                                label: t(serverShortcutValue === 0 ? "common.button.addToShortcut" : "common.button.removeShortcut"),
+                                                onClick: () => serverShortcutValue === 0 ? entryServerShortcut() : confirmDeleteServerShortcut(serverShortcutValue),
+                                                icon: `${serverShortcutValue === 0 ? "bi-plus-circle" : "bi-trash"}`,
+                                                className: `${serverShortcutValue === 0 ? "btn-primary" : "btn-danger"}`
+                                            }
+                                            : {}
+                                    ),
                                     {
                                         label: t("common.button.createDirectory"),
                                         onClick: () => entryServerDirectory(),
@@ -1206,7 +1210,11 @@ export default function Server() {
                                 }
                             ]}
 
-                            dataArray={[{ name: ".:Up:.", goToParentFlag: true }, ...serverDirectoryDataArray]}
+                            dataArray={
+                                serverCurrentDirectory[0].length > 0 || serverCurrentDirectory.length > 1
+                                    ? [{ name: ".:Up:.", goToParentFlag: true }, ...serverDirectoryDataArray]
+                                    : serverDirectoryDataArray
+                            }
                             columns={[
                                 {
                                     data: "name",

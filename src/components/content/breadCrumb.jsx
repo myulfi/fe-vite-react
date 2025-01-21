@@ -12,7 +12,8 @@ export default function BreadCrumb({
     return (
         <div className={`form-group mb-3 pt-3`}>
             {
-                valueList.map((name, index) => (
+                valueList.length > 1
+                && valueList.map((name, index) => (
                     <Fragment key={index}>
                         {
                             index > 0
@@ -24,10 +25,14 @@ export default function BreadCrumb({
                         }
                         {
                             index < valueList.length - 1
-                            && <Href label={name} onClick={() => onClick(index)}></Href>
+                            && <Href label={name.length > 0 ? name : "..."} onClick={() => onClick(index)}></Href>
                         }
                     </Fragment>
                 ))
+            }
+            {
+                valueList.length === 1
+                && <b>...</b>
             }
             &nbsp;&nbsp;<span className="bi-pencil" role="button" onClick={onEdit} />
             &nbsp;&nbsp;<span className="bi-copy" role="button" onClick={() => onCopy(valueList.join(delimiter))} />

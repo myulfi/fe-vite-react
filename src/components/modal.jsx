@@ -4,6 +4,7 @@ export default function Modal({
     id = "modal_id",
     size = "xl",
     title = "Form",
+    loadingFlag = false,
     mediumTitle,
     smallTitle,
     buttonArray,
@@ -28,9 +29,18 @@ export default function Modal({
                         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div className="modal-body">
-                        <div className="row app-padding-row mx-1">
-                            {children}
-                        </div>
+                        {
+                            loadingFlag === true
+                            && <div className="row d-flex align-items-center justify-content-center">
+                                <div class="spinner-border" style={{ width: "10rem", height: "10rem" }} role="status"></div>
+                            </div>
+                        }
+                        {
+                            loadingFlag === false
+                            && <div className="row app-padding-row mx-1">
+                                {children}
+                            </div>
+                        }
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-sm btn-secondary m-1" data-bs-dismiss="modal">

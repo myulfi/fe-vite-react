@@ -723,6 +723,7 @@ export default function Server() {
         setServerDirectoryCheckBoxTableArray([])
     }
 
+    const [serverPasteLoadingFlag, setServerPasteLoadingFlag] = useState(false)
     const confirmPasteServerDirectoryFile = (name) => {
         if (name !== undefined) {
             setDialog({
@@ -753,9 +754,9 @@ export default function Server() {
 
     const pasteServerDirectoryFile = async (name) => {
         ModalHelper.hide("dialog_server")
-        // if (name !== undefined && serverDirectoryCheckBoxTableArray.length > 0) {
-        //     setServerDirectoryBulkOptionLoadingFlag(true)
-        // }
+        if (name === undefined) {
+            setServerPasteLoadingFlag(true)
+        }
 
         try {
             const json = await apiRequest(
@@ -782,7 +783,7 @@ export default function Server() {
         } catch (error) {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
-            // setServerDirectoryBulkOptionLoadingFlag(false)
+            setServerPasteLoadingFlag(false)
         }
     }
 
@@ -816,7 +817,7 @@ export default function Server() {
 
     const deleteServerDirectoryFile = async (name) => {
         ModalHelper.hide("dialog_server")
-        if (name !== undefined && serverDirectoryCheckBoxTableArray.length > 0) {
+        if (name === undefined && serverDirectoryCheckBoxTableArray.length > 0) {
             setServerDirectoryBulkOptionLoadingFlag(true)
         }
 
@@ -911,15 +912,20 @@ export default function Server() {
         return Object.keys(error).length === 0
     }
 
+    const [serverFileEntryLoadingModal, setServerFileEntryLoadingModal] = useState(false)
     const entryServerFile = async (name) => {
         setServerFileFormError([])
+
         if (name) {
+            setServerFileEntryLoadingModal(true)
             setServerFileStateModal(CommonConstants.MODAL.VIEW)
             const params = {
                 "name": name,
                 "content": " ",
                 "directory": serverCurrentDirectory.join("/")
             }
+
+            ModalHelper.show("modal_server_entry_file")
             const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-file.json`, params)
             const json = response.data
 
@@ -929,6 +935,7 @@ export default function Server() {
                 directory: serverCurrentDirectory.join("/")
             })
 
+            setServerFileEntryLoadingModal(false)
             setServerFileEntryModal({
                 ...serverFileEntryModal,
                 title: serverForm.name,
@@ -947,9 +954,8 @@ export default function Server() {
                 submitIcon: "bi-plus-circle",
                 submitLoadingFlag: false,
             })
+            ModalHelper.show("modal_server_entry_file")
         }
-
-        ModalHelper.show("modal_server_entry_file")
     }
 
     const confirmStoreServerFile = () => {
@@ -1179,6 +1185,7 @@ export default function Server() {
                                                 label: `${t("common.button.paste")} (${serverDirectoryClipboard.name.length})`,
                                                 onClick: () => confirmPasteServerDirectoryFile(),
                                                 icon: "bi-file-earmark",
+                                                loadingFlag: serverPasteLoadingFlag
                                             }
                                             : {}
                                     )
@@ -1361,6 +1368,7 @@ export default function Server() {
                 id="modal_server_entry_file"
                 size="xl"
                 title={serverFileEntryModal.title}
+                loadingFlag={serverFileEntryLoadingModal}
                 buttonArray={
                     <Button
                         label={serverFileEntryModal.submitLabel}

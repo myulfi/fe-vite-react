@@ -26,3 +26,11 @@ export function downloadFile(name, data) {
     link.remove()
     window.URL.revokeObjectURL(url)
 }
+
+export function formatBytes(value) {
+    if (value === 0) return '0 Bytes'
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+    let idx = Math.floor(Math.log(value) / Math.log(1024))
+    if (idx > sizes.length - 1) idx = sizes.length - 1
+    return formatMoney((value / Math.pow(1024, idx)).toFixed(2)) + ' ' + sizes[idx]
+}

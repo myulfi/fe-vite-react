@@ -26,9 +26,15 @@ export const METHOD = {
 }
 export const LOCAL_STORAGE = {
     ACCESS_TOKEN: "accessToken",
+    REFRESH_TOKEN: "refreshToken",
     NAME: "name",
     ROLE: "roleList",
 }
 export const COOKIES = {
     LANGUAGE: "language"
+}
+
+export const HTTP_CODE = {
+    OK: 200,
+    UNAUTHORIZED: 401
 }

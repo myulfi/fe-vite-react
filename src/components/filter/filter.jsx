@@ -8,7 +8,7 @@ export default function Filter({
     children,
 }) {
     return (
-        <div className={`${className} fade-in-delay-${delay} mb-4`} style={{ zIndex: 990 + (10 - delay), position: "relative" }}>
+        <div className={`${className} fade-in-delay fade-in-delay-${delay} mb-4`}>
             <div className="card border-0 rounded shadow-sm">
                 <div className="card-body">
                     <div className="col-xs-12">

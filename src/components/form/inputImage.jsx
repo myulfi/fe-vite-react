@@ -5,6 +5,7 @@ export default function InputImage({
     label,
     name,
     value,
+    orientation = "potrait",
     onChange,
     className,
     error,
@@ -22,7 +23,7 @@ export default function InputImage({
 
     const [imageStyle, setImageStyle] = useState({
         width: "100%",
-        aspectRatio: "1/1",
+        aspectRatio: "potrait" === orientation ? "1/1" : "3/1",
         backgroundSize: "contain",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",

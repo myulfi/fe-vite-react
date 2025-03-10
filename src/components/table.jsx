@@ -372,10 +372,10 @@ export default function Table({
                                             {
                                                 columnShow
                                                     .map((column, index) => (
-                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} role={index === 0 ? "button" : null} onClick={index === 0 ? () => showDetail(indexRow) : null}>
+                                                        <td key={index} className={`${column.class} ${column.minDevice == CommonConstants.DEVICE.DESKTOP ? "min-desktop" : column.minDevice == CommonConstants.DEVICE.TABLET ? "min-tablet" : ""}`} role={index === 0 && column.copy !== true ? "button" : null} onClick={index === 0 && column.copy !== true ? () => showDetail(indexRow) : null}>
                                                             {
                                                                 index == 0 &&
-                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} />
+                                                                <span className={`${detailRow[indexRow] ? "bi-dash-circle-fill" : "bi-plus-circle-fill"} text-primary me-2 ${columnAlwaysHide.length === 0 ? "max-desktop" : null}`} role={column.copy ? "button" : null} onClick={column.copy ? () => showDetail(indexRow) : null} />
                                                             }
                                                             {
                                                                 column.render != undefined

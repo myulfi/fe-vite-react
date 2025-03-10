@@ -1,25 +1,38 @@
-.fade-in-delay-1 {
-    animation: fadeInAnimation ease 1000ms;
+.fade-in-delay {
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
+}
+
+.fade-in-delay-1 {
+    animation: fadeInAnimation ease 1000ms;
 }
 
 .fade-in-delay-2 {
     animation: fadeInAnimation ease 1500ms;
-    animation-iteration-count: 1;
-    animation-fill-mode: forwards;
 }
 
 .fade-in-delay-3 {
     animation: fadeInAnimation ease 2000ms;
-    animation-iteration-count: 1;
-    animation-fill-mode: forwards;
 }
 
 .fade-in-delay-4 {
     animation: fadeInAnimation ease 2500ms;
-    animation-iteration-count: 1;
-    animation-fill-mode: forwards;
+}
+
+.fade-in-delay-5 {
+    animation: fadeInAnimation ease 1000ms;
+}
+
+.fade-in-delay-6 {
+    animation: fadeInAnimation ease 1500ms;
+}
+
+.fade-in-delay-7 {
+    animation: fadeInAnimation ease 2000ms;
+}
+
+.fade-in-delay-8 {
+    animation: fadeInAnimation ease 2500ms;
 }
 
 @keyframes fadeInAnimation {

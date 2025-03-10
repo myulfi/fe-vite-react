@@ -14,10 +14,8 @@ export default function App() {
 
     const getMenu = async () => {
         if (localStorage.getItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN) !== null) {
-            try {
-                const response = await apiRequest(CommonConstants.METHOD.GET, "/main/menu.json")
-                setMenuList(response.data.data)
-            } catch (error) { }
+            const response = await apiRequest(CommonConstants.METHOD.GET, "/main/menu.json")
+            setMenuList(response.data)
         }
     }
     useEffect(() => {

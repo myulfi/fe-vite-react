@@ -59,13 +59,14 @@ export default function Login() {
                     })
                 )
 
-                if (response.data.status === "success") {
-                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN, response.data.data.token)
-                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.NAME, response.data.data.user.nickName)
-                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ROLE, response.data.data.user.roleList)
+                if (CommonConstants.HTTP_CODE.OK === response.status) {
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN, response.data.accessToken)
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.REFRESH_TOKEN, response.data.refreshToken)
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.NAME, response.data.user.nickName)
+                    localStorage.setItem(CommonConstants.LOCAL_STORAGE.ROLE, response.data.user.roleList)
                     window.location.reload(false)
                 } else {
-                    setLoginFormError(response.data.message);
+                    setLoginFormError(t(response.message));
                 }
             } catch (error) {
                 setLoginFormError(error);

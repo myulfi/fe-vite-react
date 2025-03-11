@@ -48,7 +48,9 @@ export default function Navbar({
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
         } finally {
             localStorage.removeItem(CommonConstants.LOCAL_STORAGE.ACCESS_TOKEN)
+            localStorage.removeItem(CommonConstants.LOCAL_STORAGE.REFRESH_TOKEN)
             localStorage.removeItem(CommonConstants.LOCAL_STORAGE.NAME)
+            localStorage.removeItem(CommonConstants.LOCAL_STORAGE.ROLE)
             window.location.reload(false)
         }
     }

@@ -104,35 +104,34 @@ export default function Server() {
     const getServer = async (options) => {
         setServerTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-                // "value": serverFilterTable.value,
-                // "date": serverFilterTable.date,
-                // "range": serverFilterTable.range,
-            }
-            setServerAttributeTable(options)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+            // "value": serverFilterTable.value,
+            // "date": serverFilterTable.date,
+            // "range": serverFilterTable.range,
+        }
+        setServerAttributeTable(options)
 
-            const response = await apiRequest(CommonConstants.METHOD.GET, "/external/server.json", params)
-            const json = response.data
-            setServerArray(json.data)
-            setServerDataTotalTable(json.recordsTotal)
+        const response = await apiRequest(CommonConstants.METHOD.GET, "/external/server.json", params)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setServerArray(response.data)
+            setServerDataTotalTable(response.recordsTotal)
             setServerOptionColumnTable(
-                json.data.reduce(function (map, obj) {
+                response.data.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
                     map[obj.id] = { "connectedButtonFlag": false, "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
                 }, {})
             )
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setServerTableLoadingFlag(false)
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setServerTableLoadingFlag(false)
     }
 
     const viewServer = async (id) => {
@@ -140,10 +139,10 @@ export default function Server() {
         if (id !== undefined) {
             setServerStateModal(CommonConstants.MODAL.VIEW)
             setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { viewedButtonFlag: true } })
-            try {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${id}/server.json`)
 
-                const server = response.data.data
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${id}/server.json`)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                const server = response.data
                 setServerForm({
                     id: server.id,
                     code: server.code,
@@ -165,11 +164,11 @@ export default function Server() {
                 })
 
                 ModalHelper.show("modal_server")
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            } finally {
-                setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { viewedButtonFlag: false } })
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { viewedButtonFlag: false } })
         }
     }
 
@@ -212,24 +211,21 @@ export default function Server() {
             ModalHelper.hide("dialog_server")
             setServerEntryModal({ ...serverEntryModal, submitLoadingFlag: true })
 
-            try {
-                const json = await apiRequest(
-                    serverForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
-                    serverForm.id === undefined ? '/external/server.json' : `/external/${serverForm.id}/server.json`,
-                    JSON.stringify(serverForm),
-                )
+            const response = await apiRequest(
+                serverForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                serverForm.id === undefined ? '/external/server.json' : `/external/${serverForm.id}/server.json`,
+                JSON.stringify(serverForm),
+            )
 
-                if (json.data.status === "success") {
-                    getServer(serverAttributeTable)
-                    ModalHelper.hide("modal_server")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setServerFormError(error.response.data)
-            } finally {
-                setServerEntryModal({ ...serverEntryModal, submitLoadingFlag: false })
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getServer(serverAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_server")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setServerEntryModal({ ...serverEntryModal, submitLoadingFlag: false })
         }
     }
 
@@ -264,23 +260,22 @@ export default function Server() {
             setServerBulkOptionLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id !== undefined ? id : serverCheckBoxTableArray.join("")}/server.json`)
-            if (json.data.status === "success") {
-                getServer(serverAttributeTable)
-                if (id === undefined) {
-                    setServerCheckBoxTableArray([])
-                }
+        const response = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id !== undefined ? id : serverCheckBoxTableArray.join("")}/server.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getServer(serverAttributeTable)
+            if (id === undefined) {
+                setServerCheckBoxTableArray([])
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (id !== undefined) {
-                setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { deletedButtonFlag: false } })
-            } else {
-                setServerBulkOptionLoadingFlag(false)
-            }
+
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (id !== undefined) {
+            setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { deletedButtonFlag: false } })
+        } else {
+            setServerBulkOptionLoadingFlag(false)
         }
     }
 
@@ -309,44 +304,38 @@ export default function Server() {
             setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { connectedButtonFlag: true } })
         }
 
-        try {
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${id}/server-default-directory.json`)
-            const json = response.data
-
-            if (json.status === "success") {
-                setServerId(id)
-                setServerCurrentDirectory(json.data.defaultDirectory.split("/"))
-                getServerDirectory(id, { page: 1, length: 10, search: "", order: [], directory: json.data.defaultDirectory })
-                getServerShortcut(id)
-                setServerShortcutValue(0)
-                setServerDirectoryClipboard({})
-            }
-
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${id}/server-default-directory.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setServerId(id)
+            setServerCurrentDirectory(response.data.defaultDirectory.split("/"))
+            getServerDirectory(id, { page: 1, length: 10, search: "", order: [], directory: response.data.defaultDirectory })
+            getServerShortcut(id)
+            setServerShortcutValue(0)
+            setServerDirectoryClipboard({})
             setServerDirectoryTitleModal(name)
             ModalHelper.show("modal_server_directory")
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (id === 0) {
-                setConnectServerLoadingFlag(false)
-            } else {
-                setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { connectedButtonFlag: false } })
-            }
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (id === 0) {
+            setConnectServerLoadingFlag(false)
+        } else {
+            setServerOptionColumnTable({ ...serverOptionColumnTable, [id]: { connectedButtonFlag: false } })
         }
     }
 
     const getServerShortcut = async (serverId) => {
-        try {
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-shortcut.json`)
-            const json = response.data
-            setServerShortcutMap(json.data.map((item) => {
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-shortcut.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setServerShortcutMap(response.data.map((item) => {
                 return {
                     key: item.id,
                     value: `${item.name} | ${item.directory}`
                 }
             }))
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
             setServerShortcutMap([])
         }
     }
@@ -354,22 +343,21 @@ export default function Server() {
     const getServerDirectory = async (serverId, options) => {
         setServerDirectoryTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-                "directory": options.directory
-            }
-            setServerDirectoryAttributeTable(options)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+            "directory": options.directory
+        }
+        setServerDirectoryAttributeTable(options)
 
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-directory.json`, params)
-            const json = response.data
-            setServerDirectoryFullDataArray(json.data.fileArray)
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-directory.json`, params)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setServerDirectoryFullDataArray(response.data.fileArray)
             setServerDirectoryDataArray(
-                json.data.fileArray
+                response.data.fileArray
                     .sort(
                         (left, right) => {
                             if (options.order.length > 1) {
@@ -387,9 +375,9 @@ export default function Server() {
                     )
                     .slice((options.page - 1) * options.length, ((options.page - 1) * options.length) + options.length)
             )
-            setServerDirectoryDataTotalTable(json.data.fileArray.length)
+            setServerDirectoryDataTotalTable(response.data.fileArray.length)
             setServerDirectoryOptionColumnTable(
-                json.data.fileArray.reduce(function (map, obj) {
+                response.data.fileArray.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
                     map[obj.id] = { "connectedButtonFlag": false, "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
@@ -397,11 +385,11 @@ export default function Server() {
             )
             setServerCurrentDirectory(options.directory.split("/"))
             setServerCurrentDirectoryManual(false)
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setServerDirectoryTableLoadingFlag(false)
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setServerDirectoryTableLoadingFlag(false)
     }
 
     const getServerDirectoryRender = async (options) => {
@@ -572,21 +560,17 @@ export default function Server() {
             ModalHelper.hide("dialog_server")
             setServerShortcutCreateLoadingFlag(true)
 
-            try {
-                const json = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-shortcut.json`, JSON.stringify(serverShortcutForm))
-
-                if (json.data.status === "success") {
-                    getServerShortcut(serverId)
-                    setServerShortcutValue(json.data.data.id)
-                    ModalHelper.hide("modal_server_create_shortcut")
-                }
-                setToast({ type: json.data.status, message: "common.information.created" })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setServerShortcutFormError(error.response.data)
-            } finally {
-                setServerShortcutCreateLoadingFlag(false)
+            const response = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-shortcut.json`, JSON.stringify(serverShortcutForm))
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getServerShortcut(serverId)
+                setServerShortcutValue(response.data.id)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_server_create_shortcut")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setServerShortcutCreateLoadingFlag(false)
         }
     }
 
@@ -601,15 +585,13 @@ export default function Server() {
     const deleteServerShortcut = async (id) => {
         ModalHelper.hide("dialog_server")
 
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id}/server-shortcut.json`)
-            if (json.data.status === "success") {
-                getServerShortcut(serverId)
-                setServerShortcutValue(0)
-            }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        const response = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id}/server-shortcut.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getServerShortcut(serverId)
+            setServerShortcutValue(0)
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
     }
 
@@ -659,20 +641,17 @@ export default function Server() {
             ModalHelper.hide("dialog_server")
             setServerDirectoryCreateLoadingFlag(true)
 
-            try {
-                const json = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-directory.json`, JSON.stringify(serverDirectoryForm))
+            const response = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-directory.json`, JSON.stringify(serverDirectoryForm))
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getServerDirectory(serverId, serverDirectoryAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_server_create_directory")
 
-                if (json.data.status === "success") {
-                    getServerDirectory(serverId, serverDirectoryAttributeTable)
-                    ModalHelper.hide("modal_server_create_directory")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setServerDirectoryFormError(error.response.data)
-            } finally {
-                setServerDirectoryCreateLoadingFlag(false)
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setServerDirectoryCreateLoadingFlag(false)
         }
     }
 
@@ -758,33 +737,32 @@ export default function Server() {
             setServerPasteLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(
-                CommonConstants.METHOD.PATCH,
-                `/external/${serverId}/server-paste-directory-file.json`,
-                name !== undefined
-                    ? {
-                        name: [name],
-                        source: serverCurrentDirectory.join("/"),
-                        destination: serverCurrentDirectory.join("/")
-                    }
-                    : {
-                        ...serverDirectoryClipboard,
-                        destination: serverCurrentDirectory.join("/")
-                    }
-            )
-            if (json.data.status === "success") {
-                getServerDirectory(serverId, serverDirectoryAttributeTable)
-                if (name === undefined) {
-                    setServerDirectoryClipboard({})
+        const response = await apiRequest(
+            CommonConstants.METHOD.PATCH,
+            `/external/${serverId}/server-paste-directory-file.json`,
+            name !== undefined
+                ? {
+                    name: [name],
+                    source: serverCurrentDirectory.join("/"),
+                    destination: serverCurrentDirectory.join("/")
                 }
+                : {
+                    ...serverDirectoryClipboard,
+                    destination: serverCurrentDirectory.join("/")
+                }
+        )
+
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getServerDirectory(serverId, serverDirectoryAttributeTable)
+            if (name === undefined) {
+                setServerDirectoryClipboard({})
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setServerPasteLoadingFlag(false)
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setServerPasteLoadingFlag(false)
     }
 
     const confirmDeleteServerDirectoryFile = (name) => {
@@ -821,29 +799,28 @@ export default function Server() {
             setServerDirectoryBulkOptionLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(
-                CommonConstants.METHOD.PATCH,
-                `/external/${serverId}/server-delete-directory-file.json`,
-                {
-                    "directory": serverCurrentDirectory.join("/"),
-                    "name": name !== undefined ? [name] : serverDirectoryCheckBoxTableArray
-                }
-            )
-            if (json.data.status === "success") {
-                getServerDirectory(serverId, serverDirectoryAttributeTable)
-                if (name !== undefined) {
-                    setServerDirectoryCheckBoxTableArray(serverDirectoryCheckBoxTableArray.filter(item => item !== name))
-                } else {
-                    setServerDirectoryCheckBoxTableArray([])
-                }
+        const response = await apiRequest(
+            CommonConstants.METHOD.PATCH,
+            `/external/${serverId}/server-delete-directory-file.json`,
+            {
+                "directory": serverCurrentDirectory.join("/"),
+                "name": name !== undefined ? [name] : serverDirectoryCheckBoxTableArray
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setServerDirectoryBulkOptionLoadingFlag(false)
+        )
+
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getServerDirectory(serverId, serverDirectoryAttributeTable)
+            if (name !== undefined) {
+                setServerDirectoryCheckBoxTableArray(serverDirectoryCheckBoxTableArray.filter(item => item !== name))
+            } else {
+                setServerDirectoryCheckBoxTableArray([])
+            }
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setServerDirectoryBulkOptionLoadingFlag(false)
     }
 
     const confirmRenameServerDirectoryFile = () => {
@@ -861,20 +838,16 @@ export default function Server() {
             ModalHelper.hide("dialog_server")
             setServerDirectoryFileRenameLoadingFlag(true)
 
-            try {
-                const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${serverId}/server-rename-directory-file.json`, JSON.stringify(serverDirectoryFileForm))
-
-                if (json.data.status === "success") {
-                    getServerDirectory(serverId, serverDirectoryAttributeTable)
-                    ModalHelper.hide("modal_server_rename_directory_file")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setServerDirectoryFileFormError(error.response.data)
-            } finally {
-                setServerDirectoryFileRenameLoadingFlag(false)
+            const response = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${serverId}/server-rename-directory-file.json`, JSON.stringify(serverDirectoryFileForm))
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getServerDirectory(serverId, serverDirectoryAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_server_rename_directory_file")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setServerDirectoryFileRenameLoadingFlag(false)
         }
     }
 
@@ -927,11 +900,9 @@ export default function Server() {
 
             ModalHelper.show("modal_server_entry_file")
             const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${serverId}/server-file.json`, params)
-            const json = response.data
-
             setServerFileForm({
                 name: name,
-                content: json.data.content,
+                content: response.content,
                 directory: serverCurrentDirectory.join("/")
             })
 
@@ -973,24 +944,21 @@ export default function Server() {
             ModalHelper.hide("dialog_server")
             setServerFileEntryModal({ ...serverFileEntryModal, submitLoadingFlag: true })
 
-            try {
-                const json = await apiRequest(
-                    serverFileForm.oldName === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
-                    `/external/${serverId}/server-file.json`,
-                    JSON.stringify(serverFileForm),
-                )
+            const response = await apiRequest(
+                serverFileForm.oldName === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                `/external/${serverId}/server-file.json`,
+                JSON.stringify(serverFileForm),
+            )
 
-                if (json.data.status === "success") {
-                    getServerDirectory(serverId, serverDirectoryAttributeTable)
-                    ModalHelper.hide("modal_server_entry_file")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setServerFileFormError(error.response.data)
-            } finally {
-                setServerFileEntryModal({ ...serverEntryModal, submitLoadingFlag: false })
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getServerDirectory(serverId, serverDirectoryAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_server_entry_file")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setServerFileEntryModal({ ...serverEntryModal, submitLoadingFlag: false })
         }
     }
 
@@ -1037,34 +1005,30 @@ export default function Server() {
             ModalHelper.hide("dialog_server")
             setServerUploadFileLoadingFlag(true)
 
-            try {
-                const formData = new FormData()
-                Object.keys(serverUploadFileForm).forEach(key => {
-                    if (key === "files" && typeof serverUploadFileForm[key] === 'string') {
+            const formData = new FormData()
+            Object.keys(serverUploadFileForm).forEach(key => {
+                if (key === "files" && typeof serverUploadFileForm[key] === 'string') {
 
-                    } else if (serverUploadFileForm[key] instanceof Array && serverUploadFileForm[key].length > 0) {
-                        for (let i = 0; i < serverUploadFileForm[key].length; i++) {
-                            formData.append(`${key}`, serverUploadFileForm[key][i])
-                        }
-                        // formData.append(key, serverUploadFileForm[key])
-                    } else {
-                        formData.append(key, serverUploadFileForm[key])
+                } else if (serverUploadFileForm[key] instanceof Array && serverUploadFileForm[key].length > 0) {
+                    for (let i = 0; i < serverUploadFileForm[key].length; i++) {
+                        formData.append(`${key}`, serverUploadFileForm[key][i])
                     }
-                })
-
-                const json = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-upload-file.json`, formData,)
-
-                if (json.data.status === "success") {
-                    getServerDirectory(serverId, serverDirectoryAttributeTable)
-                    ModalHelper.hide("modal_server_upload_file")
+                    // formData.append(key, serverUploadFileForm[key])
+                } else {
+                    formData.append(key, serverUploadFileForm[key])
                 }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setServerUploadFileFormError(error.response.data)
-            } finally {
-                setServerUploadFileLoadingFlag(false)
+            })
+
+            const response = await apiRequest(CommonConstants.METHOD.POST, `/external/${serverId}/server-upload-file.json`, formData,)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getServerDirectory(serverId, serverDirectoryAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_server_upload_file")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setServerUploadFileLoadingFlag(false)
         }
     }
 

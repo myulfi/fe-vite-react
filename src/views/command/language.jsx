@@ -91,43 +91,42 @@ export default function Language() {
 
     const [masterLanguageArray, setMasterLanguageArray] = useState([])
     const getMasterLanguage = async () => {
-        try {
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/master/language.json`)
-            setMasterLanguageArray(response.data.data.map(object => { return { "key": object["id"], "value": object["name"] } }))
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/master/language.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setMasterLanguageArray(response.data.map(object => { return { "key": object["id"], "value": object["name"] } }))
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
     }
 
     const getLanguage = async (options) => {
         setLanguageTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-            }
-            setLanguageAttributeTable(options)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+        }
+        setLanguageAttributeTable(options)
 
-            const response = await apiRequest(CommonConstants.METHOD.GET, "/command/language.json", params)
-            const json = response.data
-            setLanguageArray(json.data)
-            setLanguageDataTotalTable(json.recordsTotal)
+        const response = await apiRequest(CommonConstants.METHOD.GET, "/command/language.json", params)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setLanguageArray(response.data)
+            setLanguageDataTotalTable(response.recordsTotal)
             setLanguageOptionColumnTable(
-                json.data.reduce(function (map, obj) {
+                response.data.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
                     map[obj.id] = { "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
                 }, {})
             )
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setLanguageTableLoadingFlag(false)
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setLanguageTableLoadingFlag(false)
     }
 
     const viewLanguage = async (id) => {
@@ -135,10 +134,10 @@ export default function Language() {
         if (id !== undefined) {
             setLanguageStateModal(CommonConstants.MODAL.VIEW)
             setLanguageOptionColumnTable({ ...languageOptionColumnTable, [id]: { viewedButtonFlag: true } })
-            try {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/command/${id}/language.json`)
 
-                const language = response.data.data
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/command/${id}/language.json`)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                const language = response.data
                 const data = {
                     id: language.id,
                     code: `${language.screenCode}.${language.labelType}`,
@@ -151,7 +150,6 @@ export default function Language() {
                 }
 
                 setLanguageForm(data)
-
                 setLanguageEntryModal({
                     ...languageEntryModal,
                     title: language.name,
@@ -161,11 +159,11 @@ export default function Language() {
                 })
 
                 ModalHelper.show("modal_language")
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            } finally {
-                setLanguageOptionColumnTable({ ...languageOptionColumnTable, [id]: { viewedButtonFlag: false } })
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setLanguageOptionColumnTable({ ...languageOptionColumnTable, [id]: { viewedButtonFlag: false } })
         }
     }
 
@@ -208,50 +206,47 @@ export default function Language() {
             ModalHelper.hide("dialog_language")
             setLanguageEntryModal({ ...languageEntryModal, submitLoadingFlag: true })
 
-            try {
-                const data = {}
-                data.screenCode = languageForm.code.split(".")[0]
-                data.labelType = languageForm.code.split(".")[1]
-                data.keyCode = languageForm.key
-                data.version = languageForm.version
-                data.languageValueList = new Array(masterLanguageArray.length)
-                for (let i = 0; i < masterLanguageArray.length; i++) {
-                    data.languageValueList[i] = {
-                        languageId: masterLanguageArray[i].key,
-                        value: languageForm[`value_${masterLanguageArray[i].key}`]
-                    }
+            const data = {}
+            data.screenCode = languageForm.code.split(".")[0]
+            data.labelType = languageForm.code.split(".")[1]
+            data.keyCode = languageForm.key
+            data.version = languageForm.version
+            data.languageValueList = new Array(masterLanguageArray.length)
+            for (let i = 0; i < masterLanguageArray.length; i++) {
+                data.languageValueList[i] = {
+                    languageId: masterLanguageArray[i].key,
+                    value: languageForm[`value_${masterLanguageArray[i].key}`]
                 }
-
-                const json = await apiRequest(
-                    languageForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
-                    languageForm.id === undefined ? '/command/language.json' : `/command/${languageForm.id}/language.json`,
-                    JSON.stringify(data),
-                )
-
-                if (json.data.status === "success") {
-                    getLanguage(languageAttributeTable)
-                    ModalHelper.hide("modal_language")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setLanguageFormError(error.response.data)
-            } finally {
-                setLanguageEntryModal({ ...languageEntryModal, submitLoadingFlag: false })
             }
+
+            const response = await apiRequest(
+                languageForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                languageForm.id === undefined ? '/command/language.json' : `/command/${languageForm.id}/language.json`,
+                JSON.stringify(data),
+            )
+
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getLanguage(languageAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_language")
+            } else {
+                setToast({ type: "failed", message: response.message })
+            }
+
+            setLanguageEntryModal({ ...languageEntryModal, submitLoadingFlag: false })
         }
     }
 
     const implementLanguage = async () => {
-        try {
-            setImplementLoadingFlag(true)
-            const json = await apiRequest(CommonConstants.METHOD.PUT, "/command/implement-language.json")
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setImplementLoadingFlag(false)
+        setImplementLoadingFlag(true)
+        const response = await apiRequest(CommonConstants.METHOD.PUT, "/command/implement-language.json")
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setImplementLoadingFlag(false)
     }
 
     const confirmDeleteLanguage = (id, name) => {
@@ -285,23 +280,21 @@ export default function Language() {
             setLanguageBulkOptionLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/command/${id !== undefined ? id : languageCheckBoxTableArray.join("")}/language.json`)
-            if (json.data.status === "success") {
-                getLanguage(languageAttributeTable)
-                if (id === undefined) {
-                    setLanguageCheckBoxTableArray([])
-                }
+        const response = await apiRequest(CommonConstants.METHOD.DELETE, `/command/${id !== undefined ? id : languageCheckBoxTableArray.join("")}/language.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getLanguage(languageAttributeTable)
+            if (id === undefined) {
+                setLanguageCheckBoxTableArray([])
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (id !== undefined) {
-                setLanguageOptionColumnTable({ ...languageOptionColumnTable, [id]: { deletedButtonFlag: false } })
-            } else {
-                setLanguageBulkOptionLoadingFlag(false)
-            }
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (id !== undefined) {
+            setLanguageOptionColumnTable({ ...languageOptionColumnTable, [id]: { deletedButtonFlag: false } })
+        } else {
+            setLanguageBulkOptionLoadingFlag(false)
         }
     }
 

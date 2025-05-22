@@ -120,35 +120,34 @@ export default function ExampleTemplate() {
     const getExampleTemplate = async (options) => {
         setExampleTemplateTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-                // "value": exampleTemplateFilterTable.value,
-                // "date": exampleTemplateFilterTable.date,
-                // "range": exampleTemplateFilterTable.range,
-            }
-            setExampleTemplateAttributeTable(options)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+            // "value": exampleTemplateFilterTable.value,
+            // "date": exampleTemplateFilterTable.date,
+            // "range": exampleTemplateFilterTable.range,
+        }
+        setExampleTemplateAttributeTable(options)
 
-            const response = await apiRequest(CommonConstants.METHOD.GET, "/test/example-template.json", params)
-            const json = response.data
-            setExampleTemplateArray(json.data)
-            setExampleTemplateDataTotalTable(json.recordsTotal)
+        const response = await apiRequest(CommonConstants.METHOD.GET, "/test/example-template.json", params)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setExampleTemplateArray(response.data)
+            setExampleTemplateDataTotalTable(response.recordsTotal)
             setExampleTemplateOptionColumnTable(
-                json.data.reduce(function (map, obj) {
+                response.data.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
                     map[obj.id] = { "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
                 }, {})
             )
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setExampleTemplateTableLoadingFlag(false)
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setExampleTemplateTableLoadingFlag(false)
     }
 
     const viewExampleTemplate = async (id) => {
@@ -156,10 +155,10 @@ export default function ExampleTemplate() {
         if (id !== undefined) {
             setExampleTemplateStateModal(CommonConstants.MODAL.VIEW)
             setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: true } })
-            try {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/test/${id}/example-template.json`)
 
-                const exampleTemplate = response.data.data
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/test/${id}/example-template.json`)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                const exampleTemplate = response.data
                 setExampleTemplateForm({
                     id: exampleTemplate.id,
                     name: exampleTemplate.name,
@@ -180,11 +179,11 @@ export default function ExampleTemplate() {
                 })
 
                 ModalHelper.show("modal_example_template")
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            } finally {
-                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: false } })
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { viewedButtonFlag: false } })
         }
     }
 
@@ -227,24 +226,21 @@ export default function ExampleTemplate() {
             ModalHelper.hide("dialog_example_template")
             setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: true })
 
-            try {
-                const json = await apiRequest(
-                    exampleTemplateForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
-                    exampleTemplateForm.id === undefined ? '/test/example-template.json' : `/test/${exampleTemplateForm.id}/example-template.json`,
-                    JSON.stringify(exampleTemplateForm),
-                )
+            const response = await apiRequest(
+                exampleTemplateForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                exampleTemplateForm.id === undefined ? '/test/example-template.json' : `/test/${exampleTemplateForm.id}/example-template.json`,
+                JSON.stringify(exampleTemplateForm),
+            )
 
-                if (json.data.status === "success") {
-                    getExampleTemplate(exampleTemplateAttributeTable)
-                    ModalHelper.hide("modal_example_template")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setExampleTemplateFormError(error.response.data)
-            } finally {
-                setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: false })
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getExampleTemplate(exampleTemplateAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_example_template")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setExampleTemplateEntryModal({ ...exampleTemplateEntryModal, submitLoadingFlag: false })
         }
     }
 
@@ -279,23 +275,21 @@ export default function ExampleTemplate() {
             setExampleTemplateBulkOptionLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`)
-            if (json.data.status === "success") {
-                getExampleTemplate(exampleTemplateAttributeTable)
-                if (id === undefined) {
-                    setExampleTemplateCheckBoxTableArray([])
-                }
+        const response = await apiRequest(CommonConstants.METHOD.DELETE, `/test/${id !== undefined ? id : exampleTemplateCheckBoxTableArray.join("")}/example-template.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getExampleTemplate(exampleTemplateAttributeTable)
+            if (id === undefined) {
+                setExampleTemplateCheckBoxTableArray([])
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (id !== undefined) {
-                setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } })
-            } else {
-                setExampleTemplateBulkOptionLoadingFlag(false)
-            }
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (id !== undefined) {
+            setExampleTemplateOptionColumnTable({ ...exampleTemplateOptionColumnTable, [id]: { deletedButtonFlag: false } })
+        } else {
+            setExampleTemplateBulkOptionLoadingFlag(false)
         }
     }
 
@@ -343,8 +337,8 @@ export default function ExampleTemplate() {
                             dataSize={5}
                             onChange={onExampleTemplateFormChange}
                             className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.value} /> */}
-                        <InputDecimal label={t("common.text.amount")} name="amount" value={exampleTemplateForm.amount} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
-                        <InputDate label={t("common.text.date")} type="date" name="date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
+                        <InputDecimal label={t("common.text.amount")} name="amount" value={exampleTemplateForm.amount} decimal={2} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.amount} />
+                        <InputDate label={t("common.text.date")} name="date" value={DateHelper.formatDate(new Date(exampleTemplateForm.date), "yyyy-MM-dd")} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.date} />
                         <Radio label={t("common.text.activeFlag")} name="activeFlag" value={exampleTemplateForm.activeFlag} map={yesNoMap} onChange={onExampleTemplateFormChange} className="col-md-6 col-sm-6 col-xs-12" error={exampleTemplateFormError.activeFlag} />
                     </>
                 }

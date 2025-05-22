@@ -120,35 +120,34 @@ export default function Branch() {
     const getBranch = async (options) => {
         setBranchTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-                // "value": branchFilterTable.value,
-                // "date": branchFilterTable.date,
-                // "range": branchFilterTable.range,
-            }
-            setBranchAttributeTable(options)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+            // "value": branchFilterTable.value,
+            // "date": branchFilterTable.date,
+            // "range": branchFilterTable.range,
+        }
+        setBranchAttributeTable(options)
 
-            const response = await apiRequest(CommonConstants.METHOD.GET, "/master/branch.json", params)
-            const json = response.data
-            setBranchArray(json.data)
-            setBranchDataTotalTable(json.recordsTotal)
+        const response = await apiRequest(CommonConstants.METHOD.GET, "/master/branch.json", params)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setBranchArray(response.data)
+            setBranchDataTotalTable(response.recordsTotal)
             setBranchOptionColumnTable(
-                json.data.reduce(function (map, obj) {
+                response.data.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
                     map[obj.id] = { "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
                 }, {})
             )
-        } catch (error) {
+        } else {
             setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setBranchTableLoadingFlag(false)
         }
+
+        setBranchTableLoadingFlag(false)
     }
 
     const viewBranch = async (id) => {
@@ -156,10 +155,10 @@ export default function Branch() {
         if (id !== undefined) {
             setBranchStateModal(CommonConstants.MODAL.VIEW)
             setBranchOptionColumnTable({ ...branchOptionColumnTable, [id]: { viewedButtonFlag: true } })
-            try {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/master/${id}/branch.json`)
 
-                const branch = response.data.data
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/master/${id}/branch.json`)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                const branch = response.data
                 setBranchForm({
                     id: branch.id,
                     name: branch.name,
@@ -180,11 +179,11 @@ export default function Branch() {
                 })
 
                 ModalHelper.show("modal_branch")
-            } catch (error) {
+            } else {
                 setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            } finally {
-                setBranchOptionColumnTable({ ...branchOptionColumnTable, [id]: { viewedButtonFlag: false } })
             }
+
+            setBranchOptionColumnTable({ ...branchOptionColumnTable, [id]: { viewedButtonFlag: false } })
         }
     }
 
@@ -227,24 +226,21 @@ export default function Branch() {
             ModalHelper.hide("dialog_branch")
             setBranchEntryModal({ ...branchEntryModal, submitLoadingFlag: true })
 
-            try {
-                const json = await apiRequest(
-                    branchForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
-                    branchForm.id === undefined ? '/master/branch.json' : `/master/${branchForm.id}/branch.json`,
-                    JSON.stringify(branchForm),
-                )
+            const response = await apiRequest(
+                branchForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                branchForm.id === undefined ? '/master/branch.json' : `/master/${branchForm.id}/branch.json`,
+                JSON.stringify(branchForm),
+            )
 
-                if (json.data.status === "success") {
-                    getBranch(branchAttributeTable)
-                    ModalHelper.hide("modal_branch")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setBranchFormError(error.response.data)
-            } finally {
-                setBranchEntryModal({ ...branchEntryModal, submitLoadingFlag: false })
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getBranch(branchAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_branch")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setBranchEntryModal({ ...branchEntryModal, submitLoadingFlag: false })
         }
     }
 
@@ -279,23 +275,21 @@ export default function Branch() {
             setBranchBulkOptionLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/master/${id !== undefined ? id : branchCheckBoxTableArray.join("")}/branch.json`)
-            if (json.data.status === "success") {
-                getBranch(branchAttributeTable)
-                if (id === undefined) {
-                    setBranchCheckBoxTableArray([])
-                }
+        const response = await apiRequest(CommonConstants.METHOD.DELETE, `/master/${id !== undefined ? id : branchCheckBoxTableArray.join("")}/branch.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getBranch(branchAttributeTable)
+            if (id === undefined) {
+                setBranchCheckBoxTableArray([])
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (id !== undefined) {
-                setBranchOptionColumnTable({ ...branchOptionColumnTable, [id]: { deletedButtonFlag: false } })
-            } else {
-                setBranchBulkOptionLoadingFlag(false)
-            }
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (id !== undefined) {
+            setBranchOptionColumnTable({ ...branchOptionColumnTable, [id]: { deletedButtonFlag: false } })
+        } else {
+            setBranchBulkOptionLoadingFlag(false)
         }
     }
 

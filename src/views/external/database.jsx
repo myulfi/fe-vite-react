@@ -116,43 +116,42 @@ export default function Database() {
 
     const [databaseTypeArray, setDatabaseTypeArray] = useState([])
     const getDatabaseType = async () => {
-        try {
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/master/database-type.json`)
-            setDatabaseTypeArray(response.data.data.map(object => { return { "key": object["id"], "value": object["name"], "url": object["url"] } }))
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/master/database-type.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setDatabaseTypeArray(response.data.map(object => { return { "key": object["id"], "value": object["name"], "url": object["url"] } }))
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
     }
 
     const getDatabase = async (options) => {
         setDatabaseTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-            }
-            setDatabaseAttributeTable(options)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+        }
+        setDatabaseAttributeTable(options)
 
-            const response = await apiRequest(CommonConstants.METHOD.GET, "/external/database.json", params)
-            const json = response.data
-            setDatabaseArray(json.data)
-            setDatabaseDataTotalTable(json.recordsTotal)
+        const response = await apiRequest(CommonConstants.METHOD.GET, "/external/database.json", params)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setDatabaseArray(response.data)
+            setDatabaseDataTotalTable(response.recordsTotal)
             setDatabaseOptionColumnTable(
-                json.data.reduce(function (map, obj) {
+                response.data.reduce(function (map, obj) {
                     //map[obj.id] = obj.name
                     map[obj.id] = { "connectedButtonFlag": false, "viewedButtonFlag": false, "deletedButtonFlag": false }
                     return map
                 }, {})
             )
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseTableLoadingFlag(false)
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setDatabaseTableLoadingFlag(false)
     }
 
     const viewDatabase = async (id) => {
@@ -160,11 +159,10 @@ export default function Database() {
         if (id !== undefined) {
             setDatabaseStateModal(CommonConstants.MODAL.VIEW)
             setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [id]: { viewedButtonFlag: true } })
-            try {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${id}/database.json`)
 
-                const database = response.data.data
-
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${id}/database.json`)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                const database = response.data
                 setDatabaseForm({
                     id: database.id,
                     code: database.code,
@@ -188,11 +186,11 @@ export default function Database() {
                 })
 
                 ModalHelper.show("modal_database")
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            } finally {
-                setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [id]: { viewedButtonFlag: false } })
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [id]: { viewedButtonFlag: false } })
         }
     }
 
@@ -237,24 +235,21 @@ export default function Database() {
             ModalHelper.hide("dialog_database")
             setDatabaseEntryModal({ ...databaseEntryModal, submitLoadingFlag: true })
 
-            try {
-                const json = await apiRequest(
-                    databaseForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
-                    databaseForm.id === undefined ? '/external/database.json' : `/external/${databaseForm.id}/database.json`,
-                    JSON.stringify(databaseForm),
-                )
+            const response = await apiRequest(
+                databaseForm.id === undefined ? CommonConstants.METHOD.POST : CommonConstants.METHOD.PATCH,
+                databaseForm.id === undefined ? '/external/database.json' : `/external/${databaseForm.id}/database.json`,
+                JSON.stringify(databaseForm),
+            )
 
-                if (json.data.status === "success") {
-                    getDatabase(databaseAttributeTable)
-                    ModalHelper.hide("modal_database")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setDatabaseFormError(error.response.data)
-            } finally {
-                setDatabaseEntryModal({ ...databaseEntryModal, submitLoadingFlag: false })
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getDatabase(databaseAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_database")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setDatabaseEntryModal({ ...databaseEntryModal, submitLoadingFlag: false })
         }
     }
 
@@ -289,23 +284,21 @@ export default function Database() {
             setDatabaseBulkOptionLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id !== undefined ? id : databaseCheckBoxTableArray.join("")}/database.json`)
-            if (json.data.status === "success") {
-                getDatabase(databaseAttributeTable)
-                if (id === undefined) {
-                    setDatabaseCheckBoxTableArray([])
-                }
+        const response = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id !== undefined ? id : databaseCheckBoxTableArray.join("")}/database.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getDatabase(databaseAttributeTable)
+            if (id === undefined) {
+                setDatabaseCheckBoxTableArray([])
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (id !== undefined) {
-                setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [id]: { deletedButtonFlag: false } })
-            } else {
-                setDatabaseBulkOptionLoadingFlag(false)
-            }
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (id !== undefined) {
+            setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [id]: { deletedButtonFlag: false } })
+        } else {
+            setDatabaseBulkOptionLoadingFlag(false)
         }
     }
 
@@ -342,35 +335,31 @@ export default function Database() {
     const [databaseConnectionTitleModal, setDatabaseConnectionTitleModal] = useState(undefined)
     const connectDatabase = async (row) => {
         setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [row.id]: { connectedButtonFlag: true } })
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.GET, `/external/${row.id}/test-connetion-database.json`)
 
-            if (json.data.status === "success") {
-                setDatabaseId(row.id)
-                setDatabaseConnectionTitleModal(`${row.code} | ${row.databaseConnection}`)
-                setDatabaseQueryManualValue("")
-                setDatabaseQueryManualTableFlag(false)
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${row.id}/test-connetion-database.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setDatabaseId(row.id)
+            setDatabaseConnectionTitleModal(`${row.code} | ${row.databaseConnection}`)
+            setDatabaseQueryManualValue("")
+            setDatabaseQueryManualTableFlag(false)
 
-                getDatabaseQueryObject(
-                    row.id,
-                    {
-                        "page": 1,
-                        "length": 10,
-                        "search": "",
-                        "order": ["object_id", "desc"],
-                    }
-                )
+            getDatabaseQueryObject(
+                row.id,
+                {
+                    "page": 1,
+                    "length": 10,
+                    "search": "",
+                    "order": ["object_id", "desc"],
+                }
+            )
 
-                getDatabaseQueryWhitelist(row.id, databaseQueryWhitelistAttributeTable)
-                ModalHelper.show("modal_database_connection")
-            } else {
-                setToast({ type: json.data.status, message: json.data.message })
-            }
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [row.id]: { connectedButtonFlag: false } })
+            getDatabaseQueryWhitelist(row.id, databaseQueryWhitelistAttributeTable)
+            ModalHelper.show("modal_database_connection")
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setDatabaseOptionColumnTable({ ...databaseOptionColumnTable, [row.id]: { connectedButtonFlag: false } })
     }
 
     const [databaseQueryManualTableFlag, setDatabaseQueryManualTableFlag] = useState(false)
@@ -402,75 +391,71 @@ export default function Database() {
 
     const runDatabaseQueryManual = async (e) => {
         setDatabaseQueryManualButtonFlag(true)
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/query-manual-database.json`, JSON.stringify({ query: databaseQueryManualValue }))
 
-            if (json.data.status === "success") {
-                setDatabaseQueryManualTableFlag(true)
-
-                setDatabaseQueryManualColumn(
-                    json.data.data.header.map(element => {
-                        if (element.type !== undefined) {
-                            return {
-                                data: element.name,
-                                name: `${element.name} (${element.type})`,
-                                type: element.type,
-                                class: "text-nowrap",
-                                defaultContent: () => { return <i>NULL</i> }
-                            }
-                        } else {
-                            return {
-                                data: "action",
-                                name: "Result Information",
-                                class: "text-nowrap",
-                                render: function (_, row) {
-                                    if (row.error !== null) {
-                                        if (row.query !== undefined) {
-                                            return <><b>{row.error}</b> | <i>{row.query}</i></>
-                                        } else {
-                                            return row.error
-                                        }
+        const response = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/query-manual-database.json`, JSON.stringify({ query: databaseQueryManualValue }))
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setDatabaseQueryManualTableFlag(true)
+            setDatabaseQueryManualColumn(
+                response.data.header.map(element => {
+                    if (element.type !== undefined) {
+                        return {
+                            data: element.name,
+                            name: `${element.name} (${element.type})`,
+                            type: element.type,
+                            class: "text-nowrap",
+                            defaultContent: () => { return <i>NULL</i> }
+                        }
+                    } else {
+                        return {
+                            data: "action",
+                            name: "Result Information",
+                            class: "text-nowrap",
+                            render: function (_, row) {
+                                if (row.error !== null) {
+                                    if (row.query !== undefined) {
+                                        return <><b>{row.error}</b> | <i>{row.query}</i></>
                                     } else {
-                                        return <>{row.row} {row.action} | <i>{row.query}</i></>
+                                        return row.error
                                     }
+                                } else {
+                                    return <>{row.row} {row.action} | <i>{row.query}</i></>
                                 }
                             }
                         }
-                    })
-                )
+                    }
+                })
+            )
 
-                if (json.data.data.queryManualId !== undefined) {
-                    setQueryManualId(json.data.data.queryManualId)
-                    getDatabaseQueryManual({ id: json.data.data.queryManualId, page: 1, length: 10 })
-                } else {
-                    setDatabaseQueryManualDataArray(json.data.data.result)
-                }
+            if (response.data.queryManualId !== undefined) {
+                setQueryManualId(response.data.queryManualId)
+                getDatabaseQueryManual({ id: response.data.queryManualId, page: 1, length: 10 })
+            } else {
+                setDatabaseQueryManualDataArray(response.data.result)
             }
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryManualButtonFlag(false)
+        } else {
+            setToast({ type: "failed", message: response.message })
         }
+
+        setDatabaseQueryManualButtonFlag(false)
     }
 
     const getDatabaseQueryManual = async (options) => {
         setDatabaseQueryManualTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-            }
-
-            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${options.id}/query-manual-database.json`, params)
-            const json = response.data
-            setDatabaseQueryManualDataArray(json.data)
-            setDatabaseQueryManualDataTotalTable(json.recordsTotal)
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryManualTableLoadingFlag(false)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
         }
+
+        const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${options.id}/query-manual-database.json`, params)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setDatabaseQueryManualDataArray(response.data)
+            setDatabaseQueryManualDataTotalTable(response.recordsTotal)
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        setDatabaseQueryManualTableLoadingFlag(false)
     }
 
     const [databaseQueryObjectDataArray, setDatabaseQueryObjectDataArray] = useState([])
@@ -481,32 +466,31 @@ export default function Database() {
     const getDatabaseQueryObject = async (databaseId, options) => {
         setDatabaseQueryObjectTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-            }
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+        }
 
-            if (databaseId > 0) {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-object-database.json`, params)
-                const json = response.data
-                setDatabaseQueryObjectDataArray(json.data)
-                setDatabaseQueryObjectDataTotalTable(json.recordsTotal)
+        if (databaseId > 0) {
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-object-database.json`, params)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                setDatabaseQueryObjectDataArray(response.data)
+                setDatabaseQueryObjectDataTotalTable(response.recordsTotal)
                 setDatabaseQueryObjectOptionColumnTable(
-                    json.data.reduce(function (map, obj) {
+                    response.data.reduce(function (map, obj) {
                         map[obj.id] = { "definitionViewedButtonFlag": false, "dataViewedButtonFlag": false }
                         return map
                     }, {})
                 )
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryObjectTableLoadingFlag(false)
         }
+
+        setDatabaseQueryObjectTableLoadingFlag(false)
     }
 
     const databaseQueryWhitelistInitial = {
@@ -538,33 +522,32 @@ export default function Database() {
     const getDatabaseQueryWhitelist = async (databaseId, options) => {
         setDatabaseQueryWhitelistTableLoadingFlag(true)
 
-        try {
-            const params = {
-                "start": (options.page - 1) * options.length,
-                "length": options.length,
-                "search": encodeURIComponent(options.search),
-                "orderColumn": options.order.length > 1 ? options.order[0] : null,
-                "orderDir": options.order.length > 1 ? options.order[1] : null,
-            }
-            setDatabaseQueryWhitelistAttributeTable(options)
+        const params = {
+            "start": (options.page - 1) * options.length,
+            "length": options.length,
+            "search": encodeURIComponent(options.search),
+            "orderColumn": options.order.length > 1 ? options.order[0] : null,
+            "orderDir": options.order.length > 1 ? options.order[1] : null,
+        }
+        setDatabaseQueryWhitelistAttributeTable(options)
 
-            if (databaseId > 0) {
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-whitelist-database.json`, params)
-                const json = response.data
-                setDatabaseQueryWhitelistDataArray(json.data)
-                setDatabaseQueryWhitelistDataTotalTable(json.recordsTotal)
+        if (databaseId > 0) {
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/query-whitelist-database.json`, params)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                setDatabaseQueryWhitelistDataArray(response.data)
+                setDatabaseQueryWhitelistDataTotalTable(response.recordsTotal)
                 setDatabaseQueryWhitelistOptionColumnTable(
-                    json.data.reduce(function (map, obj) {
+                    response.data.reduce(function (map, obj) {
                         map[obj.id] = { "definitionViewedButtonFlag": false, "dataViewedButtonFlag": false }
                         return map
                     }, {})
                 )
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            setDatabaseQueryWhitelistTableLoadingFlag(false)
         }
+
+        setDatabaseQueryWhitelistTableLoadingFlag(false)
     }
 
     const entryDatabaseQueryWhitelist = () => {
@@ -588,22 +571,19 @@ export default function Database() {
             ModalHelper.hide("dialog_database")
             setDatabaseQueryWhitelistSubmitLoadingFlag(true)
 
-            try {
-                const data = databaseQueryWhitelistForm
-                data.queryManualId = queryManualId
-                const json = await apiRequest(CommonConstants.METHOD.POST, '/external/query-whitelist-database.json', JSON.stringify(data))
+            const data = databaseQueryWhitelistForm
+            data.queryManualId = queryManualId
+            const response = await apiRequest(CommonConstants.METHOD.POST, '/external/query-whitelist-database.json', JSON.stringify(data))
 
-                if (json.data.status === "success") {
-                    getDatabaseQueryWhitelist(databaseId, databaseQueryWhitelistAttributeTable)
-                    ModalHelper.hide("modal_database_query_whitelist")
-                }
-                setToast({ type: json.data.status, message: json.data.message })
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                setDatabaseQueryWhitelistFormError(error.response.data)
-            } finally {
-                setDatabaseQueryWhitelistSubmitLoadingFlag(false)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                getDatabaseQueryWhitelist(databaseId, databaseQueryWhitelistAttributeTable)
+                setToast({ type: "success", message: response.message })
+                ModalHelper.hide("modal_database_query_whitelist")
+            } else {
+                setToast({ type: "failed", message: response.message })
             }
+
+            setDatabaseQueryWhitelistSubmitLoadingFlag(false)
         }
     }
 
@@ -638,23 +618,21 @@ export default function Database() {
             setDatabaseQueryWhitelistBulkOptionLoadingFlag(true)
         }
 
-        try {
-            const json = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id !== undefined ? id : databaseQueryWhitelistCheckBoxTableArray.join("")}/${databaseId}/query-whitelist-database.json`)
-            if (json.data.status === "success") {
-                getDatabaseQueryWhitelist(databaseId, databaseQueryWhitelistAttributeTable)
-                if (id === undefined) {
-                    setDatabaseQueryWhitelistCheckBoxTableArray([])
-                }
+        const response = await apiRequest(CommonConstants.METHOD.DELETE, `/external/${id !== undefined ? id : databaseQueryWhitelistCheckBoxTableArray.join("")}/${databaseId}/query-whitelist-database.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            getDatabaseQueryWhitelist(databaseId, databaseQueryWhitelistAttributeTable)
+            if (id === undefined) {
+                setDatabaseQueryWhitelistCheckBoxTableArray([])
             }
-            setToast({ type: json.data.status, message: json.data.message })
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (id !== undefined) {
-                setDatabaseQueryWhitelistOptionColumnTable({ ...databaseQueryWhitelistOptionColumnTable, [id]: { deletedButtonFlag: false } })
-            } else {
-                setDatabaseQueryWhitelistBulkOptionLoadingFlag(false)
-            }
+            setToast({ type: "success", message: response.message })
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (id !== undefined) {
+            setDatabaseQueryWhitelistOptionColumnTable({ ...databaseQueryWhitelistOptionColumnTable, [id]: { deletedButtonFlag: false } })
+        } else {
+            setDatabaseQueryWhitelistBulkOptionLoadingFlag(false)
         }
     }
 
@@ -673,36 +651,33 @@ export default function Database() {
             setDatabaseQueryWhitelistOptionColumnTable({ databaseQueryWhitelistOptionColumnTable, [id]: { dataViewedButtonFlag: true } })
         }
 
-        try {
-            setQueryExactIdentity(id)
-            setDatabaseExactTitleModal(`${databaseConnectionTitleModal} | ${name ?? id}`)
-            const json = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/${id}/query-exact-data-database.json`)
-            if (json.data.status === "success") {
-                setDatabaseQueryExactColumn(
-                    json.data.data.header.map(element => {
-                        return {
-                            data: element.name,
-                            name: `${element.name} (${element.type})`,
-                            type: element.type,
-                            class: "text-nowrap",
-                            defaultContent: () => { return <i>NULL</i> }
-                        }
-                    })
-                )
+        setQueryExactIdentity(id)
+        setDatabaseExactTitleModal(`${databaseConnectionTitleModal} | ${name ?? id}`)
+        const response = await apiRequest(CommonConstants.METHOD.PATCH, `/external/${databaseId}/${id}/query-exact-data-database.json`)
+        if (CommonConstants.HTTP_CODE.OK === response.status) {
+            setDatabaseQueryExactColumn(
+                response.data.header.map(element => {
+                    return {
+                        data: element.name,
+                        name: `${element.name} (${element.type})`,
+                        type: element.type,
+                        class: "text-nowrap",
+                        defaultContent: () => { return <i>NULL</i> }
+                    }
+                })
+            )
 
-                getDatabaseQueryExactData({ id: id, page: 1, length: 10 })
-            }
-
+            getDatabaseQueryExactData({ id: id, page: 1, length: 10 })
             setDatabaseQueryExactResetPaginationTable(resetPagination => !resetPagination)
             ModalHelper.show("modal_database_exact")
-        } catch (error) {
-            setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-        } finally {
-            if (typeof id === "string") {
-                setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [id]: { dataViewedButtonFlag: false } })
-            } else {
-                setDatabaseQueryWhitelistOptionColumnTable({ databaseQueryWhitelistOptionColumnTable, [id]: { dataViewedButtonFlag: false } })
-            }
+        } else {
+            setToast({ type: "failed", message: response.message })
+        }
+
+        if (typeof id === "string") {
+            setDatabaseQueryObjectOptionColumnTable({ databaseQueryObjectOptionColumnTable, [id]: { dataViewedButtonFlag: false } })
+        } else {
+            setDatabaseQueryWhitelistOptionColumnTable({ databaseQueryWhitelistOptionColumnTable, [id]: { dataViewedButtonFlag: false } })
         }
     }
 
@@ -710,21 +685,20 @@ export default function Database() {
         if (databaseId > 0) {
             setDatabaseQueryExactTableLoadingFlag(true)
 
-            try {
-                const params = {
-                    "start": (options.page - 1) * options.length,
-                    "length": options.length,
-                }
-
-                const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${options.id}/query-exact-data-database.json`, params)
-                const json = response.data
-                setDatabaseQueryExactDataArray(json.data)
-                setDatabaseQueryExactDataTotalTable(json.recordsTotal)
-            } catch (error) {
-                setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            } finally {
-                setDatabaseQueryExactTableLoadingFlag(false)
+            const params = {
+                "start": (options.page - 1) * options.length,
+                "length": options.length,
             }
+
+            const response = await apiRequest(CommonConstants.METHOD.GET, `/external/${databaseId}/${options.id}/query-exact-data-database.json`, params)
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
+                setDatabaseQueryExactDataArray(response.data)
+                setDatabaseQueryExactDataTotalTable(response.recordsTotal)
+            } else {
+                setToast({ type: "failed", message: response.message })
+            }
+
+            setDatabaseQueryExactTableLoadingFlag(false)
         }
     }
 
@@ -809,27 +783,22 @@ export default function Database() {
                         url = `/external/${databaseId}/1/${queryManualId}/database-query-xml.json`
                     }
 
-                    try {
-                        const json = await apiRequest(CommonConstants.METHOD.GET, url)
-
-                        if (json.data.status === "success") {
-                            if (databaseQueryExportForm.saveAs === 1) {
-                                await navigator.clipboard.writeText(json.data.data)
-                                setToast({ type: json.data.status, message: "common.information.exported" })
-                            } else {
-                                const nameArray = [...databaseQueryManualValue.matchAll(new RegExp("FROM (\\w+)", "gmi"))];
-                                const name = nameArray.length > 0 && nameArray[0].length > 0 && nameArray[0][0].toLowerCase().startsWith("from ") ? nameArray[0][0].substr(5).trim() : "manual";
-                                CommonHelper.downloadFile(`${name}@${DateHelper.formatDate(new Date(), "yyyyMMddHHmmss")}.${queryExportFormatMap.find(item => item.key === databaseQueryExportForm.formatId).value.toLowerCase()}`, [json.data.data])
-                            }
-                            ModalHelper.hide("modal_database_query_export")
+                    const response = await apiRequest(CommonConstants.METHOD.GET, url)
+                    if (CommonConstants.HTTP_CODE.OK === response.status) {
+                        if (databaseQueryExportForm.saveAs === 1) {
+                            await navigator.clipboard.writeText(response.data)
+                            setToast({ type: "success", message: "common.information.exported" })
                         } else {
-                            setToast({ type: json.data.status, message: json.data.message })
+                            const nameArray = [...databaseQueryManualValue.matchAll(new RegExp("FROM (\\w+)", "gmi"))];
+                            const name = nameArray.length > 0 && nameArray[0].length > 0 && nameArray[0][0].toLowerCase().startsWith("from ") ? nameArray[0][0].substr(5).trim() : "manual";
+                            CommonHelper.downloadFile(`${name}@${DateHelper.formatDate(new Date(), "yyyyMMddHHmmss")}.${queryExportFormatMap.find(item => item.key === databaseQueryExportForm.formatId).value.toLowerCase()}`, [response.data])
                         }
-                    } catch (error) {
-                        setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-                    } finally {
-                        setDatabaseQueryExportLoadingFlag(false)
+                        ModalHelper.hide("modal_database_query_export")
+                    } else {
+                        setToast({ type: "failed", message: response.message })
                     }
+
+                    setDatabaseQueryExportLoadingFlag(false)
                 },
             })
         }
@@ -889,20 +858,19 @@ export default function Database() {
                 setDatabaseQueryExactChartLoadingFlag(true)
             }
 
-            try {
-                const params = { "start": 0, "length": -1, }
-                const response = await apiRequest(
-                    CommonConstants.METHOD.GET,
-                    "manual" === databaseQueryType
-                        ? `/external/${queryManualId}/query-manual-database.json`
-                        : `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`,
-                    params
-                )
+            const params = { "start": 0, "length": -1, }
+            const response = await apiRequest(
+                CommonConstants.METHOD.GET,
+                "manual" === databaseQueryType
+                    ? `/external/${queryManualId}/query-manual-database.json`
+                    : `/external/${databaseId}/${queryExactIdentity}/query-exact-data-database.json`,
+                params
+            )
 
-                const json = response.data
+            if (CommonConstants.HTTP_CODE.OK === response.status) {
                 const databaseQueryColumn = "manual" === databaseQueryType ? databaseQueryManualColumn : databaseQueryExactColumn
 
-                const labelArray = [...new Set(json.data.map(item => item[databaseQueryColumn[0].data] ?? "NULL"))]
+                const labelArray = [...new Set(response.data.map(item => item[databaseQueryColumn[0].data] ?? "NULL"))]
                 let datasetCommonArray = new Array()
                 let datasetBubbleArray = new Array()
 
@@ -917,7 +885,7 @@ export default function Database() {
                             "label": databaseQueryColumn[i].data,
                             // "tension" : 0.4,
                             "data": labelArray.map(label => {
-                                return json.data.reduce(function (sum, item) {
+                                return response.reduce(function (sum, item) {
                                     if ((item[databaseQueryColumn[0].data] ?? "NULL") === label) {
                                         return sum + item[databaseQueryColumn[i].data]
                                     } else {
@@ -963,13 +931,13 @@ export default function Database() {
                         databaseQueryColumn.length > 1
                         && /.*(int|number|numeric).*$/.test(databaseQueryColumn[1].type.toLowerCase()) === false
                     ) {
-                        const secondLabelArray = [...new Set(json.data.map(item => item[databaseQueryColumn[1].data] ?? "NULL"))]
+                        const secondLabelArray = [...new Set(response.data.map(item => item[databaseQueryColumn[1].data] ?? "NULL"))]
                         secondLabelArray.forEach(secondLabel => {
                             datasetCommonArray.push({
                                 hidden: false,
                                 label: secondLabel,
                                 data: labelArray.map(label => {
-                                    return json.data.reduce(function (sum, item) {
+                                    return response.data.reduce(function (sum, item) {
                                         if (
                                             (item[databaseQueryColumn[0].data] ?? "NULL") === label
                                             && (item[databaseQueryColumn[1].data] ?? "NULL") === secondLabel
@@ -988,7 +956,7 @@ export default function Database() {
                             label: t("common.text.amount"),
                             // tension : 0.4,
                             data: labelArray.map(label => {
-                                return json.data.reduce(function (sum, item) {
+                                return response.data.reduce(function (sum, item) {
                                     if ((item[databaseQueryColumn[0].data] ?? "NULL") === label) {
                                         return sum + 1
                                     } else {
@@ -1065,14 +1033,14 @@ export default function Database() {
                 setCanvasOptionArray(optionArray)
 
                 ModalHelper.show("modal_database_query_chart")
-            } catch (error) {
+            } else {
                 setToast({ type: "failed", message: error.response?.data?.message ?? error.message })
-            } finally {
-                if ("manual" === databaseQueryType) {
-                    setDatabaseQueryManualChartLoadingFlag(false)
-                } else {
-                    setDatabaseQueryExactChartLoadingFlag(false)
-                }
+            }
+
+            if ("manual" === databaseQueryType) {
+                setDatabaseQueryManualChartLoadingFlag(false)
+            } else {
+                setDatabaseQueryExactChartLoadingFlag(false)
             }
         }
     }
